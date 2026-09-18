@@ -690,7 +690,10 @@ function lockPage(saltB64, ivB64, ctB64) {
 /* ─────────────────────────── GitHub API ─────────────────────────── */
 
 async function gh(path, opts) {
+  // GitHub API yanıtları 60 sn önbelleğe alınabilir (Cache-Control: max-age=60); önbellekten gelen eski dal
+  // bilgisiyle art arda iki kayıt, "arada başka değişiklik geldi" diye reddedilirdi. Her istek taze olsun.
   const res = await fetch('https://api.github.com' + path, Object.assign({
+    cache: 'no-store',
     headers: {
       'Authorization': 'Bearer ' + state.token,
       'Accept': 'application/vnd.github+json',
@@ -749,6 +752,19 @@ class ConflictError extends Error {
  * Dönüş: { commit, shas: { yol: yeni blob sha'sı | null } }.
  */
 async function ghCommit(files, message, expect) {
+  // Dal, biz commit'i hazırlarken ilerlediyse (başka bir kayıt araya girdiyse) ve bizim dosyalarımız
+  // değişmediyse, yeni uca göre birkaç kez yeniden dene; dosyalarımız değiştiyse expect denetimi durdurur.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await ghCommitOnce(files, message, expect);
+    } catch (e) {
+      if (!(e instanceof ConflictError) || e.paths.length || attempt >= 3) throw e;
+      await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+    }
+  }
+}
+
+async function ghCommitOnce(files, message, expect) {
   const ref = await gh(repoPath(`/git/ref/heads/${encodeURIComponent(state.branch)}`));
   if (!ref) throw new Error('Dal bulunamadı: ' + state.branch);
   const baseSha = ref.object.sha;
@@ -1464,7 +1480,8 @@ async function publishMd(draft) {
     const old = state.editing && state.editing.href;
     const updateIndex = data => {
       const arr = flattenOf(data);
-      let entry = old ? arr.find(x => x.href === old) : null;
+      // düzenlenen yazının kaydı; yoksa (yeni yazı, ya da var olan bir dosyanın üzerine yazılıyor) aynı adlı kayıt
+      let entry = arr.find(x => x.href === (old || slug)) || (old && old !== slug ? arr.find(x => x.href === slug) : null);
       // yeni yazı: manşet değilse (ya da taslaksa) manşetin altına, arşivin başına
       if (!entry) { entry = {}; arr.splice(featured && !draft || !arr.length ? 0 : 1, 0, entry); }
       entry.title = meta.title;
@@ -1472,6 +1489,8 @@ async function publishMd(draft) {
       entry.author = meta.author;
       entry.href = slug;
       entry.excerpt = excerpt;
+      // aynı adresli başka kayıt kalmasın (var olan dosyanın üzerine yazıldıysa)
+      arr.filter(x => x !== entry && x.href === slug).forEach(x => arr.splice(arr.indexOf(x), 1));
       if (draft) {
         entry.taslak = true;
         if (arr[0] === entry && arr.length > 1) { arr.splice(0, 1); arr.splice(1, 0, entry); }
