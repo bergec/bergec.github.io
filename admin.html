@@ -1485,6 +1485,15 @@ $('btn-pending-discard').addEventListener('click', async (e) => {
   msg('list-msg', 'Değişiklikler geri alındı.', 'ok');
 });
 
+/** Kaydettikten sonra yazılar listesine dön ve ne olduğunu orada söyle. */
+function backToList(text) {
+  ed.dirty = false;
+  showOnly('p-list');
+  refreshPending();
+  renderList();
+  msg('list-msg', text + ' — henüz yayınlanmadı; alttaki “Değişiklikleri yayınla” ile gönderin.', 'ok');
+}
+
 /* ─────────────────────────── liste ─────────────────────────── */
 
 function allEntries() {
@@ -1784,7 +1793,7 @@ async function publishMd(draft) {
     stage(desc, { kind: 'upsert', old, slug, meta: { title: meta.title, date: meta.date, author: meta.author, subtitle: meta.subtitle }, excerpt, lede, featured, draft }, files);
     state.editing = { href: slug, sha: pending.files[slug].expect, taslak: draft };
     updateEditButtons();
-    msg('edit-msg', (draft ? 'Taslak olarak kaydedildi' : 'Kaydedildi') + ' — henüz yayınlanmadı; alttaki “Değişiklikleri yayınla” ile gönderin.', 'ok');
+    backToList('“' + meta.title + '” ' + (draft ? 'taslak olarak kaydedildi' : 'kaydedildi'));
   } catch (e) {
     msg('edit-msg', e.message, 'err');
   } finally {
@@ -2046,7 +2055,7 @@ function prepareFrame() {
     d.execCommand('insertText', false, t);
   });
   d.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveDoc(); return; }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveDoc(undefined, false); return; } // Ctrl+S: düzenleyicide kal
     // kod bloğunda Enter yeni satır, Tab girinti
     const at = d.getSelection().anchorNode;
     const atEl = at && (at.nodeType === 1 ? at : at.parentElement);
@@ -2279,7 +2288,7 @@ function updateDocButtons() {
 
 /** draft: true → taslak olarak sakla (ana sayfada görünmez); false → paylaş / yayındaki yazıyı güncelle.
     Değişiklik hemen gönderilmez; bekleyenlere eklenir. */
-async function saveDoc(draft) {
+async function saveDoc(draft, leave) {
   const t = ed.target;
   if (!t) return;
   if (draft === undefined) draft = !!(t.isNew || t.taslak); // Ctrl+S: taslaksa taslak olarak kaydet
@@ -2314,15 +2323,16 @@ async function saveDoc(draft) {
       if (sharing) { t.taslak = false; updateDocButtons(); }
     }
     ed.dirty = false;
-    msg('doc-msg', (draft ? 'Taslak olarak kaydedildi' : 'Kaydedildi') + ' — henüz yayınlanmadı; alttaki “Değişiklikleri yayınla” ile gönderin.', 'ok');
+    if (leave) backToList('“' + t.title + '” ' + (draft ? 'taslak olarak kaydedildi' : 'kaydedildi'));
+    else msg('doc-msg', (draft ? 'Taslak olarak kaydedildi' : 'Kaydedildi') + ' — henüz yayınlanmadı; alttaki “Değişiklikleri yayınla” ile gönderin.', 'ok');
   } catch (e) { msg('doc-msg', e.message, 'err'); }
   finally { btn.disabled = $('btn-doc-draft').disabled = false; }
 }
 
 document.querySelectorAll('#p-doc .tab').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); setDocTab(b.dataset.tab); }));
 $('doc-code').addEventListener('input', () => { ed.dirty = true; });
-$('btn-doc-save').addEventListener('click', (e) => { e.preventDefault(); saveDoc(false); });
-$('btn-doc-draft').addEventListener('click', (e) => { e.preventDefault(); saveDoc(true); });
+$('btn-doc-save').addEventListener('click', (e) => { e.preventDefault(); saveDoc(false, true); });
+$('btn-doc-draft').addEventListener('click', (e) => { e.preventDefault(); saveDoc(true, true); });
 $('btn-doc-cancel').addEventListener('click', (e) => {
   e.preventDefault();
   if (ed.dirty && !confirm('Kaydedilmemiş değişiklikler var. Yine de çıkılsın mı?')) return;
@@ -2991,7 +3001,7 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
   try {
     stage('Arşiv kaydı: ' + f.title, { kind: 'meta', origHref, f });
     state.metaTarget = flatten().find(x => x.href === f.href) || null;
-    msg('meta-msg', 'Kaydedildi — yayınlamak için alttaki “Değişiklikleri yayınla”ya basın.', 'ok');
+    backToList('“' + f.title + '” arşiv kaydı kaydedildi');
   } catch (e) { msg('meta-msg', e.message, 'err'); }
   finally { ev.target.disabled = false; }
 });
