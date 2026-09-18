@@ -617,7 +617,7 @@ const INDEX_RE = /(<script type="application\/json" id="bergec-index">)([\s\S]*?
 
 /**
  * JSON'u <script> etiketinin içine gömerken "<" karakterini kaçırır.
- * Aksi hâlde metinde geçen bir "</script>" sayfayı ortasından böler.
+ * Aksi hâlde metinde geçen bir "<\/script>" sayfayı ortasından böler.
  * < geçerli bir JSON kaçışı olduğu için JSON.parse aynı metni geri verir.
  */
 function jsonForScript(value, indent) {
