@@ -500,6 +500,15 @@ async function encryptPage(plaintext, password) {
   return lockPage(bytesToB64(salt), bytesToB64(iv), bytesToB64(ct));
 }
 
+/** Yapıştırırken araya giren boşlukları, satır sonlarını, görünmez karakterleri ve "Bearer " önekini atar. */
+function cleanToken(t) {
+  return String(t || '').replace(/^\s*(Bearer|token)\s+/i, '').replace(/[\s\u200B-\u200D\u2060\uFEFF]/g, '');
+}
+/** Anahtarı ele vermeden tanımak için: ilk 15 karakter ve uzunluk. */
+function tokenHint(t) {
+  return 'başı “' + String(t).slice(0, 15) + '…”, ' + String(t).length + ' karakter';
+}
+
 /** tools/encrypt.js ile birebir aynı kilit sayfası. */
 function lockPage(saltB64, ivB64, ctB64) {
   return `<!DOCTYPE html>
@@ -2174,11 +2183,17 @@ $('btn-connect').addEventListener('click', async (ev) => {
   state.owner = $('owner').value.trim();
   state.repo = $('repo').value.trim();
   state.branch = $('branch').value.trim() || 'main';
-  state.token = $('token').value.trim();
+  state.token = cleanToken($('token').value);
+  $('token').value = state.token;
   state.pw = $('sitepw').value;
 
   if (!state.owner || !state.repo) { msg('conn-msg', 'Kullanıcı ve depo adı gerekli.', 'err'); return; }
   if (!state.token) { msg('conn-msg', 'GitHub anahtarı gerekli.', 'err'); return; }
+  if (!/^(github_pat_|ghp_)[A-Za-z0-9_]+$/.test(state.token)) {
+    msg('conn-msg', 'Bu bir GitHub anahtarına benzemiyor (' + tokenHint(state.token) + '). Anahtar “github_pat_” ya da “ghp_” ile başlar. ' +
+      'Tarayıcı bu alana kayıtlı bir şifreyi doldurmuş olabilir: alanı silip anahtarı yeniden yapıştırın.', 'err');
+    return;
+  }
   if (!state.pw) { msg('conn-msg', 'Site parolası gerekli.', 'err'); return; }
 
   btn.disabled = true;
@@ -2207,6 +2222,11 @@ $('btn-connect').addEventListener('click', async (ev) => {
   } catch (e) {
     let m = e.message;
     if (/decrypt|operation-specific/i.test(m)) m = 'Site parolası yanlış (ana sayfa çözülemedi).';
+    if (/Bad credentials/i.test(m)) {
+      m = 'GitHub bu anahtarı tanımadı (' + tokenHint(state.token) + ').\n' +
+        '• Anahtarın süresi dolmuş, silinmiş ya da yenilenmiş (Regenerate) olabilir: bergec hesabında Settings → Developer settings → Fine-grained tokens sayfasına bakın; gerekirse yenisini üretin.\n' +
+        '• Eksik kopyalanmış olabilir: GitHub anahtarı yalnızca üretildiği an bir kez gösterir. Yukarıdaki ilk karakterleri ve uzunluğu GitHub’dakiyle karşılaştırın (fine-grained anahtarlar genelde 93 karakterdir).';
+    }
     msg('conn-msg', m, 'err');
   } finally {
     btn.disabled = false;
