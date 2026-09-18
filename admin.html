@@ -6,8 +6,8 @@
 <title>Bergeç · Yönetim</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="assets/bergec.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
 <style>
   body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
   .shell { max-width: 1180px; margin: 0 auto; padding: 0 20px 80px; }
@@ -136,22 +136,25 @@
     <p class="hint">
       GitHub deponuza yazabilmek için bir <strong>erişim anahtarı</strong> (token) gerekiyor.
       <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Fine-grained token</a>
-      sayfasından yalnızca bu depoya, <em>Repository permissions → Contents: Read and write</em> yetkisiyle bir anahtar üretin.
-      Anahtar yalnızca bu tarayıcıda saklanır, hiçbir yere gönderilmez.
+      sayfasından yalnızca bu depoya, <em>Repository permissions → Contents: Read and write</em> yetkisiyle bir anahtar üretin
+      (depo <code>bergec</code> hesabında olduğu için anahtarı o hesapla üretin).
+      Anahtar yalnızca bu tarayıcıda, sizin belirlediğiniz <strong>admin şifresiyle</strong> şifrelenmiş olarak saklanır; hiçbir yere gönderilmez.
     </p>
     <div class="grid g3">
       <div><label class="f" for="owner">GitHub kullanıcı</label><input type="text" id="owner" value="bergec" autocomplete="off"></div>
       <div><label class="f" for="repo">Depo</label><input type="text" id="repo" value="bergec.github.io" autocomplete="off"></div>
       <div><label class="f" for="branch">Dal</label><input type="text" id="branch" value="main" autocomplete="off"></div>
     </div>
-    <div class="grid g2" style="margin-top: 14px;">
+    <div class="grid g3" style="margin-top: 14px;">
       <div><label class="f" for="token">GitHub anahtarı</label><input type="password" id="token" placeholder="github_pat_…" autocomplete="off"></div>
+      <div><label class="f" for="adminpw">Admin şifresi</label><input type="password" id="adminpw" placeholder="anahtarı kilitleyen şifre" autocomplete="off"></div>
       <div><label class="f" for="sitepw">Site parolası</label><input type="password" id="sitepw" placeholder="sayfaların şifrelendiği parola" autocomplete="off"></div>
     </div>
+    <p class="hint" id="lock-hint" style="margin: 10px 0 0;"></p>
     <div class="row" style="margin-top: 14px;">
       <button class="b" id="btn-connect">Bağlan</button>
       <label style="font-size: 12.5px; color: var(--color-neutral-700);">
-        <input type="checkbox" id="remember" checked style="width: auto;"> Anahtarı bu tarayıcıda hatırla
+        <input type="checkbox" id="remember" checked style="width: auto;"> Anahtarı bu tarayıcıda hatırla (admin şifresiyle kilitli)
       </label>
       <span class="sp"></span>
       <button class="b ghost hidden" id="btn-forget">Anahtarı unut</button>
@@ -400,7 +403,10 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 const ITERATIONS = 250000;
-const LS_TOKEN = 'bergec-admin-token';
+const LS_TOKEN = 'bergec-admin-token';          // eski: şifresiz anahtar (varsa bir kez taşınır)
+const LS_TOKEN_ENC = 'bergec-admin-token-enc';  // admin şifresiyle şifrelenmiş anahtar
+const TOKEN_ITERATIONS = 600000;                // admin şifresi için PBKDF2 tur sayısı
+const ADMIN_PW_MIN = 8;
 const LS_REPO  = 'bergec-admin-repo';
 const SS_PW    = 'bergec-pw';
 
@@ -441,10 +447,10 @@ function bytesToB64(bytes) {
 function utf8ToB64(str) { return bytesToB64(new TextEncoder().encode(str)); }
 function b64ToUtf8(b64) { return new TextDecoder().decode(b64ToBytes(b64)); }
 
-async function deriveKey(password, saltBytes, usages) {
+async function deriveKey(password, saltBytes, usages, iterations) {
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: saltBytes, iterations: iterations || ITERATIONS, hash: 'SHA-256' },
     km, { name: 'AES-GCM', length: 256 }, false, usages
   );
 }
@@ -474,6 +480,36 @@ async function encryptPage(plaintext, password) {
   const key = await deriveKey(password, salt, ['encrypt']);
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plaintext));
   return lockPage(bytesToB64(salt), bytesToB64(iv), bytesToB64(ct));
+}
+
+/* GitHub anahtarı tarayıcıda düz metin durmasın: admin şifresiyle AES-GCM şifrelenip saklanır.
+   localStorage'ı okuyabilen biri (ortak bilgisayar, kötü amaçlı bir betik) yalnızca şifreli hâli görür. */
+async function lockToken(token, adminPw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(adminPw, salt, ['encrypt'], TOKEN_ITERATIONS);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(token));
+  return JSON.stringify({ v: 1, it: TOKEN_ITERATIONS, salt: bytesToB64(salt), iv: bytesToB64(iv), ct: bytesToB64(ct) });
+}
+async function unlockToken(stored, adminPw) {
+  const o = JSON.parse(stored);
+  const key = await deriveKey(adminPw, b64ToBytes(o.salt), ['decrypt'], o.it);
+  try {
+    const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(o.iv) }, key, b64ToBytes(o.ct));
+    return new TextDecoder().decode(buf);
+  } catch (e) {
+    throw new Error('Admin şifresi yanlış.');
+  }
+}
+function storedLockedToken() {
+  try { return localStorage.getItem(LS_TOKEN_ENC); } catch (e) { return null; }
+}
+function updateLockHint() {
+  const locked = !!storedLockedToken();
+  $('token').placeholder = locked ? 'kayıtlı (kilitli) — değiştirmek için yenisini yapıştırın' : 'github_pat_…';
+  $('lock-hint').textContent = locked
+    ? 'Bu tarayıcıda kilitli bir anahtar kayıtlı: admin şifresini ve site parolasını girip Bağlan’a basmanız yeterli.'
+    : 'Anahtarı hatırlatmak için bir admin şifresi belirleyin (en az ' + ADMIN_PW_MIN + ' karakter). Sonraki girişlerde anahtar yerine bu şifreyi yazarsınız.';
 }
 
 /** tools/encrypt.js ile birebir aynı kilit sayfası. */
@@ -857,9 +893,9 @@ function buildArticle(meta, bodyHtml, usedImages) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(meta.title)} · Bergeç</title>
 <link rel="stylesheet" href="assets/bergec.css">${katex ? `
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js"><\/script>` : ''}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"><\/script>` : ''}
 </head>
 <body>
 <div class="wrap">
@@ -1355,6 +1391,12 @@ function ledeParagraphs(body) {
    Kod sekmesi: sayfanın tamamının HTML'i. Sekme değiştirince iki taraf eşitlenir. */
 
 const KATEX_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/';
+// Alt Kaynak Bütünlüğü (SRI): CDN'deki dosya değiştirilirse tarayıcı onu yüklemez.
+const KATEX_SRI = {
+  css: 'sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+',
+  js: 'sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg',
+  autoRender: 'sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk'
+};
 const DOC_REGIONS = 'h1.title, .subtitle, .byline, article.body';
 const DOC_FRAME_CSS = `
   [contenteditable="true"] { outline: none; }
@@ -1459,6 +1501,7 @@ function loadVisual(html) {
   view.head.prepend(base);
   const kc = view.createElement('link');
   kc.rel = 'stylesheet'; kc.href = KATEX_BASE + 'katex.min.css';
+  kc.integrity = KATEX_SRI.css; kc.crossOrigin = 'anonymous';
   view.head.appendChild(kc);
   const st = view.createElement('style');
   st.textContent = DOC_FRAME_CSS;
@@ -1562,9 +1605,9 @@ function finalizeDoc(html) {
   const hasMath = /class="im"/.test(html) || /\$\$[\s\S]*?\$\$/.test(html.replace(/<script[\s\S]*?<\/script>/g, ''));
   if (hasMath && !/katex\.min\.js/.test(html)) {
     html = html.replace('</head>',
-      '<link rel="stylesheet" href="' + KATEX_BASE + 'katex.min.css">\n' +
-      '<script src="' + KATEX_BASE + 'katex.min.js"><\/script>\n' +
-      '<script src="' + KATEX_BASE + 'contrib/auto-render.min.js"><\/script>\n</head>');
+      '<link rel="stylesheet" href="' + KATEX_BASE + 'katex.min.css" integrity="' + KATEX_SRI.css + '" crossorigin="anonymous">\n' +
+      '<script src="' + KATEX_BASE + 'katex.min.js" integrity="' + KATEX_SRI.js + '" crossorigin="anonymous"><\/script>\n' +
+      '<script src="' + KATEX_BASE + 'contrib/auto-render.min.js" integrity="' + KATEX_SRI.autoRender + '" crossorigin="anonymous"><\/script>\n</head>');
     html = html.replace(/<\/body>(?![\s\S]*<\/body>)/,
       '<script>\n  document.addEventListener(\'DOMContentLoaded\', function () {\n' +
       '    if (window.renderMathInElement) renderMathInElement(document.body, { delimiters: [{ left: \'$$\', right: \'$$\', display: true }], throwOnError: false });\n' +
@@ -1884,13 +1927,25 @@ $('btn-connect').addEventListener('click', async (ev) => {
   state.branch = $('branch').value.trim() || 'main';
   state.token = $('token').value.trim();
   state.pw = $('sitepw').value;
+  const adminPw = $('adminpw').value;
+  const remember = $('remember').checked;
+  const locked = storedLockedToken();
 
   if (!state.owner || !state.repo) { msg('conn-msg', 'Kullanıcı ve depo adı gerekli.', 'err'); return; }
-  if (!state.token) { msg('conn-msg', 'GitHub anahtarı gerekli.', 'err'); return; }
+  if (!state.token && !locked) { msg('conn-msg', 'GitHub anahtarı gerekli.', 'err'); return; }
+  if (!state.token && !adminPw) { msg('conn-msg', 'Kayıtlı anahtarı açmak için admin şifresini girin.', 'err'); return; }
+  if (state.token && remember && adminPw.length < ADMIN_PW_MIN) {
+    msg('conn-msg', 'Anahtarı hatırlatmak için en az ' + ADMIN_PW_MIN + ' karakterlik bir admin şifresi belirleyin (ya da “hatırla”yı kapatın).', 'err');
+    return;
+  }
   if (!state.pw) { msg('conn-msg', 'Site parolası gerekli.', 'err'); return; }
 
   btn.disabled = true;
   try {
+    if (!state.token) {
+      msg('conn-msg', 'Anahtarın kilidi açılıyor…', 'info');
+      state.token = await unlockToken(locked, adminPw);
+    }
     msg('conn-msg', 'Bağlanılıyor…', 'info');
     const repo = await gh(`/repos/${state.owner}/${state.repo}`);
     if (!repo) throw new Error('Depo bulunamadı ya da anahtarın bu depoya erişimi yok.');
@@ -1899,12 +1954,19 @@ $('btn-connect').addEventListener('click', async (ev) => {
     msg('conn-msg', 'Ana sayfa çözülüyor…', 'info');
     await loadIndex();
 
-    if ($('remember').checked) {
-      try {
-        localStorage.setItem(LS_TOKEN, state.token);
+    // Anahtar yalnızca doğrulandıktan sonra, admin şifresiyle kilitlenip saklanır.
+    try {
+      localStorage.removeItem(LS_TOKEN); // eski, şifresiz kayıt
+      if (remember) {
+        if ($('token').value.trim() || !locked) localStorage.setItem(LS_TOKEN_ENC, await lockToken(state.token, adminPw));
         localStorage.setItem(LS_REPO, JSON.stringify({ owner: state.owner, repo: state.repo, branch: state.branch }));
-      } catch (e) {}
-    }
+      } else {
+        localStorage.removeItem(LS_TOKEN_ENC);
+      }
+    } catch (e) {}
+    $('token').value = '';
+    $('adminpw').value = '';
+    updateLockHint();
     try { sessionStorage.setItem(SS_PW, state.pw); } catch (e) {}
 
     $('who').textContent = state.owner + '/' + state.repo + ' · ' + state.branch;
@@ -1923,9 +1985,10 @@ $('btn-connect').addEventListener('click', async (ev) => {
 
 $('btn-forget').addEventListener('click', (e) => {
   e.preventDefault();
-  try { localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_REPO); } catch (err) {}
+  try { localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_TOKEN_ENC); localStorage.removeItem(LS_REPO); } catch (err) {}
   try { sessionStorage.removeItem(SS_PW); } catch (err) {}
   $('token').value = '';
+  updateLockHint();
   msg('conn-msg', 'Anahtar bu tarayıcıdan silindi.', 'ok');
   show('btn-forget', false);
 });
@@ -1934,13 +1997,16 @@ $('btn-forget').addEventListener('click', (e) => {
 
 (function init() {
   try {
+    // Eski sürümün şifresiz sakladığı anahtar: alana doldur; Bağlan'da admin şifresiyle kilitlenip bu kayıt silinir.
     const t = localStorage.getItem(LS_TOKEN);
     if (t) { $('token').value = t; show('btn-forget', true); }
+    if (localStorage.getItem(LS_TOKEN_ENC)) show('btn-forget', true);
     const r = JSON.parse(localStorage.getItem(LS_REPO) || 'null');
     if (r) { $('owner').value = r.owner; $('repo').value = r.repo; $('branch').value = r.branch; }
     const pw = sessionStorage.getItem(SS_PW);
     if (pw) $('sitepw').value = pw;
   } catch (e) {}
+  updateLockHint();
   if (!window.crypto || !window.crypto.subtle) {
     msg('conn-msg', 'Bu sayfa şifreleme için https (veya localhost) gerektirir.', 'err');
   }
