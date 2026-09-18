@@ -1716,7 +1716,8 @@ async function openArticle(p) {
     $('f-subtitle').value = src.meta.subtitle || '';
     $('f-author').value = src.meta.author || '';
     $('f-date').value = src.meta.date || '';
-    $('f-excerpt').value = p.excerpt || src.meta.excerpt || '';
+    // yalnızca elle yazılmış özet; boşsa her kayıtta yazının metninden yeniden üretilir
+    $('f-excerpt').value = src.meta.excerpt || '';
     $('f-slug').value = p.href;
     $('f-body').value = src.body || '';
     $('f-lede').checked = src.meta.lede !== false;
@@ -1763,8 +1764,9 @@ async function publishMd(draft) {
   try {
     const html = buildCurrentArticle();
     const featured = $('f-featured').checked;
-    const excerpt = meta.excerpt || firstSentences(meta.body, 240);
-    const lede = ledeParagraphs(meta.body);
+    const paras = plainParagraphs(html);
+    const excerpt = meta.excerpt || firstSentences(paras.join(' '), 240);
+    const lede = paras.slice(0, 2);
     const old = state.editing && state.editing.href;
     const wasDraft = !!(state.editing && state.editing.taslak);
     const files = {};
@@ -1790,26 +1792,39 @@ async function publishMd(draft) {
   }
 }
 
-function stripMd(t) {
-  return String(t || '')
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/\$\$[\s\S]*?\$\$/g, ' ')
-    .replace(/\[\[gorsel:[^\]]*\]\]/g, ' ')
-    .replace(/^#{1,6}\s+.*$/gm, ' ')
-    .replace(/[*`>]/g, '')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\$([^$]*)\$/g, '$1');
+/**
+ * Ana sayfadaki özet ve manşet girişi için yazının okunan metni: sayfanın kendisinden (Markdown ya da
+ * HTML fark etmez) çıkarılır. Satır içi formüller okunur hâlleriyle (\int_a^b → ∫ab) girer; ortalı
+ * formüller, kod, görseller, tablolar, dipnot numaraları ve kutu etiketleri girmez.
+ */
+function plainParagraphs(html) {
+  const d = new DOMParser().parseFromString(html, 'text/html');
+  const art = d.querySelector('article.body');
+  if (!art) return [];
+  art.querySelectorAll('script, style, .eq, pre, figure, .fig-row, table, svg, sup.fn, .label, .algo-title, .qed, .refs, p.fn').forEach(x => x.remove());
+  art.querySelectorAll('.im').forEach(el => {
+    let t = el.textContent;
+    if (window.katex) {
+      try {
+        const k = d.createElement('span');
+        k.innerHTML = katex.renderToString(el.textContent, { output: 'html', throwOnError: false });
+        t = k.textContent;
+      } catch (e) {}
+    }
+    el.replaceWith(d.createTextNode(t));
+  });
+  return [...art.querySelectorAll('p, li, blockquote')]
+    .filter(el => !el.parentElement.closest('p, li, blockquote')) // iç içe olanları iki kez sayma
+    .map(el => el.textContent.replace(/\$\$[\s\S]*?\$\$/g, ' ').replace(/[\u200B-\u200D\u2060\uFEFF]/g, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
 }
-function firstSentences(body, max) {
-  const t = stripMd(body).replace(/\s+/g, ' ').trim();
+/** Metnin baştan en fazla max karakteri; mümkünse cümle sonunda keser. */
+function firstSentences(text, max) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
   const cut = t.slice(0, max);
   const i = cut.lastIndexOf('. ');
   return (i > 60 ? cut.slice(0, i + 1) : cut.trim() + '…');
-}
-function ledeParagraphs(body) {
-  const paras = stripMd(body).split(/\n{2,}/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
-  return paras.slice(0, 2);
 }
 
 /* ─────────────────────────── görsel / kod düzenleyici ───────────────────────────
@@ -2242,8 +2257,7 @@ function finishNewDoc(html) {
   if (!/^[a-z0-9][a-z0-9._-]*\.html$/.test(slug)) throw new Error('Dosya adında yalnızca küçük harf, rakam, nokta, - ve _ kullanın.');
   $('d-slug').value = slug;
 
-  const art = d.querySelector('article.body');
-  const paras = art ? Array.from(art.querySelectorAll('p')).map(p => p.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean) : [];
+  const paras = plainParagraphs('<!DOCTYPE html>\n' + d.documentElement.outerHTML);
   return {
     html: '<!DOCTYPE html>\n' + d.documentElement.outerHTML,
     info: {
