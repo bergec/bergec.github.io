@@ -375,6 +375,10 @@ article.body figure figcaption {
   margin-top: 9px; font-size: 12.5px; font-style: italic;
   color: var(--color-neutral-600); text-align: center;
 }
+/* Yan yana görseller (yönetim ekranı: Ekle… → Yan yana görseller). Telefonda alt alta dizilir. */
+article.body .fig-row { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: flex-start; margin: 0 0 24px; clear: both; }
+article.body .fig-row > figure { margin: 0; flex: 1 1 240px; min-width: 0; }
+article.body .fig-row > figure img { width: 100%; height: auto; }
 article.body figure.left { float: left; margin: 4px 24px 12px 0; max-width: 46%; }
 article.body figure.right { float: right; margin: 4px 0 12px 24px; max-width: 46%; }
 article.body figure.left + *, article.body figure.right + * { text-align: justify; }

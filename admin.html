@@ -128,6 +128,18 @@
   .dlg h3 { font-family: var(--font-heading); font-weight: 400; font-size: 22px; margin: 0 0 12px; }
   .math-prev { margin-top: 12px; min-height: 48px; padding: 12px; background: #fff; border: 1px solid var(--color-divider); overflow-x: auto; text-align: center; }
 
+  .pending {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: var(--color-accent-100); border-top: 1px solid var(--color-accent-400);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08); padding: 10px 20px;
+  }
+  .pending-in { max-width: 1180px; margin: 0 auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13.5px; }
+  .pending details { font-size: 12.5px; }
+  .pending summary { cursor: pointer; color: var(--color-accent-700); }
+  .pending ul { margin: 6px 0 0; padding-left: 18px; max-height: 30vh; overflow: auto; }
+  body.has-pending .shell { padding-bottom: 150px; }
+  table.list .pend { color: var(--color-accent-700); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+
   .hidden { display: none !important; }
   .bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--color-divider); }
   .sp { flex: 1; }
@@ -142,6 +154,18 @@
     <span class="spacer"></span>
     <span class="who" id="who"></span>
   </header>
+
+  <!-- ══════════════ bekleyen değişiklikler (altta sabit çubuk) ══════════════ -->
+  <div id="pending-bar" class="pending hidden">
+    <div class="pending-in">
+      <strong id="pending-count"></strong>
+      <details id="pending-details"><summary>Neler?</summary><ul id="pending-list"></ul></details>
+      <span class="sp"></span>
+      <button class="b ghost" id="btn-pending-discard">Hepsini geri al</button>
+      <button class="b" id="btn-pending-publish">Değişiklikleri yayınla</button>
+    </div>
+    <div class="pending-in"><div class="msg" id="pending-msg" style="margin: 8px 0 0; flex: 1;"></div></div>
+  </div>
 
   <!-- ══════════════ 1. BAĞLANTI ══════════════ -->
   <section class="panel" id="p-conn">
@@ -295,7 +319,7 @@
     <p class="hint">
       <strong>Görsel</strong> sekmesinde yazı sitede göründüğü gibi açılır: metne tıklayıp yazın, formüle tıklayıp LaTeX’ini değiştirin,
       görsele tıklayıp boyutunu ayarlayın. <strong>Kod</strong> sekmesi sayfanın HTML’ini gösterir; Görsel sekmesine geçince kodda yaptığınız
-      değişiklikler orada görünür (önizleme). <strong>Kaydet ve yayınla</strong>’ya basana kadar hiçbir şey siteye gitmez.
+      değişiklikler orada görünür (önizleme). Kaydettikleriniz alttaki çubukta birikir; <strong>Değişiklikleri yayınla</strong>’ya basana kadar hiçbir şey siteye gitmez.
     </p>
     <div id="doc-newinfo" class="newinfo hidden">
       <p class="hint" style="margin: 0 0 12px;">
@@ -338,6 +362,7 @@
         <button class="mini" data-act="math-block">Ortalı formül</button>
         <button class="mini" data-act="image">Görsel ekle</button>
         <input type="file" id="doc-img-file" accept="image/*" class="hidden">
+        <input type="file" id="doc-imgs-file" accept="image/*" multiple class="hidden">
         <span class="tsep"></span>
         <button class="mini" data-act="code-inline" title="Seçili metni kod olarak yaz"><code>Kod</code></button>
         <select id="doc-insert" class="mini-select" title="Yazıya kutu, tablo, dipnot vb. ekle">
@@ -352,6 +377,7 @@
             <option value="quote">Kaynaklı alıntı</option>
             <option value="steps">Adımlar listesi</option>
             <option value="table">Tablo</option>
+            <option value="fig-row">Yan yana görseller</option>
             <option value="pre">Kod bloğu</option>
             <option value="fn">Dipnot</option>
             <option value="refs">Kaynakça</option>
@@ -855,14 +881,14 @@ function writeIndexData(plain, data) {
  */
 async function saveIndex(message, extraFiles, mutate, extraExpect) {
   for (let attempt = 0; ; attempt++) {
-    const data = JSON.parse(JSON.stringify(state.index));
+    const data = JSON.parse(JSON.stringify(state.repoIndex)); // depodaki hâl (bekleyen değişiklikler mutate ile gelir)
     if (mutate) mutate(data);
     const plain = writeIndexData(state.indexPlain, data);
     const enc = await encryptPage(plain, state.pw);
     try {
       const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: enc }]), message,
         Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
-      state.index = data;
+      state.repoIndex = data;
       state.indexPlain = plain;
       state.indexSha = shas['index.html'];
       return shas;
@@ -1259,6 +1285,206 @@ function slugify(s) {
     .slice(0, 60) || 'yazi';
 }
 
+/* ─────────────────────────── bekleyen değişiklikler ───────────────────────────
+   Liste ve yazı değişiklikleri hemen GitHub'a gitmez; burada birikir ve "Değişiklikleri yayınla" ile
+   tek commit'te gönderilir.
+   - Liste değişiklikleri adresle (href) tarif edilen işlemlerdir (ops). Ekranda depodaki listeye
+     uygulanmış hâlleri görünür; yayınlarken en güncel listeye yeniden uygulanır (başkasının
+     değişiklikleriyle birleşir).
+   - Yazı dosyaları şifresiz hâlleriyle bekler (files); yayınlarken şifrelenir. expect: dosya ilk
+     açıldığındaki sürüm (null: yeni dosya) — başkasının değişikliği sessizce ezilmesin.
+   - Hepsi bu tarayıcıda (IndexedDB) saklanır: sekme kapansa da kaybolmaz. */
+
+const pending = { ops: [], files: {} };
+
+function pendingDescs() {
+  const out = [];
+  pending.ops.forEach(o => { if (o.desc && !out.includes(o.desc)) out.push(o.desc); });
+  Object.values(pending.files).forEach(f => { if (f.desc && !out.includes(f.desc)) out.push(f.desc); });
+  return out;
+}
+function pendingCount() { return pending.ops.length + Object.keys(pending.files).length; }
+function pendingHrefs() {
+  const h = new Set(Object.keys(pending.files));
+  pending.ops.forEach(o => ['href', 'origHref', 'slug', 'old'].forEach(k => o[k] && h.add(o[k])));
+  pending.ops.forEach(o => o.entry && h.add(o.entry.href));
+  return h;
+}
+
+function applyOp(data, op) {
+  const arr = flattenOf(data);
+  switch (op.kind) {
+    case 'moveBefore': return moveBefore(data, op.href, op.before);
+    case 'swap': {
+      const i = arr.findIndex(x => x.href === op.href), j = i + op.delta;
+      if (i < 0 || j < 0 || j >= arr.length) return;
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      return unflattenInto(data, arr);
+    }
+    case 'draft': return setDraftState(data, op.href, op.on);
+    case 'remove': return unflattenInto(data, arr.filter(x => x.href !== op.href));
+    case 'meta': {
+      const f = op.f, q = arr.find(x => x.href === op.origHref);
+      if (!q) return;
+      q.title = f.title; q.author = f.author; q.date = f.date; q.href = f.href; q.excerpt = f.excerpt;
+      if (f.kicker) q.kicker = f.kicker; else delete q.kicker;
+      if (f.featured) {
+        const i = arr.indexOf(q);
+        if (i > 0) { arr.splice(i, 1); arr.unshift(q); }
+        q.lede = f.lede.length ? f.lede : [q.excerpt || ''];
+      } else if (arr[0] === q && arr.length > 1 && !q.taslak) { // taslağın yeri değişmesin
+        arr.splice(0, 1);
+        arr.splice(1, 0, q);
+      } else if (f.lede.length) {
+        q.lede = f.lede;
+      }
+      return unflattenInto(data, arr);
+    }
+    case 'upsert': { // Markdown düzenleyiciden kayıt
+      const { old, slug, meta, excerpt, lede, featured, draft } = op;
+      let entry = arr.find(x => x.href === (old || slug)) || (old && old !== slug ? arr.find(x => x.href === slug) : null);
+      if (!entry) { entry = {}; arr.splice(featured && !draft || !arr.length ? 0 : 1, 0, entry); }
+      entry.title = meta.title; entry.date = meta.date; entry.author = meta.author; entry.href = slug; entry.excerpt = excerpt;
+      arr.filter(x => x !== entry && x.href === slug).forEach(x => arr.splice(arr.indexOf(x), 1));
+      if (draft) entry.taslak = true; else delete entry.taslak; // taslak ↔ paylaşım sırayı değiştirmez
+      if (featured && !draft) {
+        arr.splice(arr.indexOf(entry), 1);
+        arr.unshift(entry);
+        entry.lede = lede;
+        if (!entry.kicker) entry.kicker = meta.subtitle || '';
+      }
+      return unflattenInto(data, arr);
+    }
+    case 'add': { // Görsel / Kod düzenleyicide yeni yazı
+      if (arr.some(x => x.href === op.entry.href)) return;
+      const entry = Object.assign({}, op.entry);
+      if (op.draft) entry.taslak = true;
+      arr.splice(op.featured && !op.draft || !arr.length ? 0 : 1, 0, entry);
+      if (op.featured) { entry.lede = op.lede; if (op.subtitle) entry.kicker = op.subtitle; }
+      return unflattenInto(data, arr);
+    }
+  }
+}
+/** Depodaki listeye bekleyen işlemleri uygular (uygulanamayanlar — ör. bu arada silinmiş yazı — atlanır). */
+function applyPending(base) {
+  const data = JSON.parse(JSON.stringify(base));
+  pending.ops.forEach(op => { try { applyOp(data, op); } catch (e) {} });
+  return data;
+}
+
+/** Değişikliği bekleyenlere ekler: liste işlemi (op) ve/veya yazı dosyaları. */
+function stage(desc, op, files) {
+  if (op) { op.desc = desc; pending.ops.push(op); }
+  Object.entries(files || {}).forEach(([path, f]) => {
+    const prev = pending.files[path];
+    // dosya ilk açıldığındaki sürüm korunur; bekleyen yeni bir dosyanın silinmesi = hiç eklenmemesi
+    if (f.plain === null && prev && prev.expect === null) { delete pending.files[path]; return; }
+    pending.files[path] = { plain: f.plain, expect: prev ? prev.expect : f.expect, desc: f.desc || desc };
+  });
+  refreshPending();
+  persistPending();
+}
+
+function refreshPending() {
+  if (state.repoIndex) state.index = applyPending(state.repoIndex);
+  const n = pendingDescs().length;
+  show('pending-bar', !!n);
+  document.body.classList.toggle('has-pending', !!n);
+  $('pending-count').textContent = n + ' yayınlanmamış değişiklik';
+  $('pending-list').innerHTML = pendingDescs().map(d => '<li>' + esc(d) + '</li>').join('');
+  if (state.index && !$('p-list').classList.contains('hidden')) renderList();
+}
+
+/* tarayıcıda saklama (IndexedDB; yazılar büyük olabildiği için localStorage değil) */
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('bergec-admin', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('pending');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+function pendingKey() { return state.owner + '/' + state.repo + '#' + state.branch; }
+async function persistPending() {
+  try {
+    const db = await idb();
+    const tx = db.transaction('pending', 'readwrite');
+    tx.objectStore('pending').put(pendingCount() ? JSON.parse(JSON.stringify(pending)) : null, pendingKey());
+  } catch (e) {}
+}
+async function restorePending() {
+  try {
+    const db = await idb();
+    const v = await new Promise(res => {
+      const r = db.transaction('pending').objectStore('pending').get(pendingKey());
+      r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+    });
+    if (v && ((v.ops || []).length || Object.keys(v.files || {}).length)) {
+      pending.ops = v.ops || []; pending.files = v.files || {};
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function publishPending() {
+  if (!pendingCount()) return;
+  const btn = $('btn-pending-publish');
+  btn.disabled = $('btn-pending-discard').disabled = true;
+  try {
+    msg('pending-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
+    const files = [], expect = {};
+    for (const [path, f] of Object.entries(pending.files)) {
+      files.push({ path, text: f.plain === null ? null : await encryptPage(f.plain, state.pw) });
+      if (f.expect !== undefined) expect[path] = f.expect;
+    }
+    const descs = pendingDescs();
+    let message = descs.length === 1 ? descs[0] : descs.length + ' değişiklik: ' + descs.join('; ');
+    if (message.length > 300) message = message.slice(0, 297) + '…';
+    const mutate = data => pending.ops.forEach(op => { try { applyOp(data, op); } catch (e) {} });
+    let shas;
+    try {
+      shas = await saveIndex(message, files, mutate, expect);
+    } catch (e) {
+      if (!(e instanceof ConflictError) || !e.paths.length || e.paths.every(x => x === 'index.html')) throw e;
+      const taken = e.paths.filter(x => expect[x] === null), changed = e.paths.filter(x => expect[x] !== null && x !== 'index.html');
+      const q = (changed.length ? 'Şu yazılar siz açtıktan sonra başka biri tarafından değiştirildi: ' + changed.join(', ') + '.\n' : '') +
+        (taken.length ? 'Şu adlarda dosya zaten var: ' + taken.join(', ') + '.\n' : '') +
+        '\nÜzerlerine yazılsın mı? Tamam derseniz o değişiklikler kaybolur.';
+      if (!confirm(q)) throw e;
+      const exp2 = Object.assign({}, expect);
+      e.paths.forEach(x => delete exp2[x]);
+      shas = await saveIndex(message, files, mutate, exp2);
+    }
+    // açık düzenleyiciler artık yeni sürümü baz alsın
+    if (ed.target && ed.target.href && ed.target.href in shas) ed.target.sha = shas[ed.target.href];
+    if (state.editing && state.editing.href in shas) state.editing.sha = shas[state.editing.href];
+    pending.ops = []; pending.files = {};
+    await persistPending();
+    refreshPending();
+    msg('pending-msg', '', '');
+    msg('list-msg', 'Yayınlandı (' + descs.length + ' değişiklik) — site ~30 saniye içinde güncellenir.', 'ok');
+    ['edit-msg', 'doc-msg', 'meta-msg'].forEach(id => msg(id, ''));
+  } catch (e) {
+    msg('pending-msg', e.message, 'err');
+  } finally {
+    btn.disabled = $('btn-pending-discard').disabled = false;
+  }
+}
+$('btn-pending-publish').addEventListener('click', (e) => { e.preventDefault(); publishPending(); });
+$('btn-pending-discard').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (!confirm('Yayınlanmamış ' + pendingDescs().length + ' değişikliğin hepsi geri alınsın mı?\n\n' + pendingDescs().join('\n'))) return;
+  pending.ops = []; pending.files = {};
+  await persistPending();
+  ed.dirty = false;
+  msg('pending-msg', '');
+  showOnly('p-list');
+  refreshPending();
+  renderList();
+  msg('list-msg', 'Değişiklikler geri alındı.', 'ok');
+});
+
 /* ─────────────────────────── liste ─────────────────────────── */
 
 function allEntries() {
@@ -1272,6 +1498,7 @@ function renderList() {
   const tb = $('list-body');
   tb.innerHTML = '';
   const shownFeatured = flatten().find(x => !x.taslak); // ana sayfada manşet olan: ilk yayındaki yazı
+  const waiting = pendingHrefs();
   allEntries().forEach((entry, idx) => {
     const p = entry.post;
     entry = Object.assign({}, entry, { featured: p === shownFeatured });
@@ -1280,7 +1507,8 @@ function renderList() {
     tr.dataset.href = p.href || '';
     tr.innerHTML =
       '<td class="grip" title="Sürükleyerek taşı">⠿</td>' +
-      '<td class="t">' + esc(p.title) + (p.taslak ? ' <span class="star draft">· taslak</span>' : entry.featured ? ' <span class="star">· manşet</span>' : '') + '</td>' +
+      '<td class="t">' + esc(p.title) + (p.taslak ? ' <span class="star draft">· taslak</span>' : entry.featured ? ' <span class="star">· manşet</span>' : '') +
+        (waiting.has(p.href) ? ' <span class="pend" title="Yayınlanmamış değişiklik var">· bekliyor</span>' : '') + '</td>' +
       '<td class="meta">' + esc(p.date || '') + '</td>' +
       '<td class="meta">' + esc(p.author || '') + '</td>' +
       '<td class="meta"><code style="font-size: 12px;">' + esc(p.href || '') + '</code></td>' +
@@ -1315,16 +1543,10 @@ function setDraftState(data, href, draft) {
   unflattenInto(data, arr);
 }
 
-async function togglePublish(p) {
+function togglePublish(p) {
   const draft = !p.taslak;
-  if (draft && !confirm('“' + p.title + '” ana sayfadan kaldırılıp taslak olarak saklansın mı?\n\n(Yazı silinmez; “Paylaş” deyince geri gelir.)')) return;
-  const href = p.href;
-  try {
-    msg('list-msg', 'Kaydediliyor…', 'info');
-    await saveIndex((draft ? 'Taslağa al: ' : 'Paylaş: ') + p.title, [], data => setDraftState(data, href, draft));
-    msg('list-msg', draft ? 'Taslağa alındı; ana sayfada görünmüyor. Listedeki yeri korunuyor.' : 'Paylaşıldı; eski yerinde, ana sayfada görünüyor (site ~30 saniye içinde güncellenir).', 'ok');
-  } catch (e) { msg('list-msg', e.message, 'err'); }
-  renderList();
+  stage((draft ? 'Taslağa al: ' : 'Paylaş: ') + p.title, { kind: 'draft', href: p.href, on: draft });
+  msg('list-msg', '');
 }
 
 /* sürükle-bırak sıralama (fare ve dokunmatik; kenara yaklaşınca sayfa kayar) */
@@ -1341,21 +1563,10 @@ function moveBefore(data, href, beforeHref) {
   unflattenInto(data, arr);
 }
 
-async function reorder(href, beforeHref) {
-  const old = state.index;
-  const preview = JSON.parse(JSON.stringify(old));
-  moveBefore(preview, href, beforeHref);
-  state.index = preview; // bırakır bırakmaz göster
-  renderList();
-  try {
-    msg('list-msg', 'Sıra kaydediliyor…', 'info');
-    await saveIndex('Yazı sırasını güncelle', [], data => moveBefore(data, href, beforeHref));
-    msg('list-msg', 'Sıra güncellendi.', 'ok');
-  } catch (e) {
-    if (state.index === preview) state.index = old; // kaydedilemedi: eski sıraya dön
-    msg('list-msg', e.message, 'err');
-  }
-  renderList();
+function reorder(href, beforeHref) {
+  const it = flatten().find(x => x.href === href);
+  stage('Sıra: ' + (it ? it.title : href), { kind: 'moveBefore', href, before: beforeHref });
+  msg('list-msg', '');
 }
 
 $('list-body').addEventListener('pointerdown', (e) => {
@@ -1424,22 +1635,11 @@ function unflattenInto(data, arr) {
 }
 function flatten() { return flattenOf(state.index); }
 
-async function move(idx, delta) {
+function move(idx, delta) {
   const item = flatten()[idx];
-  if (!item) return;
-  const href = item.href;
-  try {
-    msg('list-msg', 'Sıra kaydediliyor…', 'info');
-    await saveIndex('Yazı sırasını güncelle', [], data => {
-      const arr = flattenOf(data);
-      const i = arr.findIndex(x => x.href === href), j = i + delta;
-      if (i < 0 || j < 0 || j >= arr.length) return;
-      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
-      unflattenInto(data, arr);
-    });
-    msg('list-msg', 'Sıra güncellendi.', 'ok');
-  } catch (e) { msg('list-msg', e.message, 'err'); }
-  renderList();
+  if (!item || idx + delta < 0 || idx + delta >= flatten().length) return;
+  stage('Sıra: ' + item.title, { kind: 'swap', href: item.href, delta });
+  msg('list-msg', '');
 }
 
 async function removeEntry(p) {
@@ -1447,15 +1647,9 @@ async function removeEntry(p) {
   const alsoFile = p.href && /\.html$/.test(p.href) &&
     confirm(p.href + ' dosyası da depodan silinsin mi?\n\nİptal derseniz yazı sadece ana sayfadaki listeden çıkar, adresi çalışmaya devam eder.');
 
-  const href = p.href;
-  try {
-    msg('list-msg', 'Kaydediliyor…', 'info');
-    const extra = alsoFile ? [{ path: href, text: null }] : [];
-    await saveIndex('Arşivden kaldır: ' + p.title, extra,
-      data => unflattenInto(data, flattenOf(data).filter(x => x.href !== href)));
-    msg('list-msg', 'Arşivden kaldırıldı.' + (alsoFile ? ' Dosya da silindi.' : ''), 'ok');
-  } catch (e) { msg('list-msg', e.message, 'err'); }
-  renderList();
+  const desc = (alsoFile ? 'Sil: ' : 'Arşivden kaldır: ') + p.title;
+  stage(desc, { kind: 'remove', href: p.href }, alsoFile ? { [p.href]: { plain: null, expect: undefined } } : null);
+  msg('list-msg', '');
 }
 
 /* ─────────────────────────── açma / kaydetme ─────────────────────────── */
@@ -1494,9 +1688,16 @@ $('btn-reload').addEventListener('click', () => loadIndex().then(renderList).cat
 async function openArticle(p) {
   msg('list-msg', 'Yazı indiriliyor…', 'info');
   try {
-    const f = await ghGetFile(p.href);
-    if (!f) throw new Error('Dosya bulunamadı: ' + p.href);
-    const plain = await decryptPage(f.text, state.pw);
+    // yayınlanmamış bir hâli bekliyorsa onu aç; değilse depodan
+    const pf = pending.files[p.href];
+    if (pf && pf.plain === null) throw new Error('Bu yazının dosyası silinmek üzere (yayınlanmamış değişiklik).');
+    let f;
+    if (pf) f = { sha: pf.expect, text: null, plain: pf.plain };
+    else {
+      f = await ghGetFile(p.href);
+      if (!f) throw new Error('Dosya bulunamadı: ' + p.href);
+    }
+    const plain = f.plain || await decryptPage(f.text, state.pw);
     const m = plain.match(/<script type="application\/json" id="bergec-source">([\s\S]*?)<\/script>/);
     if (!m) {
       // Markdown kaynağı yok (elle hazırlanmış ya da görsel düzenleyicide kaydedilmiş) → görsel / kod düzenleyici
@@ -1535,11 +1736,16 @@ async function openArticle(p) {
   }
 }
 
-/** Yeni ya da taslak yazıda "Kaydet" (taslak) + "Paylaş"; yayındaki yazıda tek "Kaydet ve yayınla". */
+/** Yeni ya da taslak yazıda "Kaydet" (taslak) + "Paylaş"; yayındaki yazıda tek "Kaydet". */
 function updateEditButtons() {
   const draftish = !state.editing || !!state.editing.taslak;
   show('btn-draft', draftish);
-  $('btn-publish').textContent = draftish ? 'Paylaş' : 'Kaydet ve yayınla';
+  $('btn-publish').textContent = draftish ? 'Paylaş' : 'Kaydet';
+}
+
+/** Depoda bu adda dosya var mı (yeni yazının adı başka bir yazının üzerine gelmesin). */
+async function fileExists(path) {
+  return !!(await gh(repoPath(`/contents/${encPath(path)}?ref=${encodeURIComponent(state.branch)}`)));
 }
 
 $('btn-publish').addEventListener('click', (ev) => { ev.preventDefault(); publishMd(false); });
@@ -1555,72 +1761,28 @@ async function publishMd(draft) {
 
   $('btn-publish').disabled = $('btn-draft').disabled = true;
   try {
-    msg('edit-msg', 'Sayfa hazırlanıyor ve şifreleniyor…', 'info');
     const html = buildCurrentArticle();
-    const enc = await encryptPage(html, state.pw);
-
-    // arşiv kaydı — en güncel listeye uygulanır (bkz. saveIndex)
     const featured = $('f-featured').checked;
     const excerpt = meta.excerpt || firstSentences(meta.body, 240);
     const lede = ledeParagraphs(meta.body);
-    const wasEditing = !!state.editing;
     const old = state.editing && state.editing.href;
-    const updateIndex = data => {
-      const arr = flattenOf(data);
-      // düzenlenen yazının kaydı; yoksa (yeni yazı, ya da var olan bir dosyanın üzerine yazılıyor) aynı adlı kayıt
-      let entry = arr.find(x => x.href === (old || slug)) || (old && old !== slug ? arr.find(x => x.href === slug) : null);
-      // yeni yazı: manşet değilse (ya da taslaksa) manşetin altına, arşivin başına
-      if (!entry) { entry = {}; arr.splice(featured && !draft || !arr.length ? 0 : 1, 0, entry); }
-      entry.title = meta.title;
-      entry.date = meta.date;
-      entry.author = meta.author;
-      entry.href = slug;
-      entry.excerpt = excerpt;
-      // aynı adresli başka kayıt kalmasın (var olan dosyanın üzerine yazıldıysa)
-      arr.filter(x => x !== entry && x.href === slug).forEach(x => arr.splice(arr.indexOf(x), 1));
-      // taslak ↔ paylaşım sırayı değiştirmez; yazı listedeki yerinde kalır
-      if (draft) entry.taslak = true; else delete entry.taslak;
-      if (featured && !draft) {
-        arr.splice(arr.indexOf(entry), 1);
-        arr.unshift(entry);
-        entry.lede = lede;
-        if (!entry.kicker) entry.kicker = meta.subtitle || '';
-      }
-      unflattenInto(data, arr);
-    };
-
-    msg('edit-msg', 'GitHub’a gönderiliyor…', 'info');
-    const files = [{ path: slug, text: enc }];
-    // Aynı dosya adıyla (yeni yazı / ad değişikliği) var olan bir dosyanın üzerine yazılmasın;
-    // düzenlenen yazı da açıldığından beri başkası tarafından değiştirilmemiş olsun.
-    const expect = {};
-    if (!old || old !== slug) expect[slug] = null;
-    if (old && state.editing.sha) expect[old] = state.editing.sha;
-    if (old && old !== slug && confirm('Dosya adı değişti (' + old + ' → ' + slug + ').\nEski dosya depodan silinsin mi?')) {
-      files.push({ path: old, text: null });
-    }
-    const title = (draft ? 'Taslak: ' : wasEditing ? 'Yazıyı güncelle: ' : 'Yeni yazı: ') + meta.title;
-    let shas;
-    try {
-      shas = await saveIndex(title, files, updateIndex, expect);
-    } catch (e) {
-      if (!(e instanceof ConflictError)) throw e;
-      const taken = e.paths.includes(slug) && expect[slug] === null;
-      const q = taken
-        ? '“' + slug + '” adında bir dosya zaten var. Üzerine yazılsın mı?\n\n(İptal: dosya adını değiştirip yeniden yayınlayın.)'
-        : 'Bu yazı siz açtıktan sonra başka biri tarafından değiştirildi.\n\nÜzerine yazılsın mı? Tamam derseniz onun değişiklikleri kaybolur.';
-      if (!e.paths.length) throw e;
-      if (!confirm(q)) throw taken ? new Error('“' + slug + '” adında bir dosya zaten var; dosya adını değiştirip yeniden yayınlayın.') : e;
-      shas = await saveIndex(title, files, updateIndex, {});
-    }
-
     const wasDraft = !!(state.editing && state.editing.taslak);
-    state.editing = { href: slug, sha: shas[slug], taslak: draft };
+    const files = {};
+    // yeni ad: var olan bir dosyanın üzerine yazılmasın (şimdiden sor; yayınlarken de denetlenir)
+    let newExpect = null;
+    if ((!old || old !== slug) && !pending.files[slug] && await fileExists(slug)) {
+      if (!confirm('“' + slug + '” adında bir dosya zaten var. Üzerine yazılsın mı?\n\n(İptal: dosya adını değiştirin.)')) throw new Error('“' + slug + '” adında bir dosya zaten var; dosya adını değiştirin.');
+      newExpect = undefined;
+    }
+    files[slug] = { plain: html, expect: (!old || old !== slug) ? newExpect : state.editing.sha };
+    if (old && old !== slug && confirm('Dosya adı değişti (' + old + ' → ' + slug + ').\nEski dosya depodan silinsin mi?')) {
+      files[old] = { plain: null, expect: state.editing.sha };
+    }
+    const desc = (draft ? 'Taslak: ' : !old ? 'Yeni yazı: ' : wasDraft ? 'Paylaş: ' : 'Yazıyı güncelle: ') + meta.title;
+    stage(desc, { kind: 'upsert', old, slug, meta: { title: meta.title, date: meta.date, author: meta.author, subtitle: meta.subtitle }, excerpt, lede, featured, draft }, files);
+    state.editing = { href: slug, sha: pending.files[slug].expect, taslak: draft };
     updateEditButtons();
-    renderList();
-    msg('edit-msg', draft
-      ? 'Taslak kaydedildi: ' + slug + ' — ana sayfada görünmez; hazır olunca “Paylaş”a basın.'
-      : (wasEditing && !wasDraft ? 'Yayınlandı: ' : 'Paylaşıldı, ana sayfada görünüyor: ') + slug + ' — site ~30 saniye içinde güncellenir.', 'ok');
+    msg('edit-msg', (draft ? 'Taslak olarak kaydedildi' : 'Kaydedildi') + ' — henüz yayınlanmadı; alttaki “Değişiklikleri yayınla” ile gönderin.', 'ok');
   } catch (e) {
     msg('edit-msg', e.message, 'err');
   } finally {
@@ -1888,6 +2050,7 @@ function prepareFrame() {
       ed.dirty = true;
       return;
     }
+    if (e.key === 'Enter' && atEl && atEl.closest('figcaption')) { e.preventDefault(); return; } // altyazı tek satır
     if (e.key === 'Enter' && atEl) {
       // tablo hücresinde Enter hücre içinde alt satır
       if (atEl.closest('td, th')) { e.preventDefault(); d.execCommand('insertLineBreak'); ed.dirty = true; return; }
@@ -2097,43 +2260,11 @@ function updateDocButtons() {
   const t = ed.target;
   const draftish = !!(t && (t.isNew || t.taslak));
   show('btn-doc-draft', draftish);
-  $('btn-doc-save').textContent = draftish ? 'Paylaş' : 'Kaydet ve yayınla';
+  $('btn-doc-save').textContent = draftish ? 'Paylaş' : 'Kaydet';
 }
 
-/** Görsel / Kod düzenleyicide yazılan yeni yazının ilk kaydı: dosya + ana sayfa listesi tek commit'te. */
-async function publishNewDoc(t, e, enc, draft) {
-  msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
-  let shas;
-  try {
-    shas = await saveIndex((draft ? 'Taslak: ' : 'Yeni yazı: ') + e.title, [{ path: e.slug, text: enc }], data => {
-      const arr = flattenOf(data);
-      const entry = { title: e.title, date: e.date, author: e.author, href: e.slug, excerpt: e.excerpt };
-      if (draft) entry.taslak = true;
-      arr.splice(e.featured && !draft || !arr.length ? 0 : 1, 0, entry); // manşet değilse (ya da taslaksa) manşetin altına
-      if (e.featured) { entry.lede = e.lede; if (e.subtitle) entry.kicker = e.subtitle; }
-      unflattenInto(data, arr);
-    }, { [e.slug]: null });
-  } catch (err) {
-    if (err instanceof ConflictError && err.paths.includes(e.slug)) {
-      throw new Error('“' + e.slug + '” adında bir dosya zaten var; yukarıdan başka bir dosya adı yazıp yeniden kaydedin.');
-    }
-    throw err;
-  }
-  t.isNew = false;
-  t.href = e.slug;
-  t.title = e.title;
-  t.sha = shas[e.slug];
-  t.taslak = !!draft;
-  $('doc-title').textContent = 'Düzenle · ' + e.title;
-  show('doc-newinfo', false);
-  updateDocButtons();
-  renderList();
-  msg('doc-msg', draft
-    ? 'Taslak kaydedildi: ' + e.slug + ' — ana sayfada görünmez; hazır olunca “Paylaş”a basın.'
-    : 'Paylaşıldı ve ana sayfaya eklendi: ' + e.slug + ' — site ~30 saniye içinde güncellenir.', 'ok');
-}
-
-/** draft: true → taslak olarak sakla (ana sayfada görünmez); false → paylaş / yayındaki yazıyı güncelle. */
+/** draft: true → taslak olarak sakla (ana sayfada görünmez); false → paylaş / yayındaki yazıyı güncelle.
+    Değişiklik hemen gönderilmez; bekleyenlere eklenir. */
 async function saveDoc(draft) {
   const t = ed.target;
   if (!t) return;
@@ -2143,38 +2274,33 @@ async function saveDoc(draft) {
   btn.disabled = $('btn-doc-draft').disabled = true;
   try {
     const html = finalizeDoc(ed.tab === 'visual' ? serializeVisual() : $('doc-code').value);
-    msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
     if (t.isNew) {
       const r = finishNewDoc(html);
-      const enc = await encryptPage(r.html, state.pw);
-      await publishNewDoc(t, r.info, enc, draft);
+      const e = r.info;
+      let expect = null;
+      if (!pending.files[e.slug] && await fileExists(e.slug)) {
+        if (!confirm('“' + e.slug + '” adında bir dosya zaten var. Üzerine yazılsın mı?\n\n(İptal: yukarıdan başka bir dosya adı yazın.)')) throw new Error('“' + e.slug + '” adında bir dosya zaten var; yukarıdan başka bir dosya adı yazıp yeniden kaydedin.');
+        expect = undefined;
+      }
+      stage((draft ? 'Taslak: ' : 'Yeni yazı: ') + e.title,
+        { kind: 'add', entry: { title: e.title, date: e.date, author: e.author, href: e.slug, excerpt: e.excerpt }, featured: e.featured, draft, lede: e.lede, subtitle: e.subtitle },
+        { [e.slug]: { plain: r.html, expect } });
+      t.isNew = false; t.href = e.slug; t.title = e.title; t.sha = expect; t.taslak = !!draft;
+      $('doc-title').textContent = 'Düzenle · ' + e.title;
+      show('doc-newinfo', false);
+      updateDocButtons();
       // kaydedilen hâli (boş alt başlık vb. temizlenmiş) düzenleyiciye geri yükle
       $('doc-code').value = r.html;
       if (ed.tab === 'visual') await loadVisual(r.html);
-      ed.dirty = false;
-      return;
+    } else {
+      const sharing = t.taslak && !draft;
+      stage((draft ? 'Taslak: ' : sharing ? 'Paylaş: ' : 'Yazıyı güncelle: ') + t.title,
+        sharing ? { kind: 'draft', href: t.href, on: false } : null,
+        { [t.href]: { plain: html, expect: t.sha } });
+      if (sharing) { t.taslak = false; updateDocButtons(); }
     }
-    const enc = await encryptPage(html, state.pw);
-    const files = [{ path: t.href, text: enc }];
-    const sharing = t.taslak && !draft; // taslak paylaşılıyor: dosya + ana sayfa listesi tek commit'te
-    const message = (draft ? 'Taslak: ' : sharing ? 'Paylaş: ' : 'Yazıyı güncelle: ') + t.title;
-    const commit = (expect) => sharing
-      ? saveIndex(message, files, data => setDraftState(data, t.href, false), expect)
-      : ghCommit(files, message, expect).then(r => r.shas);
-    let shas;
-    try {
-      shas = await commit(t.sha ? { [t.href]: t.sha } : {});
-    } catch (e) {
-      if (!(e instanceof ConflictError) || !e.paths.length || e.paths.every(p => p === 'index.html')) throw e;
-      if (!confirm('Bu yazı siz açtıktan sonra başka biri tarafından değiştirildi.\n\nÜzerine yazılsın mı? Tamam derseniz onun değişiklikleri kaybolur.\n(İptal: Kod sekmesindeki HTML’i bir yere kopyalayıp yazıyı yeniden açabilirsiniz.)')) throw e;
-      shas = await commit({});
-    }
-    t.sha = shas[t.href];
-    if (sharing) { t.taslak = false; updateDocButtons(); renderList(); }
     ed.dirty = false;
-    msg('doc-msg', draft
-      ? 'Taslak kaydedildi: ' + t.href + ' — ana sayfada görünmez; hazır olunca “Paylaş”a basın.'
-      : (sharing ? 'Paylaşıldı, ana sayfada görünüyor: ' : 'Kaydedildi: ') + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
+    msg('doc-msg', (draft ? 'Taslak olarak kaydedildi' : 'Kaydedildi') + ' — henüz yayınlanmadı; alttaki “Değişiklikleri yayınla” ile gönderin.', 'ok');
   } catch (e) { msg('doc-msg', e.message, 'err'); }
   finally { btn.disabled = $('btn-doc-draft').disabled = false; }
 }
@@ -2190,7 +2316,8 @@ $('btn-doc-cancel').addEventListener('click', (e) => {
   showOnly('p-list');
 });
 window.addEventListener('beforeunload', (e) => {
-  if (ed.dirty && !$('p-doc').classList.contains('hidden')) { e.preventDefault(); e.returnValue = ''; }
+  // bekleyen değişiklikler tarayıcıda saklanır ama yayınlanmadıkları hatırlatılsın
+  if ((ed.dirty && !$('p-doc').classList.contains('hidden')) || pendingCount()) { e.preventDefault(); e.returnValue = ''; }
 });
 
 $('btn-to-doc').addEventListener('click', async (e) => {
@@ -2542,6 +2669,10 @@ function insertKind(kind) {
       return placeBlock(`<pre class="code"><span data-ed-select>// kod</span></pre>`);
     case 'hr':
       return placeBlock(`<hr class="hr">`);
+    case 'fig-row':
+      msg('doc-msg', 'Yan yana koymak için 2 ya da 3 görsel seçin (Ctrl ya da Shift ile birden fazla seçilir).', 'info');
+      $('doc-imgs-file').click();
+      return;
     case 'table': {
       const cols = Math.max(1, Math.min(12, parseInt(prompt('Kaç sütun?', '3'), 10) || 0));
       if (!cols) return;
@@ -2659,6 +2790,34 @@ $('doc-insert').addEventListener('change', (e) => {
   if (/^(row|col)-|^unwrap$|^del-block$/.test(v)) editKind(v); else insertKind(v);
 });
 
+$('doc-imgs-file').addEventListener('change', async (e) => {
+  const files = [...(e.target.files || [])];
+  e.target.value = '';
+  if (!files.length) return;
+  if (files.length < 2 || files.length > 3) { msg('doc-msg', 'Yan yana görseller için 2 ya da 3 görsel seçin (' + files.length + ' seçildi).', 'err'); return; }
+  try {
+    const d = frameDoc();
+    const row = d.createElement('div');
+    row.className = 'fig-row';
+    for (let i = 0; i < files.length; i++) {
+      const src = await shrinkImage(files[i], 820);
+      const fig = d.createElement('figure');
+      const img = d.createElement('img');
+      img.src = src; img.alt = '';
+      img.setAttribute('contenteditable', 'false');
+      const cap = d.createElement('figcaption');
+      cap.textContent = 'Görsel ' + (i + 1) + ' altyazısı';
+      fig.append(img, cap);
+      row.appendChild(fig);
+    }
+    insertBlock(row, ed.lastRange);
+    if (!row.nextElementSibling) { const p = d.createElement('p'); p.innerHTML = '<br>'; row.after(p); }
+    ed.dirty = true;
+    msg('doc-msg', 'Görseller eklendi. Altyazılara tıklayıp yazın; görsele tıklayınca değiştirme / silme penceresi açılır.', 'ok');
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } catch (err) { msg('doc-msg', err.message, 'err'); }
+});
+
 /* formül penceresi */
 
 let mathMode = null; // { chip } düzenleme · { display, range } ekleme
@@ -2767,7 +2926,9 @@ $('img-del').addEventListener('click', (e) => {
   const img = ed.img;
   if (!img) return;
   const fig = img.closest('figure');
+  const row = img.closest('.fig-row');
   (fig && fig.querySelectorAll('img').length === 1 ? fig : img).remove();
+  if (row && !row.querySelector('img')) row.remove();
   ed.dirty = true;
   show('dlg-img', false);
   ed.img = null;
@@ -2814,28 +2975,9 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
     featured: $('m-featured').checked
   };
   try {
-    msg('meta-msg', 'Kaydediliyor…', 'info');
-    await saveIndex('Arşiv kaydını güncelle: ' + f.title, [], data => {
-      const arr = flattenOf(data);
-      const q = arr.find(x => x.href === origHref);
-      if (!q) throw new Error('Bu yazı bu arada listeden kaldırılmış.');
-      q.title = f.title; q.author = f.author; q.date = f.date; q.href = f.href; q.excerpt = f.excerpt;
-      if (f.kicker) q.kicker = f.kicker; else delete q.kicker;
-      if (f.featured) {
-        const i = arr.indexOf(q);
-        if (i > 0) { arr.splice(i, 1); arr.unshift(q); }
-        q.lede = f.lede.length ? f.lede : [q.excerpt || ''];
-      } else if (arr[0] === q && arr.length > 1 && !q.taslak) { // taslağın yeri değişmesin
-        arr.splice(0, 1);
-        arr.splice(1, 0, q);
-      } else if (f.lede.length) {
-        q.lede = f.lede;
-      }
-      unflattenInto(data, arr);
-    });
+    stage('Arşiv kaydı: ' + f.title, { kind: 'meta', origHref, f });
     state.metaTarget = flatten().find(x => x.href === f.href) || null;
-    renderList();
-    msg('meta-msg', 'Kaydedildi.', 'ok');
+    msg('meta-msg', 'Kaydedildi — yayınlamak için alttaki “Değişiklikleri yayınla”ya basın.', 'ok');
   } catch (e) { msg('meta-msg', e.message, 'err'); }
   finally { ev.target.disabled = false; }
 });
@@ -2847,7 +2989,8 @@ async function loadIndex() {
   if (!f) throw new Error('index.html bulunamadı.');
   state.indexSha = f.sha;
   state.indexPlain = await decryptPage(f.text, state.pw);
-  state.index = readIndexData(state.indexPlain);
+  state.repoIndex = readIndexData(state.indexPlain);
+  state.index = applyPending(state.repoIndex); // ekranda: depodaki liste + bekleyen değişiklikler
 }
 
 $('btn-connect').addEventListener('click', async (ev) => {
@@ -2889,9 +3032,12 @@ $('btn-connect').addEventListener('click', async (ev) => {
 
     $('who').textContent = state.owner + '/' + state.repo + ' · ' + state.branch;
     show('btn-forget', true);
-    renderList();
+    const restored = await restorePending();
     showOnly('p-list');
-    msg('conn-msg', 'Bağlandı. ' + (flatten().length) + ' yazı bulundu.', 'ok');
+    refreshPending();
+    renderList();
+    msg('conn-msg', 'Bağlandı. ' + (flatten().length) + ' yazı bulundu.' +
+      (restored ? ' Bu tarayıcıda yayınlanmamış ' + pendingDescs().length + ' değişiklik bulundu; alttaki çubuktan yayınlayabilir ya da geri alabilirsiniz.' : ''), 'ok');
   } catch (e) {
     let m = e.message;
     if (/decrypt|operation-specific/i.test(m)) m = 'Site parolası yanlış (ana sayfa çözülemedi).';
