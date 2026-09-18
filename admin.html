@@ -77,6 +77,8 @@
   table.list td.t { font-family: var(--font-heading); font-size: 18px; line-height: 1.25; }
   table.list td.meta { font-size: 12px; color: var(--color-neutral-600); white-space: nowrap; }
   table.list .star { color: var(--color-accent); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+  table.list .star.draft { color: var(--color-neutral-600); }
+  table.list tr.is-draft td.t { color: var(--color-neutral-600); }
 
   .imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; margin-top: 12px; }
   .imgcard { border: 1px solid var(--color-divider); background: #fff; padding: 10px; }
@@ -271,6 +273,7 @@
 
     <div class="bar">
       <button class="b" id="btn-publish">Yayınla</button>
+      <button class="b ghost hidden" id="btn-draft" title="Taslak olarak sakla; ana sayfada görünmez">Kaydet</button>
       <button class="b ghost" id="btn-preview-full">Önizlemeyi yenile</button>
       <button class="b ghost hidden" id="btn-to-doc" title="Bu yazıyı Görsel / Kod düzenleyicide aç">Görsel / Kod düzenleyiciye geç</button>
       <span class="sp"></span>
@@ -368,6 +371,7 @@
     </div>
     <div class="bar">
       <button class="b" id="btn-doc-save">Kaydet ve yayınla</button>
+      <button class="b ghost hidden" id="btn-doc-draft" title="Taslak olarak sakla; ana sayfada görünmez">Kaydet</button>
       <span class="sp"></span>
       <button class="b ghost" id="btn-doc-cancel">Vazgeç</button>
     </div>
@@ -1247,14 +1251,16 @@ function renderList() {
   allEntries().forEach((entry, idx) => {
     const p = entry.post;
     const tr = document.createElement('tr');
+    if (p.taslak) tr.className = 'is-draft';
     tr.innerHTML =
-      '<td class="t">' + esc(p.title) + (entry.featured ? ' <span class="star">· manşet</span>' : '') + '</td>' +
+      '<td class="t">' + esc(p.title) + (p.taslak ? ' <span class="star draft">· taslak</span>' : entry.featured ? ' <span class="star">· manşet</span>' : '') + '</td>' +
       '<td class="meta">' + esc(p.date || '') + '</td>' +
       '<td class="meta">' + esc(p.author || '') + '</td>' +
       '<td class="meta"><code style="font-size: 12px;">' + esc(p.href || '') + '</code></td>' +
       '<td><div class="row" style="gap: 5px; flex-wrap: nowrap;">' +
         '<button class="mini e">Yazıyı düzenle</button>' +
         '<button class="mini m">Arşiv kaydı</button>' +
+        '<button class="mini pub" title="' + (p.taslak ? 'Ana sayfada göster' : 'Ana sayfadan kaldır, taslak olarak sakla') + '">' + (p.taslak ? 'Paylaş' : 'Taslağa al') + '</button>' +
         '<button class="mini up">↑</button>' +
         '<button class="mini dn">↓</button>' +
         '<button class="mini rm" style="color: #8d3427;">Sil</button>' +
@@ -1264,8 +1270,40 @@ function renderList() {
     tr.querySelector('.up').addEventListener('click', () => move(idx, -1));
     tr.querySelector('.dn').addEventListener('click', () => move(idx, 1));
     tr.querySelector('.rm').addEventListener('click', () => removeEntry(p));
+    tr.querySelector('.pub').addEventListener('click', () => togglePublish(p));
     tb.appendChild(tr);
   });
+}
+
+/**
+ * Taslak: listede tutulur ama ana sayfada görünmez (index.html'deki çizici taslak: true kayıtları atlar).
+ * Taslağa alınan manşet, manşet yerinden iner; paylaşılan taslak arşivin başına (manşet istenirse en üste) geçer.
+ */
+function setDraftState(data, href, draft, featured) {
+  const arr = flattenOf(data);
+  const e = arr.find(x => x.href === href);
+  if (!e) throw new Error('Bu yazı listede bulunamadı (bu arada silinmiş olabilir).');
+  if (draft) {
+    e.taslak = true;
+    if (arr[0] === e && arr.length > 1) { arr.splice(0, 1); arr.splice(1, 0, e); }
+  } else if (e.taslak) {
+    delete e.taslak;
+    arr.splice(arr.indexOf(e), 1);
+    arr.splice(featured || !arr.length ? 0 : 1, 0, e);
+  }
+  unflattenInto(data, arr);
+}
+
+async function togglePublish(p) {
+  const draft = !p.taslak;
+  if (draft && !confirm('“' + p.title + '” ana sayfadan kaldırılıp taslak olarak saklansın mı?\n\n(Yazı silinmez; “Paylaş” deyince geri gelir.)')) return;
+  const href = p.href;
+  try {
+    msg('list-msg', 'Kaydediliyor…', 'info');
+    await saveIndex((draft ? 'Taslağa al: ' : 'Paylaş: ') + p.title, [], data => setDraftState(data, href, draft));
+    msg('list-msg', draft ? 'Taslağa alındı; ana sayfada görünmüyor.' : 'Paylaşıldı; ana sayfada görünüyor (site ~30 saniye içinde güncellenir).', 'ok');
+  } catch (e) { msg('list-msg', e.message, 'err'); }
+  renderList();
 }
 
 /** Manşet + arşiv tek bir dizi gibi davranır; 0. sıra manşettir. */
@@ -1341,6 +1379,7 @@ function showOnly(panel) {
 $('btn-new').addEventListener('click', () => {
   resetEditor();
   show('btn-to-doc', true);
+  updateEditButtons();
   $('edit-title').textContent = 'Yeni yazı';
   showOnly('p-edit');
   renderPreview();
@@ -1358,7 +1397,7 @@ async function openArticle(p) {
     const m = plain.match(/<script type="application\/json" id="bergec-source">([\s\S]*?)<\/script>/);
     if (!m) {
       // Markdown kaynağı yok (elle hazırlanmış ya da görsel düzenleyicide kaydedilmiş) → görsel / kod düzenleyici
-      await openDoc({ href: p.href, sha: f.sha, title: p.title }, plain);
+      await openDoc({ href: p.href, sha: f.sha, title: p.title, taslak: !!p.taslak }, plain);
       msg('list-msg', '');
       return;
     }
@@ -1368,7 +1407,7 @@ async function openArticle(p) {
     if (mi) imgs = JSON.parse(mi[1]);
 
     resetEditor();
-    state.editing = { href: p.href, sha: f.sha };
+    state.editing = { href: p.href, sha: f.sha, taslak: !!p.taslak };
     $('f-title').value = src.meta.title || '';
     $('f-subtitle').value = src.meta.subtitle || '';
     $('f-author').value = src.meta.author || '';
@@ -1383,6 +1422,7 @@ async function openArticle(p) {
     state.nextImgId = state.images.reduce((a, im) => Math.max(a, (+im.id || 0) + 1), 1);
     renderImageList();
     show('btn-to-doc', true);
+    updateEditButtons();
     $('edit-title').textContent = 'Düzenle · ' + (src.meta.title || p.title);
     showOnly('p-edit');
     renderPreview();
@@ -1392,16 +1432,25 @@ async function openArticle(p) {
   }
 }
 
-$('btn-publish').addEventListener('click', async (ev) => {
-  ev.preventDefault();
-  const btn = ev.target;
+/** Yeni ya da taslak yazıda "Kaydet" (taslak) + "Paylaş"; yayındaki yazıda tek "Kaydet ve yayınla". */
+function updateEditButtons() {
+  const draftish = !state.editing || !!state.editing.taslak;
+  show('btn-draft', draftish);
+  $('btn-publish').textContent = draftish ? 'Paylaş' : 'Kaydet ve yayınla';
+}
+
+$('btn-publish').addEventListener('click', (ev) => { ev.preventDefault(); publishMd(false); });
+$('btn-draft').addEventListener('click', (ev) => { ev.preventDefault(); publishMd(true); });
+
+async function publishMd(draft) {
+  const btn = $(draft ? 'btn-draft' : 'btn-publish');
   const meta = currentMeta();
   if (!meta.title) { msg('edit-msg', 'Başlık gerekli.', 'err'); return; }
   if (!meta.slug) { msg('edit-msg', 'Dosya adı gerekli.', 'err'); return; }
   let slug = meta.slug;
   if (!/\.html$/.test(slug)) slug += '.html';
 
-  btn.disabled = true;
+  $('btn-publish').disabled = $('btn-draft').disabled = true;
   try {
     msg('edit-msg', 'Sayfa hazırlanıyor ve şifreleniyor…', 'info');
     const html = buildCurrentArticle();
@@ -1416,14 +1465,23 @@ $('btn-publish').addEventListener('click', async (ev) => {
     const updateIndex = data => {
       const arr = flattenOf(data);
       let entry = old ? arr.find(x => x.href === old) : null;
-      // yeni yazı: manşet değilse manşetin altına, arşivin başına
-      if (!entry) { entry = {}; arr.splice(featured || !arr.length ? 0 : 1, 0, entry); }
+      // yeni yazı: manşet değilse (ya da taslaksa) manşetin altına, arşivin başına
+      if (!entry) { entry = {}; arr.splice(featured && !draft || !arr.length ? 0 : 1, 0, entry); }
       entry.title = meta.title;
       entry.date = meta.date;
       entry.author = meta.author;
       entry.href = slug;
       entry.excerpt = excerpt;
-      if (featured) {
+      if (draft) {
+        entry.taslak = true;
+        if (arr[0] === entry && arr.length > 1) { arr.splice(0, 1); arr.splice(1, 0, entry); }
+      } else if (entry.taslak) {
+        // taslak paylaşılıyor: arşivin başına
+        delete entry.taslak;
+        arr.splice(arr.indexOf(entry), 1);
+        arr.splice(!arr.length ? 0 : 1, 0, entry);
+      }
+      if (featured && !draft) {
         arr.splice(arr.indexOf(entry), 1);
         arr.unshift(entry);
         entry.lede = lede;
@@ -1442,7 +1500,7 @@ $('btn-publish').addEventListener('click', async (ev) => {
     if (old && old !== slug && confirm('Dosya adı değişti (' + old + ' → ' + slug + ').\nEski dosya depodan silinsin mi?')) {
       files.push({ path: old, text: null });
     }
-    const title = (wasEditing ? 'Yazıyı güncelle: ' : 'Yeni yazı: ') + meta.title;
+    const title = (draft ? 'Taslak: ' : wasEditing ? 'Yazıyı güncelle: ' : 'Yeni yazı: ') + meta.title;
     let shas;
     try {
       shas = await saveIndex(title, files, updateIndex, expect);
@@ -1457,15 +1515,19 @@ $('btn-publish').addEventListener('click', async (ev) => {
       shas = await saveIndex(title, files, updateIndex, {});
     }
 
-    state.editing = { href: slug, sha: shas[slug] };
+    const wasDraft = !!(state.editing && state.editing.taslak);
+    state.editing = { href: slug, sha: shas[slug], taslak: draft };
+    updateEditButtons();
     renderList();
-    msg('edit-msg', 'Yayınlandı: ' + slug + ' — GitHub Pages ~30 saniye içinde güncellenir.', 'ok');
+    msg('edit-msg', draft
+      ? 'Taslak kaydedildi: ' + slug + ' — ana sayfada görünmez; hazır olunca “Paylaş”a basın.'
+      : (wasEditing && !wasDraft ? 'Yayınlandı: ' : 'Paylaşıldı, ana sayfada görünüyor: ') + slug + ' — site ~30 saniye içinde güncellenir.', 'ok');
   } catch (e) {
     msg('edit-msg', e.message, 'err');
   } finally {
-    btn.disabled = false;
+    $('btn-publish').disabled = $('btn-draft').disabled = false;
   }
-});
+}
 
 function stripMd(t) {
   return String(t || '')
@@ -1885,6 +1947,7 @@ async function openDoc(target, html) {
   ed.model = null;
   $('doc-title').textContent = target.isNew ? 'Yeni yazı (HTML)' : 'Düzenle · ' + target.title;
   show('doc-newinfo', !!target.isNew);
+  updateDocButtons();
   $('doc-code').value = html;
   msg('doc-msg', '');
   showOnly('p-doc');
@@ -1930,15 +1993,24 @@ function finishNewDoc(html) {
   };
 }
 
+/** Yeni ya da taslak yazıda "Kaydet" (taslak) + "Paylaş"; yayındaki yazıda tek "Kaydet ve yayınla". */
+function updateDocButtons() {
+  const t = ed.target;
+  const draftish = !!(t && (t.isNew || t.taslak));
+  show('btn-doc-draft', draftish);
+  $('btn-doc-save').textContent = draftish ? 'Paylaş' : 'Kaydet ve yayınla';
+}
+
 /** Görsel / Kod düzenleyicide yazılan yeni yazının ilk kaydı: dosya + ana sayfa listesi tek commit'te. */
-async function publishNewDoc(t, e, enc) {
+async function publishNewDoc(t, e, enc, draft) {
   msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
   let shas;
   try {
-    shas = await saveIndex('Yeni yazı: ' + e.title, [{ path: e.slug, text: enc }], data => {
+    shas = await saveIndex((draft ? 'Taslak: ' : 'Yeni yazı: ') + e.title, [{ path: e.slug, text: enc }], data => {
       const arr = flattenOf(data);
       const entry = { title: e.title, date: e.date, author: e.author, href: e.slug, excerpt: e.excerpt };
-      arr.splice(e.featured || !arr.length ? 0 : 1, 0, entry); // manşet değilse manşetin altına
+      if (draft) entry.taslak = true;
+      arr.splice(e.featured && !draft || !arr.length ? 0 : 1, 0, entry); // manşet değilse (ya da taslaksa) manşetin altına
       if (e.featured) { entry.lede = e.lede; if (e.subtitle) entry.kicker = e.subtitle; }
       unflattenInto(data, arr);
     }, { [e.slug]: null });
@@ -1952,25 +2024,31 @@ async function publishNewDoc(t, e, enc) {
   t.href = e.slug;
   t.title = e.title;
   t.sha = shas[e.slug];
+  t.taslak = !!draft;
   $('doc-title').textContent = 'Düzenle · ' + e.title;
   show('doc-newinfo', false);
+  updateDocButtons();
   renderList();
-  msg('doc-msg', 'Yayınlandı ve listeye eklendi: ' + e.slug + ' — site ~30 saniye içinde güncellenir.', 'ok');
+  msg('doc-msg', draft
+    ? 'Taslak kaydedildi: ' + e.slug + ' — ana sayfada görünmez; hazır olunca “Paylaş”a basın.'
+    : 'Paylaşıldı ve ana sayfaya eklendi: ' + e.slug + ' — site ~30 saniye içinde güncellenir.', 'ok');
 }
 
-async function saveDoc() {
+/** draft: true → taslak olarak sakla (ana sayfada görünmez); false → paylaş / yayındaki yazıyı güncelle. */
+async function saveDoc(draft) {
   const t = ed.target;
   if (!t) return;
+  if (draft === undefined) draft = !!(t.isNew || t.taslak); // Ctrl+S: taslaksa taslak olarak kaydet
   const btn = $('btn-doc-save');
   if (btn.disabled) return;
-  btn.disabled = true;
+  btn.disabled = $('btn-doc-draft').disabled = true;
   try {
     const html = finalizeDoc(ed.tab === 'visual' ? serializeVisual() : $('doc-code').value);
     msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
     if (t.isNew) {
       const r = finishNewDoc(html);
       const enc = await encryptPage(r.html, state.pw);
-      await publishNewDoc(t, r.info, enc);
+      await publishNewDoc(t, r.info, enc, draft);
       // kaydedilen hâli (boş alt başlık vb. temizlenmiş) düzenleyiciye geri yükle
       $('doc-code').value = r.html;
       if (ed.tab === 'visual') await loadVisual(r.html);
@@ -1978,25 +2056,34 @@ async function saveDoc() {
       return;
     }
     const enc = await encryptPage(html, state.pw);
-    const files = [{ path: t.href, text: enc }], message = 'Yazıyı güncelle: ' + t.title;
-    let res;
+    const files = [{ path: t.href, text: enc }];
+    const sharing = t.taslak && !draft; // taslak paylaşılıyor: dosya + ana sayfa listesi tek commit'te
+    const message = (draft ? 'Taslak: ' : sharing ? 'Paylaş: ' : 'Yazıyı güncelle: ') + t.title;
+    const commit = (expect) => sharing
+      ? saveIndex(message, files, data => setDraftState(data, t.href, false), expect)
+      : ghCommit(files, message, expect).then(r => r.shas);
+    let shas;
     try {
-      res = await ghCommit(files, message, t.sha ? { [t.href]: t.sha } : {});
+      shas = await commit(t.sha ? { [t.href]: t.sha } : {});
     } catch (e) {
-      if (!(e instanceof ConflictError) || !e.paths.length) throw e;
+      if (!(e instanceof ConflictError) || !e.paths.length || e.paths.every(p => p === 'index.html')) throw e;
       if (!confirm('Bu yazı siz açtıktan sonra başka biri tarafından değiştirildi.\n\nÜzerine yazılsın mı? Tamam derseniz onun değişiklikleri kaybolur.\n(İptal: Kod sekmesindeki HTML’i bir yere kopyalayıp yazıyı yeniden açabilirsiniz.)')) throw e;
-      res = await ghCommit(files, message, {});
+      shas = await commit({});
     }
-    t.sha = res.shas[t.href];
+    t.sha = shas[t.href];
+    if (sharing) { t.taslak = false; updateDocButtons(); renderList(); }
     ed.dirty = false;
-    msg('doc-msg', 'Kaydedildi: ' + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
+    msg('doc-msg', draft
+      ? 'Taslak kaydedildi: ' + t.href + ' — ana sayfada görünmez; hazır olunca “Paylaş”a basın.'
+      : (sharing ? 'Paylaşıldı, ana sayfada görünüyor: ' : 'Kaydedildi: ') + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
   } catch (e) { msg('doc-msg', e.message, 'err'); }
-  finally { btn.disabled = false; }
+  finally { btn.disabled = $('btn-doc-draft').disabled = false; }
 }
 
 document.querySelectorAll('#p-doc .tab').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); setDocTab(b.dataset.tab); }));
 $('doc-code').addEventListener('input', () => { ed.dirty = true; });
-$('btn-doc-save').addEventListener('click', (e) => { e.preventDefault(); saveDoc(); });
+$('btn-doc-save').addEventListener('click', (e) => { e.preventDefault(); saveDoc(false); });
+$('btn-doc-draft').addEventListener('click', (e) => { e.preventDefault(); saveDoc(true); });
 $('btn-doc-cancel').addEventListener('click', (e) => {
   e.preventDefault();
   if (ed.dirty && !confirm('Kaydedilmemiş değişiklikler var. Yine de çıkılsın mı?')) return;
@@ -2022,7 +2109,7 @@ $('btn-to-doc').addEventListener('click', async (e) => {
     return;
   }
   if (!confirm('Bu yazı bundan sonra Görsel / Kod düzenleyicide açılacak; Markdown kaynağı kaydedince kaldırılır.\nDevam edilsin mi?')) return;
-  await openDoc({ href: state.editing.href, sha: state.editing.sha, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
+  await openDoc({ href: state.editing.href, sha: state.editing.sha, taslak: !!state.editing.taslak, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
   ed.dirty = true;
 });
 
