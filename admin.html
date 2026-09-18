@@ -1627,6 +1627,13 @@ function loadVisual(html) {
 
   const view = ed.model.cloneNode(true);
   view.querySelectorAll('script').forEach(s => s.remove());
+  // Sitenin stil dosyası tarayıcı önbelleğinden eski hâliyle gelmesin (yeni biçimler, ör. .vurgu, görünmezdi).
+  // Yalnızca düzenleyicideki görünüm için; kaydedilen sayfaya dokunmaz.
+  const bust = 'v=' + Date.now();
+  view.querySelectorAll('link[rel="stylesheet"][href]').forEach(l => {
+    const h = l.getAttribute('href');
+    if (!/^(https?:)?\/\//.test(h)) l.setAttribute('href', h + (h.includes('?') ? '&' : '?') + bust);
+  });
   const base = view.createElement('base');
   base.href = location.href.replace(/[^/]*$/, '');
   view.head.prepend(base);
