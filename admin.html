@@ -1381,6 +1381,8 @@ function stage(desc, op, files) {
     if (f.plain === null && prev && prev.expect === null) { delete pending.files[path]; return; }
     pending.files[path] = { plain: f.plain, expect: prev ? prev.expect : f.expect, desc: f.desc || desc };
   });
+  // liste işlemleri toplamda hiçbir şeyi değiştirmiyorsa (ör. sıra eski hâline döndü) hepsini at
+  if (pending.ops.length && state.repoIndex && JSON.stringify(applyPending(state.repoIndex)) === JSON.stringify(state.repoIndex)) pending.ops = [];
   refreshPending();
   persistPending();
 }
@@ -1433,15 +1435,21 @@ async function publishPending() {
   btn.disabled = $('btn-pending-discard').disabled = true;
   try {
     msg('pending-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
+    // Yayın başladığı andaki bekleyenler gönderilir; yayın sürerken yapılan kayıtlar beklemede kalır
+    // (yoksa şifreleme sırasında gelen bir kaydın liste işlemi gider, dosyası gitmez ve kaybolurdu).
+    const snapOps = pending.ops.slice();
+    const snapFiles = Object.assign({}, pending.files);
     const files = [], expect = {};
-    for (const [path, f] of Object.entries(pending.files)) {
+    for (const [path, f] of Object.entries(snapFiles)) {
       files.push({ path, text: f.plain === null ? null : await encryptPage(f.plain, state.pw) });
       if (f.expect !== undefined) expect[path] = f.expect;
     }
-    const descs = pendingDescs();
+    const descs = [];
+    snapOps.forEach(o => { if (o.desc && !descs.includes(o.desc)) descs.push(o.desc); });
+    Object.values(snapFiles).forEach(f => { if (f.desc && !descs.includes(f.desc)) descs.push(f.desc); });
     let message = descs.length === 1 ? descs[0] : descs.length + ' değişiklik: ' + descs.join('; ');
     if (message.length > 300) message = message.slice(0, 297) + '…';
-    const mutate = data => pending.ops.forEach(op => { try { applyOp(data, op); } catch (e) {} });
+    const mutate = data => snapOps.forEach(op => { try { applyOp(data, op); } catch (e) {} });
     let shas;
     try {
       shas = await saveIndex(message, files, mutate, expect);
@@ -1459,7 +1467,11 @@ async function publishPending() {
     // açık düzenleyiciler artık yeni sürümü baz alsın
     if (ed.target && ed.target.href && ed.target.href in shas) ed.target.sha = shas[ed.target.href];
     if (state.editing && state.editing.href in shas) state.editing.sha = shas[state.editing.href];
-    pending.ops = []; pending.files = {};
+    // yalnızca gönderilenleri düş; bu arada eklenen ya da yeniden kaydedilen yazılar beklemede kalsın
+    pending.ops = pending.ops.filter(o => !snapOps.includes(o));
+    Object.keys(snapFiles).forEach(p => { if (pending.files[p] === snapFiles[p]) delete pending.files[p]; });
+    // beklemede kalan (yayın sürerken yeniden kaydedilen) yazılar, az önce yayınlanan sürümü baz alsın
+    Object.keys(pending.files).forEach(p => { if (p in shas) pending.files[p].expect = shas[p]; });
     await persistPending();
     refreshPending();
     msg('pending-msg', '', '');
@@ -1484,6 +1496,25 @@ $('btn-pending-discard').addEventListener('click', async (e) => {
   renderList();
   msg('list-msg', 'Değişiklikler geri alındı.', 'ok');
 });
+
+/** Karşılaştırma için sayfanın kanonik hâli (biçim farkları — boşluk, tırnak — sayılmasın). */
+function canonHtml(html) {
+  return new DOMParser().parseFromString(finalizeDoc(html), 'text/html').documentElement.outerHTML;
+}
+/** Markdown düzenleyicinin kaydedilecek her şeyi (sayfa + liste bilgileri). */
+function mdSnapshot() {
+  return { html: buildCurrentArticle(), slug: $('f-slug').value.trim(), featured: $('f-featured').checked,
+           excerpt: $('f-excerpt').value.trim(), draft: !!(state.editing && state.editing.taslak) };
+}
+/** Hiçbir şey değişmeden kaydedildi: bekleyenlere bir şey ekleme. */
+function noChange(leave, where) {
+  if (leave === false) { msg(where, 'Değişiklik yok; kaydedilecek bir şey olmadı.', 'info'); return; }
+  ed.dirty = false;
+  showOnly('p-list');
+  refreshPending();
+  renderList();
+  msg('list-msg', 'Değişiklik yok; kaydedilecek bir şey olmadı.', 'info');
+}
 
 /** Kaydettikten sonra yazılar listesine dön ve ne olduğunu orada söyle. */
 function backToList(text) {
@@ -1554,6 +1585,13 @@ function setDraftState(data, href, draft) {
 
 function togglePublish(p) {
   const draft = !p.taslak;
+  const prev = pending.ops.findIndex(o => o.kind === 'draft' && o.href === p.href);
+  if (prev >= 0) { // az önce tersini yapmıştın: ikisi birbirini götürür
+    pending.ops.splice(prev, 1);
+    refreshPending(); persistPending();
+    msg('list-msg', '');
+    return;
+  }
   stage((draft ? 'Taslağa al: ' : 'Paylaş: ') + p.title, { kind: 'draft', href: p.href, on: draft });
   msg('list-msg', '');
 }
@@ -1640,7 +1678,8 @@ function unflattenInto(data, arr) {
   const a = arr.slice();
   data.featured = a.shift() || null;
   data.posts = a;
-  if (data.featured && !data.featured.lede) data.featured.lede = [data.featured.excerpt || ''];
+  // manşete giriş metni (lede) eklenmez: ana sayfa yoksa özeti kullanır. Böylece sırayı geri almak listeyi
+  // gerçekten eski hâline döndürür (bekleyen değişiklik de düşer).
 }
 function flatten() { return flattenOf(state.index); }
 
@@ -1700,17 +1739,22 @@ async function openArticle(p) {
     // yayınlanmamış bir hâli bekliyorsa onu aç; değilse depodan
     const pf = pending.files[p.href];
     if (pf && pf.plain === null) throw new Error('Bu yazının dosyası silinmek üzere (yayınlanmamış değişiklik).');
-    let f;
-    if (pf) f = { sha: pf.expect, text: null, plain: pf.plain };
-    else {
+    let f, repoPlain = null;
+    if (pf) {
+      f = { sha: pf.expect, text: null, plain: pf.plain };
+      // depodaki hâl de bilinsin: düzenlemeler geri alınırsa bekleyen değişiklik kalksın
+      if (pf.expect) { try { const rf = await ghGetFile(p.href); if (rf) repoPlain = await decryptPage(rf.text, state.pw); } catch (e) {} }
+    } else {
       f = await ghGetFile(p.href);
       if (!f) throw new Error('Dosya bulunamadı: ' + p.href);
     }
     const plain = f.plain || await decryptPage(f.text, state.pw);
+    if (!pf) repoPlain = plain;
     const m = plain.match(/<script type="application\/json" id="bergec-source">([\s\S]*?)<\/script>/);
     if (!m) {
       // Markdown kaynağı yok (elle hazırlanmış ya da görsel düzenleyicide kaydedilmiş) → görsel / kod düzenleyici
-      await openDoc({ href: p.href, sha: f.sha, title: p.title, taslak: !!p.taslak }, plain);
+      await openDoc({ href: p.href, sha: f.sha, title: p.title, taslak: !!p.taslak,
+        baseCanon: canonHtml(plain), repoCanon: repoPlain ? canonHtml(repoPlain) : null }, plain);
       msg('list-msg', '');
       return;
     }
@@ -1737,6 +1781,7 @@ async function openArticle(p) {
     renderImageList();
     show('btn-to-doc', true);
     updateEditButtons();
+    state.editing.base = mdSnapshot(); // değişiklik var mı diye kaydederken karşılaştırılır
     $('edit-title').textContent = 'Düzenle · ' + (src.meta.title || p.title);
     showOnly('p-edit');
     renderPreview();
@@ -1767,11 +1812,15 @@ async function publishMd(draft) {
   if (!meta.title) { msg('edit-msg', 'Başlık gerekli.', 'err'); return; }
   if (!meta.slug) { msg('edit-msg', 'Dosya adı gerekli.', 'err'); return; }
   let slug = meta.slug;
-  if (!/\.html$/.test(slug)) slug += '.html';
+  slug = slug.replace(/(\.html?)+$/i, '') + '.html'; // uzantı tam bir kez (ör. "yazi.html.html" → "yazi.html")
 
   $('btn-publish').disabled = $('btn-draft').disabled = true;
   try {
     const html = buildCurrentArticle();
+    const snap = mdSnapshot(); snap.draft = draft;
+    const base = state.editing && state.editing.base;
+    const sameHtml = !!base && base.html === html && base.slug === snap.slug;
+    if (base && sameHtml && base.featured === snap.featured && base.excerpt === snap.excerpt && base.draft === draft) { noChange(); return; }
     const featured = $('f-featured').checked;
     const paras = plainParagraphs(html);
     const excerpt = meta.excerpt || firstSentences(paras.join(' '), 240);
@@ -1785,13 +1834,13 @@ async function publishMd(draft) {
       if (!confirm('“' + slug + '” adında bir dosya zaten var. Üzerine yazılsın mı?\n\n(İptal: dosya adını değiştirin.)')) throw new Error('“' + slug + '” adında bir dosya zaten var; dosya adını değiştirin.');
       newExpect = undefined;
     }
-    files[slug] = { plain: html, expect: (!old || old !== slug) ? newExpect : state.editing.sha };
+    if (!sameHtml) files[slug] = { plain: html, expect: (!old || old !== slug) ? newExpect : state.editing.sha };
     if (old && old !== slug && confirm('Dosya adı değişti (' + old + ' → ' + slug + ').\nEski dosya depodan silinsin mi?')) {
       files[old] = { plain: null, expect: state.editing.sha };
     }
     const desc = (draft ? 'Taslak: ' : !old ? 'Yeni yazı: ' : wasDraft ? 'Paylaş: ' : 'Yazıyı güncelle: ') + meta.title;
     stage(desc, { kind: 'upsert', old, slug, meta: { title: meta.title, date: meta.date, author: meta.author, subtitle: meta.subtitle }, excerpt, lede, featured, draft }, files);
-    state.editing = { href: slug, sha: pending.files[slug].expect, taslak: draft };
+    state.editing = { href: slug, sha: pending.files[slug] ? pending.files[slug].expect : state.editing.sha, taslak: draft, base: snap };
     updateEditButtons();
     backToList('“' + meta.title + '” ' + (draft ? 'taslak olarak kaydedildi' : 'kaydedildi'));
   } catch (e) {
@@ -2261,8 +2310,8 @@ function finishNewDoc(html) {
   const date = dm ? dm[0] : todayStr();
   if (!d.title.replace(/·\s*Bergeç\s*$/, '').trim()) d.title = title + ' · Bergeç';
 
-  let slug = $('d-slug').value.trim() || slugify(title);
-  if (!/\.html$/.test(slug)) slug += '.html';
+  let slug = $('d-slug').value.trim() || fileNameFor(title);
+  slug = slug.replace(/(\.html?)+$/i, '') + '.html'; // uzantı tam bir kez (ör. "yazi.html.html" → "yazi.html")
   if (!/^[a-z0-9][a-z0-9._-]*\.html$/.test(slug)) throw new Error('Dosya adında yalnızca küçük harf, rakam, nokta, - ve _ kullanın.');
   $('d-slug').value = slug;
 
@@ -2317,10 +2366,21 @@ async function saveDoc(draft, leave) {
       if (ed.tab === 'visual') await loadVisual(r.html);
     } else {
       const sharing = t.taslak && !draft;
+      const c = canonHtml(html);
+      const changed = c !== t.baseCanon;
+      if (!changed && !sharing) { noChange(leave, 'doc-msg'); return; }
+      const backToRepo = changed && t.repoCanon && c === t.repoCanon; // düzenlemeler geri alındı: yayındaki hâline döndü
+      if (backToRepo) delete pending.files[t.href];
       stage((draft ? 'Taslak: ' : sharing ? 'Paylaş: ' : 'Yazıyı güncelle: ') + t.title,
         sharing ? { kind: 'draft', href: t.href, on: false } : null,
-        { [t.href]: { plain: html, expect: t.sha } });
+        changed && !backToRepo ? { [t.href]: { plain: html, expect: t.sha } } : null);
+      t.baseCanon = c;
       if (sharing) { t.taslak = false; updateDocButtons(); }
+      if (backToRepo && !sharing) {
+        if (leave) { backToList('“' + t.title + '” yayındaki hâline döndü'); msg('list-msg', '“' + t.title + '” yayındaki hâline döndü; bekleyen değişikliği kaldırıldı.', 'ok'); }
+        else msg('doc-msg', 'Yazı yayındaki hâline döndü; bekleyen değişikliği kaldırıldı.', 'ok');
+        return;
+      }
     }
     ed.dirty = false;
     if (leave) backToList('“' + t.title + '” ' + (draft ? 'taslak olarak kaydedildi' : 'kaydedildi'));
@@ -2378,11 +2438,9 @@ function newDocTemplate() {
     .split(M).join('');
 }
 
-function slugify(t) {
-  const s = String(t || '').toLocaleLowerCase('tr')
-    .replace(/[çğıöşü]/g, c => ({ ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' })[c])
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return s ? s + '.html' : '';
+/** Başlıktan dosya adı (uzantısıyla). slugify yalnızca adı üretir, uzantı eklemez. */
+function fileNameFor(title) {
+  return String(title || '').trim() ? slugify(title) + '.html' : '';
 }
 
 $('btn-new-html').addEventListener('click', async () => {
@@ -2970,6 +3028,7 @@ function onFrameClick(e) {
 
 function openMeta(p, featured) {
   state.metaTarget = p;
+  state.metaFeatured = !!featured;
   $('m-title').value = p.title || '';
   $('m-author').value = p.author || '';
   $('m-date').value = p.date || '';
@@ -2998,6 +3057,9 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
     lede: $('m-lede').value.split(/\n{2,}/).map(s => s.trim()).filter(Boolean),
     featured: $('m-featured').checked
   };
+  const same = f.title === (p.title || '') && f.author === (p.author || '') && f.date === (p.date || '') && f.href === (p.href || '') &&
+    f.excerpt === (p.excerpt || '') && f.kicker === (p.kicker || '') && f.lede.join('\n\n') === (p.lede || []).join('\n\n') && f.featured === state.metaFeatured;
+  if (same) { ev.target.disabled = false; noChange(); return; }
   try {
     stage('Arşiv kaydı: ' + f.title, { kind: 'meta', origHref, f });
     state.metaTarget = flatten().find(x => x.href === f.href) || null;
