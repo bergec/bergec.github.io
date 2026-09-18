@@ -77,6 +77,13 @@
   table.list td.t { font-family: var(--font-heading); font-size: 18px; line-height: 1.25; }
   table.list td.meta { font-size: 12px; color: var(--color-neutral-600); white-space: nowrap; }
   table.list .star { color: var(--color-accent); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+  table.list td.grip { cursor: grab; touch-action: none; user-select: none; color: var(--color-neutral-500); font-size: 18px; line-height: 1; padding-right: 8px; vertical-align: middle; }
+  table.list td.grip:hover { color: var(--color-text); }
+  table.list tr.dragging { opacity: 0.45; }
+  table.list tr.dragging td.grip { cursor: grabbing; }
+  table.list tr.drop-before td { box-shadow: inset 0 3px 0 var(--color-accent); }
+  table.list tr.drop-after td { box-shadow: inset 0 -3px 0 var(--color-accent); }
+  body.list-dragging, body.list-dragging * { cursor: grabbing !important; user-select: none; }
   table.list .star.draft { color: var(--color-neutral-600); }
   table.list tr.is-draft td.t { color: var(--color-neutral-600); }
 
@@ -169,10 +176,10 @@
   <!-- ══════════════ 2. YAZILAR ══════════════ -->
   <section class="panel hidden" id="p-list">
     <h2>Yazılar</h2>
-    <p class="hint">Ana sayfadaki sıralama buradaki sıradır. En üstteki “öne çıkan” yazı ana sayfanın manşetidir.</p>
+    <p class="hint">Ana sayfadaki sıralama buradaki sıradır. En üstteki “öne çıkan” yazı ana sayfanın manşetidir. Sırayı değiştirmek için satırı soldaki <strong>⠿</strong> tutamacından tutup sürükleyin.</p>
     <table class="list">
       <thead>
-        <tr><th style="width: 42%">Başlık</th><th>Tarih</th><th>Yazar</th><th>Dosya</th><th style="width: 1%"></th></tr>
+        <tr><th style="width: 1%"></th><th style="width: 42%">Başlık</th><th>Tarih</th><th>Yazar</th><th>Dosya</th><th style="width: 1%"></th></tr>
       </thead>
       <tbody id="list-body"></tbody>
     </table>
@@ -1268,7 +1275,9 @@ function renderList() {
     const p = entry.post;
     const tr = document.createElement('tr');
     if (p.taslak) tr.className = 'is-draft';
+    tr.dataset.href = p.href || '';
     tr.innerHTML =
+      '<td class="grip" title="Sürükleyerek taşı">⠿</td>' +
       '<td class="t">' + esc(p.title) + (p.taslak ? ' <span class="star draft">· taslak</span>' : entry.featured ? ' <span class="star">· manşet</span>' : '') + '</td>' +
       '<td class="meta">' + esc(p.date || '') + '</td>' +
       '<td class="meta">' + esc(p.author || '') + '</td>' +
@@ -1321,6 +1330,88 @@ async function togglePublish(p) {
   } catch (e) { msg('list-msg', e.message, 'err'); }
   renderList();
 }
+
+/* sürükle-bırak sıralama (fare ve dokunmatik; kenara yaklaşınca sayfa kayar) */
+
+/** href'li yazıyı beforeHref'in önüne (null: en sona) taşır. Yazılar adresleriyle bulunur; en güncel listeye uygulanır. */
+function moveBefore(data, href, beforeHref) {
+  const arr = flattenOf(data);
+  const i = arr.findIndex(x => x.href === href);
+  if (i < 0) return;
+  const [it] = arr.splice(i, 1);
+  let j = beforeHref ? arr.findIndex(x => x.href === beforeHref) : arr.length;
+  if (j < 0) j = arr.length;
+  arr.splice(j, 0, it);
+  unflattenInto(data, arr);
+}
+
+async function reorder(href, beforeHref) {
+  const old = state.index;
+  const preview = JSON.parse(JSON.stringify(old));
+  moveBefore(preview, href, beforeHref);
+  state.index = preview; // bırakır bırakmaz göster
+  renderList();
+  try {
+    msg('list-msg', 'Sıra kaydediliyor…', 'info');
+    await saveIndex('Yazı sırasını güncelle', [], data => moveBefore(data, href, beforeHref));
+    msg('list-msg', 'Sıra güncellendi.', 'ok');
+  } catch (e) {
+    if (state.index === preview) state.index = old; // kaydedilemedi: eski sıraya dön
+    msg('list-msg', e.message, 'err');
+  }
+  renderList();
+}
+
+$('list-body').addEventListener('pointerdown', (e) => {
+  const grip = e.target.closest('td.grip');
+  if (!grip || e.button > 0) return;
+  e.preventDefault();
+  const tb = $('list-body');
+  const row = grip.parentElement;
+  const rows = [...tb.rows];
+  const fromHref = row.dataset.href;
+  let target = null, lastY = e.clientY, raf = 0;
+  row.classList.add('dragging');
+  document.body.classList.add('list-dragging');
+  try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+
+  const mark = () => {
+    rows.forEach(r => r.classList.remove('drop-before', 'drop-after'));
+    target = null;
+    for (const r of rows) {
+      const b = r.getBoundingClientRect();
+      if (lastY < b.top + b.height / 2) { target = { row: r, after: false }; break; }
+    }
+    if (!target) target = { row: rows[rows.length - 1], after: true };
+    target.row.classList.add(target.after ? 'drop-after' : 'drop-before');
+  };
+  // kenara yaklaşınca kaydır (yaklaştıkça hızlanır)
+  const tick = () => {
+    const edge = 70, h = window.innerHeight;
+    if (lastY < edge) window.scrollBy(0, -Math.ceil((edge - lastY) / 4));
+    else if (lastY > h - edge) window.scrollBy(0, Math.ceil((lastY - (h - edge)) / 4));
+    mark();
+    raf = requestAnimationFrame(tick);
+  };
+  const onMove = (ev) => { lastY = ev.clientY; };
+  const onUp = (ev) => {
+    cancelAnimationFrame(raf);
+    grip.removeEventListener('pointermove', onMove);
+    grip.removeEventListener('pointerup', onUp);
+    grip.removeEventListener('pointercancel', onUp);
+    rows.forEach(r => r.classList.remove('drop-before', 'drop-after', 'dragging'));
+    document.body.classList.remove('list-dragging');
+    if (ev.type === 'pointercancel' || !target) return;
+    const beforeRow = target.after ? target.row.nextElementSibling : target.row;
+    const beforeHref = beforeRow ? beforeRow.dataset.href : null;
+    if (beforeHref === fromHref || (row.nextElementSibling && row.nextElementSibling.dataset.href === beforeHref) || (!beforeHref && !row.nextElementSibling)) return; // yerinde
+    reorder(fromHref, beforeHref);
+  };
+  grip.addEventListener('pointermove', onMove);
+  grip.addEventListener('pointerup', onUp);
+  grip.addEventListener('pointercancel', onUp);
+  raf = requestAnimationFrame(tick);
+});
 
 /** Manşet + arşiv tek bir dizi gibi davranır; 0. sıra manşettir. */
 function flattenOf(data) {
