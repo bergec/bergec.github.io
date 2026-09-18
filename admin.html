@@ -60,6 +60,7 @@
     border: 1px solid var(--color-neutral-400); background: #fff; border-radius: 2px; color: var(--color-text);
   }
   button.mini:hover { border-color: var(--color-text); }
+  button.mini.on { border-color: var(--color-text); background: var(--color-accent-100); box-shadow: inset 0 0 0 1px var(--color-text); }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 
   .msg { font-size: 13px; line-height: 1.6; margin-top: 12px; padding: 10px 13px; border-radius: 2px; display: none; }
@@ -1606,6 +1607,10 @@ function cleanRegion(r) {
     });
     p.replaceWith(frag);
   });
+  // renk değiştirirken imleç için konan görünmez karakterler ve içi boş kalan renk kutuları
+  const tw = d.createTreeWalker(r, NodeFilter.SHOW_TEXT);
+  for (let t = tw.nextNode(); t; t = tw.nextNode()) if (t.nodeValue.includes(ZW)) t.nodeValue = t.nodeValue.split(ZW).join('');
+  r.querySelectorAll('.' + COLOR_CLASS).forEach(el => { if (!el.textContent && !el.querySelector('img')) el.remove(); });
   // boş paragraflar (kutudan çıkarken ya da Enter'la açılıp yazılmadan kalan satırlar) sayfada boşluk bırakmasın
   r.querySelectorAll('p').forEach(p => {
     if (!p.textContent.replace(/\u00a0/g, ' ').trim() && !p.querySelector('img, svg, [data-ed-tex], [data-ed-disp], iframe, video')) p.remove();
@@ -1694,6 +1699,7 @@ function prepareFrame() {
   d.addEventListener('selectionchange', () => {
     const s = d.getSelection();
     if (s.rangeCount && editableAt(s.anchorNode)) ed.lastRange = s.getRangeAt(0).cloneRange();
+    updateToolState();
   });
   d.addEventListener('click', onFrameClick, true);
   d.addEventListener('paste', (e) => {
@@ -2109,7 +2115,11 @@ $('doc-tools').addEventListener('click', (e) => {
   } else if (b.dataset.act === 'code-inline') {
     if (!wrapSelection('code', 'inl')) { msg('doc-msg', 'Önce kod olarak yazılacak metni seçin.', 'info'); return; }
   } else if (b.dataset.act === 'color-accent' || b.dataset.act === 'color-none') {
-    if (!colorSelection(b.dataset.act === 'color-accent')) { msg('doc-msg', 'Önce renklendirmek istediğiniz metni seçin.', 'info'); return; }
+    const on = b.dataset.act === 'color-accent';
+    const sel = d.getSelection();
+    if (sel.rangeCount && sel.isCollapsed) typingColor(on);   // seçim yok: bundan sonra yazılan bu renkte
+    else if (!colorSelection(on)) { msg('doc-msg', 'Metnin içinde bir yere tıklayın ya da renklendirilecek metni seçin.', 'info'); return; }
+    updateToolState();
   } else if (b.dataset.act === 'math') {
     openMathDialog(null, false);
   } else if (b.dataset.act === 'math-block') {
@@ -2185,6 +2195,52 @@ function liftOut(node, box) {
 }
 
 function colorSelection(on) { return wrapSelection('span', COLOR_CLASS, on); }
+
+const ZW = '\u200B'; // imlecin renkli kutunun içinde / dışında durabilmesi için görünmez karakter; kaydederken silinir
+
+/** Seçim yokken: imlecin olduğu yerden itibaren yazılan metin kahverengi (on) ya da normal (!on) olsun. */
+function typingColor(on) {
+  const d = frameDoc();
+  const s = d.getSelection();
+  const r = s.getRangeAt(0);
+  if (!editableAt(r.startContainer)) return;
+  const at = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
+  const box = at.closest('.' + COLOR_CLASS);
+  const zw = d.createTextNode(ZW);
+  if (on) {
+    if (box) return; // zaten kahverengi yazıyor
+    const span = d.createElement('span');
+    span.className = COLOR_CLASS;
+    span.appendChild(zw);
+    r.insertNode(span);
+  } else {
+    if (!box) return; // zaten normal renk
+    // kutuyu imleçten ikiye böl; imleç aradaki normal renkli yere geçsin
+    const tail = d.createRange(); tail.setStart(r.startContainer, r.startOffset); tail.setEnd(box, box.childNodes.length);
+    const rest = tail.extractContents();
+    box.after(zw);
+    if (rest.textContent.replace(new RegExp(ZW, 'g'), '')) { const b2 = box.cloneNode(false); b2.appendChild(rest); zw.after(b2); }
+    if (!box.textContent.replace(new RegExp(ZW, 'g'), '')) box.remove();
+  }
+  const nr = d.createRange(); nr.setStart(zw, 1); nr.collapse(true);
+  s.removeAllRanges(); s.addRange(nr);
+  ed.lastRange = nr.cloneRange();
+  frameWin().focus();
+  ed.dirty = true;
+}
+
+/** Araç çubuğunda imlecin bulunduğu yerin rengini göster. */
+function updateToolState() {
+  const d = frameDoc();
+  const s = d && d.getSelection();
+  const n = s && s.anchorNode;
+  const el = n && (n.nodeType === 1 ? n : n.parentElement);
+  const inColor = !!(el && el.closest('.' + COLOR_CLASS));
+  const a = document.querySelector('#doc-tools [data-act="color-accent"]');
+  const b = document.querySelector('#doc-tools [data-act="color-none"]');
+  if (a) a.classList.toggle('on', inColor);
+  if (b) b.classList.toggle('on', !!el && !inColor);
+}
 
 /**
  * Seçili metni <tag class="cls"> ile sarar (on) ya da o sarmalayıcıdan çıkarır (!on).
