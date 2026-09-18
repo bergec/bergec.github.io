@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bergeç — Giriş</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #f3f2f2; color: #201f1d;
+    font-family: "Lora", Georgia, serif; padding: 20px;
+  }
+  .box { width: 100%; max-width: 360px; text-align: center; }
+  .mark {
+    font-family: "Cormorant Garamond", Georgia, serif; font-size: 32px; letter-spacing: 0.04em;
+    margin: 0 0 6px;
+  }
+  .sub {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #7d7979; margin: 0 0 36px;
+  }
+  form { display: flex; flex-direction: column; gap: 12px; }
+  input[type="password"] {
+    font: inherit; font-size: 15px; padding: 12px 14px; border: 1px solid #201f1d; border-radius: 2px;
+    background: #fff; color: #201f1d; text-align: center; letter-spacing: 0.04em;
+  }
+  input[type="password"]:focus { outline: 2px solid #b68235; outline-offset: 1px; }
+  button {
+    font: inherit; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 12px 14px; border: 1px solid #201f1d; background: #201f1d; color: #f3f2f2;
+    border-radius: 2px; cursor: pointer;
+  }
+  button:hover { background: #3a3836; }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  #err { color: #a03a2c; font-size: 13px; margin-top: 14px; min-height: 1.2em; }
+  noscript { display: block; margin-top: 20px; font-size: 13px; color: #a03a2c; }
+</style>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+  <div class="box">
+    <p class="mark">bergeç</p>
+    <p class="sub">Bu içerik parola ile korunuyor</p>
+    <form id="pwform" autocomplete="off">
+      <input type="password" id="pw" placeholder="Parola" autocomplete="current-password" autofocus>
+      <button type="submit" id="go">Gir</button>
+    </form>
+    <p id="err"></p>
+    <noscript>Bu sayfayı görüntülemek için JavaScript gereklidir.</noscript>
+  </div>
+
+<script>
+  var SALT_B64 = "xr2dU7uISbi0RwFEyymbjQ==";
+  var IV_B64 = "EaTqFBcDw6Z+FmTi";
+  var CIPHERTEXT_B64 = "X1DYxtsTNeawU+oz3isjd9ZYqLaWn7n64qdg/xXglNbRaXG2784tgkF+JLno+ouhY3vcz0DIYmXtGH/LAF3dkbIGz2bVfXZ7ZihASNaDib0DEIHDA/8gDDTS5nXJcGyqvHfRJ6npwhuYbfO+0rUKbtaV2tZS7FDTbhrth7s2WiuTJYisxZ6jjMQkft0IfUZ0FytaTRwpLX165JgUIGIxPfJWAVbFFVmNMGq8P/5Vv9ZRBXwNB4TLH2eS+tisfwtQYiwL7TfIUapaEe8Kffg751OrQbiOPJ2MSQO18GnGhCy/QY3HiknRCnZQ8oEfvsxa0CGOq/4MbzQH7YWNQXDxvLU4Nrm/ljLh5pa46W3XKaGkqwZC9NPxOj+gJyFky9JC96f8A3xkoaNXZnsp9HtsBdmWhREvb383/HAyIZa7zQz5qwax1mobjfUVBVrVouO+IyyET9p+l8NAwB5A32wjoRLGKNE76IgNmTWX85M6JVI9fvdhj/ELpBMT9RE+GF4Z6sf4mjsO2g3Qu2T1B3eBLxXV8ldRXhxJge8xf/Fu/M0hDivI8BldLFFB2hnbNVDbC/Lbv8BhLPtp5dayfA4iSQkr6pMGA0RRbGzSBVWQa+fva8K3CAOEhpp5znfywtbIMoLDK4NuXzP/vaD4t9y/Hl6u6SCnDiPnhU/BU02o4vXae92WzSsdHPWWZh9vXay/QDD4pGhd7V5ZqU4dfTBU6jV59kdDMrq0cr14XMNeID1zsDjSLBCMZR/HMsBi5vCvvBhnbzPM2cKk+Uan2y5QSRYlYQrZSv1VhwqhgLoNep0XVZkips8od8/dfrIExZ+30QfsjEOpO2fejocp386p3FycJbniI8Twphy/4KxRPw+ys/EkujOoOuFwlyptwt5p1bhRXDClcpSU+gTPgXZqixss/wqHOljdAceIDb83FMBEqzwtlsamvlC3ar9Llq+9uLoulBfwk2Yuk2mSExccJJqz1fjQhKMNOV2kuqoPi1lGwWLFdci8ppN274SchA/ehUHM4uCD7DlA33SPE67I7wRakXV4AlQalPdsyR+G4lxXlfur3n/o1P9pkwMXs6yEXUR+QmqQ/nri1kmMwrRC8raO6Fx22eSuXZ8jV3+sQL360Cc8t3JidhmAjxK028DaRRhQFwJtzqThIwDvev42kSiFt/N47seSkUerv12ujLv4xpS7Nljf5mlQ5krZnRDoXVkE0lV8k2w/Mn1ZJCQbQP0NyeFMfP6fgjDU+ZEuJFGRTAzEyjXf0DOAvlSyoJ3BsvPY7S31n6y5Bjzg0iFLg3MDxeex5ldVx0fC+oJ5aUUdQsJGS5AM6vcZu9LbYNe+D0r5Dax3ku6kSZdXoLJN0N6kWH3aSqMp4FWp+mqLYhM6eDQi247mJRSe7bqcLHiZXzn3M5MTokmbVMpMK2p3xYrUOWYnK54QYHG8rrE3loMLmEQArCwYVZQfTQ6dPTfW1XCroHIs+mtreBT2a2PCNZFDo41/csW/HhQ8MlfWYAR62dKDVH6vFuhpJ0FnINx755nFB+psRoTgQimqwVyFPfbcjpUZZxjLhpJsQvreMZJH8ZFVilchqEKwgNmFnF8mMtN8ok6yc5O5tZlEA1mnY3XtHKkz+ygXRZrHhIb2CYgg1EL5XWZ7ylUjg3Q9NnBJowANNCD08HFpakYk3+Ifnv9xXp46psxlfkVQXTDVyQ3gKr9bAJzuH1GYa7qvbnV4x6AVWbQQkqwIyG0cxewSe+6pvdee1tEocdsPiee/1UKeAyWcZB2R2IR+RYfp8L2snDChSi+5lLjyow2umijY0FIj40I6mUdYyX7kBsNGMZ4rwZfLsXV3LPbguqfuDbN8NO2mbkB5mdb9moYmUo0mWjCoA7iGTwk4VhB80GgitUcS6PgbyqqhbDgCKtqsss7hq/ikgLndWEmC5CrwehNM/B/DDHOELwC1zKofzSU5u40DZCgTP1wOi7OiC+oxpzZMOI5JscFy0zxVBSdt0NHurRhD14Hl7qv7tk6QEUCu2g2g30NhYHQrI+aKZ7Dg4gNo17UrcuEsxMztM8OZxV1IcFW/jzQTL4nOh6w498p3jMC6Nz5qQVY7Wq0gfZDmXtmgwtNtI2RY9M7r2+NRHp650FYmYNjIjR7L1PbnxuFuMq/GcKHeh2ZcRpACULIrUYKm6QRr9xXaq3jCi/8W7qpfrwc4GbqOe2t6UTW2WaMnaea/AZO2aIe69nY5I8HIQCME+ZFhCAdh++kNJLhoVEh65R84HQMwsexzpIR9erSQ6j7HnoewD1LvW6wtlORo1o10LmRPCtfEsanZ6Bev4orbaOI2fC33r41apyKG0eGE5eZACQgeMJKRnzWjRiUZLQmxeY58/allg4Z/u+lv4N1vDf9p+HpxxwEaxYrdwRcCXNlsEyA4irGW/6ZUsCaub6IhLQuGNr9AeO/8NWrdJu0QmKg/5HI4gX2yuflBnd+UG1AyBTUzosWx9kbU2bhD8PVXLxznV6W5R2D5Iu2wyK3L31Ss5iNI+w3QqXJ5H+m8Sco3AO0xiVD4JyrrHXzlHZKKVyey0Kh+ALb6ANffBqipDmgED3v1MSBW7pCuXUxr+/5GktWJCPFX9qXVoKiBfHb5AYvu5mGFr1maLdkFRXjBTnYKmUMd8LBER1v2+CBOoqutxdhGcy1amqbY2J3qDze3/B2BlC/Y09kZ3b7+3uDxOIJl98OPs7wWQRvokV6DWTb0YnzdB5gIsewRkEpPUxUMUG5BGXijFeLkZoChZt5uyYql7Ny/248xCQsXxe9POQ+Irve/HmnbeVfZg18BQgS4aZifMnYs7LPSIxMs5p/XhTDkXGGQDQVUsQwcWrePtNVRJHcmxmb5PXogx9HakpiQLroloiobvabMMwp+uTmwjGwbBgiDg2nTZU6DhnK+q4/kcspwshheCgxjy6ghbhkNO3ilIzni5F51srmFbKZD9zha7m0XiEtGSyWHy2RcVZtGpl4dui6CgKo9zpLH9USXfS8vpZcdPv4/LOUHxW8Og1N//yN+27PWheQg+6vEIuOPfBKryYMo6m4y4wl6EZqnekM7lm2mlkn188efOq+Qv/r5GMbCuXF2oDlEEGmiGi3agLhgDfDrRMOASVg7AaBsSUJDoUFGEwarzgfAzQ5libB/iNclgsluchJjRdlUBd20iQXKTCifSDnv+J3AXB9SW/BypKoWWrLeH2e+ptVku0jyCwtH5AmJeILQ5OYWFHqLRpx47d6HzYziRuS/NdFrs9at6ThbIv1eSemmIg6SjajokY3LzOr16OtG7dXy1EXISghCMTPirxSki1YOzaF5kBIKNiciVJz+oLgLXnDfDrPQ0qLBdtWy9/zTIP6v1dFscHfsf6vIL3BRsqRXaNMcmTLJXUk6CgyAlyO9nkMxQ/ZXA+MGlLxAI6BaSRLXSPXraKh0c3vanzC+26fkyMBys3ldnd6TKiwB+JgZN8AD4u1/rM21komgJTWSk/ah9FscrG1nrcLybKdz+y3Qi8TAOYOa6mdIbbE8VrtCIxjmo4gx92/8cyf42fwfcADmQNckvvun6RF3n4DhrDLUerT6LIfOupQ7fWfzr9Hi6ZJOzYlLkW00y4nXOtM1rs2iX7HifNignaqi6F3AD4/fDzHFuBAt6qGdEpw4elE9JULzAprs+gJ0kL8JkvyUQVTNrH+//SMqtCIpcReYqSgbSwSb5RfrI8+YkMyzIjnb4kqi5ETIWHGCV81guyUNuxHqWNuQbB+k0i1Y1P7PU/vqNUbzLCLpnyB1oz4lCGWV4QatYSEU32/NN2GHGA==";
+  var ITERATIONS = 250000;
+
+  function b64ToBytes(b64) {
+    var bin = atob(b64);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+
+  async function deriveKey(password, saltBytes) {
+    var enc = new TextEncoder();
+    var keyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+  }
+
+  var form = document.getElementById('pwform');
+  var pwInput = document.getElementById('pw');
+  var err = document.getElementById('err');
+  var go = document.getElementById('go');
+  var SESSION_KEY = 'bergec-pw';
+
+  async function tryDecrypt(password) {
+    if (!window.crypto || !window.crypto.subtle) throw new Error('no-subtle');
+    var salt = b64ToBytes(SALT_B64);
+    var iv = b64ToBytes(IV_B64);
+    var ct = b64ToBytes(CIPHERTEXT_B64);
+    var key = await deriveKey(password, salt);
+    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    return new TextDecoder().decode(plainBuf);
+  }
+
+  function reveal(html, password) {
+    try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    err.textContent = '';
+    go.disabled = true;
+    go.textContent = 'Kontrol ediliyor…';
+    try {
+      var html = await tryDecrypt(pwInput.value);
+      reveal(html, pwInput.value);
+    } catch (ex) {
+      if (ex && ex.message === 'no-subtle') {
+        err.textContent = 'Tarayıcınız bu şifrelemeyi desteklemiyor (https veya localhost gerekir).';
+      } else {
+        err.textContent = 'Yanlış parola.';
+      }
+      go.disabled = false;
+      go.textContent = 'Gir';
+      pwInput.select();
+    }
+  });
+
+  (async function autoUnlock() {
+    var cached;
+    try { cached = sessionStorage.getItem(SESSION_KEY); } catch (e) {}
+    if (!cached) return;
+    try {
+      var html = await tryDecrypt(cached);
+      reveal(html, cached);
+    } catch (e) {
+      try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) {}
+    }
+  })();
+</script>
+</body>
+</html>
