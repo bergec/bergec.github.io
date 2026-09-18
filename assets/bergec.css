@@ -392,4 +392,17 @@ footer.bottom {
 @media (max-width: 620px) {
   article.body .lede::first-letter { font-size: 2.6em; }
   article.body figure.left, article.body figure.right { float: none; max-width: 100%; margin: 0 0 24px; }
+
+  /* Dar ekranda iki yana yaslama kelimeler arasında büyük boşluklar açıyor; sola yasla.
+     (Yazıların kendi <style>'ı da justify verdiği için seçici bilerek daha özgül.) */
+  body article.body p, body article.body li,
+  body article.body figure.left + *, body article.body figure.right + * { text-align: left; }
+
+  /* Uzun satır içi formüller ve geniş tablolar sayfayı yana taşırmasın; kendi içinde kaysın. */
+  article.body .im .katex { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: -0.35em; }
+  article.body table.tm { display: block; max-width: 100%; width: max-content; overflow-x: auto; font-size: 13px; }
+  article.body table.tm th, article.body table.tm td { padding: 6px 5px; }
 }
+
+/* Izgara listelerde (.steps) sütun, içindeki en uzun formül kadar genişlemesin. */
+article.body .steps { grid-template-columns: minmax(0, 1fr); }
