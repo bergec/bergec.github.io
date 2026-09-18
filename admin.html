@@ -1271,8 +1271,10 @@ function allEntries() {
 function renderList() {
   const tb = $('list-body');
   tb.innerHTML = '';
+  const shownFeatured = flatten().find(x => !x.taslak); // ana sayfada manşet olan: ilk yayındaki yazı
   allEntries().forEach((entry, idx) => {
     const p = entry.post;
+    entry = Object.assign({}, entry, { featured: p === shownFeatured });
     const tr = document.createElement('tr');
     if (p.taslak) tr.className = 'is-draft';
     tr.dataset.href = p.href || '';
@@ -1302,20 +1304,14 @@ function renderList() {
 
 /**
  * Taslak: listede tutulur ama ana sayfada görünmez (index.html'deki çizici taslak: true kayıtları atlar).
- * Taslağa alınan manşet, manşet yerinden iner; paylaşılan taslak arşivin başına (manşet istenirse en üste) geçer.
+ * Taslağa almak ve yeniden paylaşmak sırayı değiştirmez; yazı listedeki yerinde kalır. Taslağa alınan
+ * manşetin yerine ana sayfada geçici olarak sıradaki yayındaki yazı çıkar, paylaşınca manşet geri döner.
  */
-function setDraftState(data, href, draft, featured) {
+function setDraftState(data, href, draft) {
   const arr = flattenOf(data);
   const e = arr.find(x => x.href === href);
   if (!e) throw new Error('Bu yazı listede bulunamadı (bu arada silinmiş olabilir).');
-  if (draft) {
-    e.taslak = true;
-    if (arr[0] === e && arr.length > 1) { arr.splice(0, 1); arr.splice(1, 0, e); }
-  } else if (e.taslak) {
-    delete e.taslak;
-    arr.splice(arr.indexOf(e), 1);
-    arr.splice(featured || !arr.length ? 0 : 1, 0, e);
-  }
+  if (draft) e.taslak = true; else delete e.taslak;
   unflattenInto(data, arr);
 }
 
@@ -1326,7 +1322,7 @@ async function togglePublish(p) {
   try {
     msg('list-msg', 'Kaydediliyor…', 'info');
     await saveIndex((draft ? 'Taslağa al: ' : 'Paylaş: ') + p.title, [], data => setDraftState(data, href, draft));
-    msg('list-msg', draft ? 'Taslağa alındı; ana sayfada görünmüyor.' : 'Paylaşıldı; ana sayfada görünüyor (site ~30 saniye içinde güncellenir).', 'ok');
+    msg('list-msg', draft ? 'Taslağa alındı; ana sayfada görünmüyor. Listedeki yeri korunuyor.' : 'Paylaşıldı; eski yerinde, ana sayfada görünüyor (site ~30 saniye içinde güncellenir).', 'ok');
   } catch (e) { msg('list-msg', e.message, 'err'); }
   renderList();
 }
@@ -1582,15 +1578,8 @@ async function publishMd(draft) {
       entry.excerpt = excerpt;
       // aynı adresli başka kayıt kalmasın (var olan dosyanın üzerine yazıldıysa)
       arr.filter(x => x !== entry && x.href === slug).forEach(x => arr.splice(arr.indexOf(x), 1));
-      if (draft) {
-        entry.taslak = true;
-        if (arr[0] === entry && arr.length > 1) { arr.splice(0, 1); arr.splice(1, 0, entry); }
-      } else if (entry.taslak) {
-        // taslak paylaşılıyor: arşivin başına
-        delete entry.taslak;
-        arr.splice(arr.indexOf(entry), 1);
-        arr.splice(!arr.length ? 0 : 1, 0, entry);
-      }
+      // taslak ↔ paylaşım sırayı değiştirmez; yazı listedeki yerinde kalır
+      if (draft) entry.taslak = true; else delete entry.taslak;
       if (featured && !draft) {
         arr.splice(arr.indexOf(entry), 1);
         arr.unshift(entry);
@@ -2836,7 +2825,7 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
         const i = arr.indexOf(q);
         if (i > 0) { arr.splice(i, 1); arr.unshift(q); }
         q.lede = f.lede.length ? f.lede : [q.excerpt || ''];
-      } else if (arr[0] === q && arr.length > 1) {
+      } else if (arr[0] === q && arr.length > 1 && !q.taslak) { // taslağın yeri değişmesin
         arr.splice(0, 1);
         arr.splice(1, 0, q);
       } else if (f.lede.length) {
