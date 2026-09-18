@@ -1517,7 +1517,8 @@ const DOC_FRAME_CSS = `
   article.body img { cursor: pointer; }
   article.body img:hover { outline: 2px solid #b68235; outline-offset: 2px; }
   a { cursor: text; }
-  [data-ph]:empty::before { content: attr(data-ph); color: #b3aca5; font-style: italic; pointer-events: none; }
+  .ed-empty { position: relative; }
+  .ed-empty::before { content: attr(data-ph); position: absolute; left: 0; top: 0; color: #b3aca5; font-style: italic; pointer-events: none; white-space: nowrap; }
   .ed-raw-tex { font-family: ui-monospace, monospace; font-size: 0.85em; color: #a03a2c; }
 `;
 
@@ -1615,6 +1616,7 @@ function cleanRegion(r) {
   });
   [r, ...r.querySelectorAll('*')].forEach(el => {
     ['contenteditable', 'spellcheck', 'data-ed-tex', 'data-ed-orig', 'data-ph', 'data-ed-select'].forEach(a => el.removeAttribute(a));
+    if (el.classList && el.classList.contains('ed-empty')) { el.classList.remove('ed-empty'); if (!el.getAttribute('class')) el.removeAttribute('class'); }
   });
   r.normalize();
 }
@@ -1677,16 +1679,11 @@ function prepareFrame() {
     chipify(r);
   });
 
-  if (ed.target && ed.target.isNew) {
-    const ph = (sel, text) => { const el = d.querySelector(sel); if (el && !el.textContent.trim() && !el.querySelector('img, svg')) { el.innerHTML = ''; el.setAttribute('data-ph', text); } };
-    ph('h1.title', 'Başlık');
-    ph('.subtitle', 'Alt başlık (isteğe bağlı)');
-    ph('.byline', 'Yazar adı');
-    ph('article.body > p:first-child', 'Yazınızı buraya yazın…');
-  }
+  refreshPlaceholders();
 
   d.addEventListener('input', () => {
     ed.dirty = true;
+    refreshPlaceholders();
     // Enter, büyük ilk harfli (lede) paragrafı bölünce tarayıcı sınıfı yeni paragrafa da kopyalar; yalnızca ilki kalsın.
     d.querySelectorAll('article.body p.lede').forEach((p, i) => {
       if (i === 0) return;
@@ -1776,6 +1773,31 @@ function prepareFrame() {
       const reg = editableAt(e.target === d.body ? d.getSelection().anchorNode : e.target);
       if (reg && !reg.matches('article.body')) e.preventDefault();
     }
+  });
+}
+
+/**
+ * Yeni yazıda boş alanlarda soluk ipucu ("Başlık", "Yazar adı"…). Alan her boşaldığında (tarayıcı içinde
+ * görünmez bir <br> bıraksa bile) ipucu geri gelir; bütün paragraflar silinirse ilk paragraf yeniden açılır.
+ */
+function refreshPlaceholders() {
+  if (!ed.target || !ed.target.isNew) return;
+  const d = frameDoc();
+  const art = d.querySelector('article.body');
+  if (art && !art.querySelector('p, h2, h3, div, ul, ol, table, pre, figure, blockquote')) {
+    art.innerHTML = '<p class="lede"><br></p>';
+    const r = d.createRange(); r.setStart(art.firstChild, 0); r.collapse(true);
+    const s = d.getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  const hints = [['h1.title', 'Başlık'], ['.subtitle', 'Alt başlık (isteğe bağlı)'], ['.byline', 'Yazar adı'], ['article.body > p:first-child', 'Yazınızı buraya yazın…']];
+  d.querySelectorAll('[data-ph]').forEach(el => { if (!hints.some(([q]) => el.matches(q))) { el.removeAttribute('data-ph'); el.classList.remove('ed-empty'); } });
+  hints.forEach(([q, text]) => {
+    const el = d.querySelector(q);
+    if (!el) return;
+    el.setAttribute('data-ph', text);
+    const empty = !el.textContent.replace(/\u00a0/g, ' ').trim() && !el.querySelector('img, svg, [data-ed-tex], [data-ed-disp]');
+    if (empty && !el.firstChild) el.appendChild(d.createElement('br')); // boş satırın yüksekliği olsun, tıklanabilsin
+    el.classList.toggle('ed-empty', empty);
   });
 }
 
@@ -2009,7 +2031,7 @@ function todayStr() {
 /** Boş yazı sayfası: başlık, alt başlık, yazar ve ilk paragraf boş gelir; düzenleyicide ipucu gösterilir. */
 function newDocTemplate() {
   const M = '\u0000';
-  return buildArticle({ title: M, subtitle: M, author: M, date: todayStr(), katex: true, lede: true, body: '' }, '<p class="lede"></p>', [])
+  return buildArticle({ title: M, subtitle: M, author: M, date: todayStr(), katex: true, lede: true, body: '' }, '<p class="lede"><br></p>', [])
     .split(M).join('');
 }
 
