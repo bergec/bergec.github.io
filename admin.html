@@ -6,6 +6,8 @@
 <title>Bergeç · Yönetim</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="assets/bergec.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
 <style>
   body { background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); }
   .shell { max-width: 1180px; margin: 0 auto; padding: 0 20px 80px; }
@@ -94,6 +96,24 @@
   details.help code { font-family: ui-monospace, monospace; background: var(--color-neutral-200); padding: 1px 4px; border-radius: 2px; font-size: 12px; }
   details.help table { border-collapse: collapse; margin-top: 10px; }
   details.help td { padding: 4px 16px 4px 0; vertical-align: top; border-bottom: 1px solid var(--color-divider); }
+
+  /* görsel / kod düzenleyici */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-text); margin-bottom: 12px; }
+  .tab {
+    font: inherit; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
+    padding: 9px 18px; border: 1px solid transparent; border-bottom: 0; background: transparent; color: var(--color-neutral-600);
+    margin-bottom: -1px;
+  }
+  .tab.on { border-color: var(--color-text); background: #fff; color: var(--color-text); }
+  .toolbar.sticky { position: sticky; top: 0; z-index: 5; background: var(--color-surface); padding: 8px 0; margin: 0; align-items: center; }
+  .tsep { width: 1px; height: 20px; background: var(--color-divider); margin: 0 4px; }
+  #doc-frame { display: block; width: 100%; height: 76vh; min-height: 480px; border: 1px solid var(--color-divider); background: #fff; }
+  #doc-code { min-height: 76vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+
+  .dlg-back { position: fixed; inset: 0; z-index: 50; background: rgba(32, 31, 29, 0.35); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .dlg { background: var(--color-surface); border: 1px solid var(--color-text); padding: 20px 22px; width: 100%; max-width: 560px; box-shadow: 0 10px 40px rgba(0,0,0,0.18); }
+  .dlg h3 { font-family: var(--font-heading); font-weight: 400; font-size: 22px; margin: 0 0 12px; }
+  .math-prev { margin-top: 12px; min-height: 48px; padding: 12px; background: #fff; border: 1px solid var(--color-divider); overflow-x: auto; text-align: center; }
 
   .hidden { display: none !important; }
   .bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--color-divider); }
@@ -246,27 +266,91 @@
     <div class="bar">
       <button class="b" id="btn-publish">Yayınla</button>
       <button class="b ghost" id="btn-preview-full">Önizlemeyi yenile</button>
+      <button class="b ghost hidden" id="btn-to-doc" title="Bu yazıyı Görsel / Kod düzenleyicide aç">Görsel / Kod düzenleyiciye geç</button>
       <span class="sp"></span>
       <button class="b ghost" id="btn-cancel">Vazgeç</button>
     </div>
     <div class="msg" id="edit-msg"></div>
   </section>
 
-  <!-- ══════════════ 4. HAM HTML (eski yazılar) ══════════════ -->
-  <section class="panel hidden" id="p-raw">
-    <h2 id="raw-title">Ham HTML düzenleme</h2>
+  <!-- ══════════════ 4. GÖRSEL / KOD DÜZENLEYİCİ ══════════════ -->
+  <section class="panel hidden" id="p-doc">
+    <h2 id="doc-title">Düzenle</h2>
     <p class="hint">
-      Bu yazı elle hazırlanmış (yönetim ekranı kaynağını içermiyor), bu yüzden doğrudan HTML’i düzenliyorsunuz.
-      Kaydettiğinizde sayfa yeniden şifrelenip gönderilir.
+      <strong>Görsel</strong> sekmesinde yazı sitede göründüğü gibi açılır: metne tıklayıp yazın, formüle tıklayıp LaTeX’ini değiştirin,
+      görsele tıklayıp boyutunu ayarlayın. <strong>Kod</strong> sekmesi sayfanın HTML’ini gösterir. Kaydettiğinizde sayfa şifrelenip gönderilir.
     </p>
-    <textarea id="raw-body" rows="24"></textarea>
-    <div class="bar">
-      <button class="b" id="btn-raw-save">Kaydet ve yayınla</button>
-      <span class="sp"></span>
-      <button class="b ghost" id="btn-raw-cancel">Vazgeç</button>
+    <div class="tabs">
+      <button class="tab" data-tab="visual">Görsel</button>
+      <button class="tab" data-tab="code">Kod</button>
     </div>
-    <div class="msg" id="raw-msg"></div>
+    <div id="doc-visual">
+      <div class="toolbar sticky" id="doc-tools">
+        <button class="mini" data-cmd="undo" title="Geri al (Ctrl+Z)">↶</button>
+        <button class="mini" data-cmd="redo" title="Yinele (Ctrl+Y)">↷</button>
+        <span class="tsep"></span>
+        <button class="mini" data-block="p">Paragraf</button>
+        <button class="mini" data-block="h2">Başlık</button>
+        <button class="mini" data-block="h3">Ara başlık</button>
+        <button class="mini" data-block="blockquote">Alıntı</button>
+        <span class="tsep"></span>
+        <button class="mini" data-cmd="bold" title="Kalın (Ctrl+B)"><b>K</b></button>
+        <button class="mini" data-cmd="italic" title="İtalik (Ctrl+I)"><i>İ</i></button>
+        <button class="mini" data-cmd="insertUnorderedList">• Liste</button>
+        <button class="mini" data-cmd="insertOrderedList">1. Liste</button>
+        <button class="mini" data-act="link">Bağlantı</button>
+        <span class="tsep"></span>
+        <button class="mini" data-act="math">Formül</button>
+        <button class="mini" data-act="math-block">Ortalı formül</button>
+        <button class="mini" data-act="image">Görsel ekle</button>
+        <input type="file" id="doc-img-file" accept="image/*" class="hidden">
+      </div>
+      <iframe id="doc-frame" title="Görsel düzenleyici"></iframe>
+    </div>
+    <div id="doc-codewrap" class="hidden">
+      <textarea id="doc-code" spellcheck="false"></textarea>
+    </div>
+    <div class="bar">
+      <button class="b" id="btn-doc-save">Kaydet ve yayınla</button>
+      <span class="sp"></span>
+      <button class="b ghost" id="btn-doc-cancel">Vazgeç</button>
+    </div>
+    <div class="msg" id="doc-msg"></div>
   </section>
+
+  <!-- formül penceresi -->
+  <div class="dlg-back hidden" id="dlg-math">
+    <div class="dlg">
+      <h3 id="math-head">Formül</h3>
+      <label class="f" for="math-tex">LaTeX</label>
+      <textarea id="math-tex" rows="3" spellcheck="false" placeholder="örn. \sigma_k = (A\,B\,\dots\,Z)^k"></textarea>
+      <div class="math-prev" id="math-prev"></div>
+      <div class="row" style="margin-top: 14px;">
+        <button class="b" id="math-ok">Tamam</button>
+        <button class="b ghost" id="math-cancel">Vazgeç</button>
+        <span class="sp"></span>
+        <button class="b danger" id="math-del">Formülü sil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- görsel penceresi -->
+  <div class="dlg-back hidden" id="dlg-img">
+    <div class="dlg">
+      <h3>Görsel</h3>
+      <img id="img-prev" alt="" style="display: block; max-width: 100%; max-height: 220px; margin: 0 auto 14px; border: 1px solid var(--color-divider);">
+      <label class="f" for="img-w">Genişlik <span id="img-w-val"></span></label>
+      <input type="range" id="img-w" min="20" max="100" step="5" style="width: 100%;">
+      <p style="font-size: 12.5px; color: var(--color-neutral-700); margin: 10px 0 0;">Altyazıyı doğrudan yazının içinde, görselin altına tıklayarak değiştirebilirsiniz.</p>
+      <div class="row" style="margin-top: 14px;">
+        <button class="b" id="img-close">Tamam</button>
+        <button class="b ghost" id="img-replace">Görseli değiştir</button>
+        <input type="file" id="img-replace-file" accept="image/*" class="hidden">
+        <span class="sp"></span>
+        <button class="b danger" id="img-del">Görseli sil</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ══════════════ 5. ARŞİV KAYDI ══════════════ -->
   <section class="panel hidden" id="p-meta">
@@ -328,7 +412,6 @@ const state = {
   editing: null,      // düzenlenen yazının dosya adı (yeni ise null)
   images: [],         // {id, name, dataUrl, caption, width, align}
   nextImgId: 1,
-  rawTarget: null,
   metaTarget: null
 };
 
@@ -1126,18 +1209,18 @@ function resetEditor() {
 }
 
 function showOnly(panel) {
-  ['p-list', 'p-edit', 'p-raw', 'p-meta'].forEach(id => show(id, id === panel));
+  ['p-list', 'p-edit', 'p-doc', 'p-meta'].forEach(id => show(id, id === panel));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 $('btn-new').addEventListener('click', () => {
   resetEditor();
+  show('btn-to-doc', false);
   $('edit-title').textContent = 'Yeni yazı';
   showOnly('p-edit');
   renderPreview();
 });
 $('btn-cancel').addEventListener('click', () => showOnly('p-list'));
-$('btn-raw-cancel').addEventListener('click', () => showOnly('p-list'));
 $('btn-meta-cancel').addEventListener('click', () => showOnly('p-list'));
 $('btn-reload').addEventListener('click', () => loadIndex().then(renderList).catch(e => msg('list-msg', e.message, 'err')));
 
@@ -1149,12 +1232,8 @@ async function openArticle(p) {
     const plain = await decryptPage(f.text, state.pw);
     const m = plain.match(/<script type="application\/json" id="bergec-source">([\s\S]*?)<\/script>/);
     if (!m) {
-      // elle hazırlanmış sayfa → ham HTML düzenleme
-      state.rawTarget = { href: p.href, sha: f.sha, title: p.title };
-      $('raw-title').textContent = 'Ham HTML · ' + p.title;
-      $('raw-body').value = plain;
-      msg('raw-msg', '');
-      showOnly('p-raw');
+      // Markdown kaynağı yok (elle hazırlanmış ya da görsel düzenleyicide kaydedilmiş) → görsel / kod düzenleyici
+      await openDoc({ href: p.href, title: p.title }, plain);
       msg('list-msg', '');
       return;
     }
@@ -1178,6 +1257,7 @@ async function openArticle(p) {
     state.images = (src.images || []).map(im => Object.assign({}, im, { dataUrl: imgs[im.id] || '' })).filter(im => im.dataUrl);
     state.nextImgId = state.images.reduce((a, im) => Math.max(a, (+im.id || 0) + 1), 1);
     renderImageList();
+    show('btn-to-doc', true);
     $('edit-title').textContent = 'Düzenle · ' + (src.meta.title || p.title);
     showOnly('p-edit');
     renderPreview();
@@ -1262,21 +1342,477 @@ function ledeParagraphs(body) {
   return paras.slice(0, 2);
 }
 
-/* ─────────────────────────── ham HTML ─────────────────────────── */
+/* ─────────────────────────── görsel / kod düzenleyici ───────────────────────────
+   Her yazı, kaynağı ne olursa olsun, sonunda bir HTML sayfasıdır; bu düzenleyici o
+   sayfanın üzerinde çalışır.
 
-$('btn-raw-save').addEventListener('click', async (ev) => {
-  ev.preventDefault();
-  const t = state.rawTarget;
-  if (!t) return;
-  ev.target.disabled = true;
+   Görsel sekme: sayfa (betikleri çıkarılmış hâliyle) bir iframe'de açılır; başlık,
+   alt başlık, yazar satırı ve <article class="body"> düzenlenebilir olur. Formüller
+   ve görseller tek parça "blok"a dönüşür; tıklanınca pencerede düzenlenir.
+   Kaydederken bu bölgeler temizlenip (formüller yeniden LaTeX metnine döner) asıl
+   sayfanın aynı bölgelerine yazılır; <head>, betikler ve veri blokları olduğu gibi kalır.
+
+   Kod sekmesi: sayfanın tamamının HTML'i. Sekme değiştirince iki taraf eşitlenir. */
+
+const KATEX_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/';
+const DOC_REGIONS = 'h1.title, .subtitle, .byline, article.body';
+const DOC_FRAME_CSS = `
+  [contenteditable="true"] { outline: none; }
+  h1.title:focus, .subtitle:focus, .byline:focus, article.body:focus { outline: 1px dashed #b68235; outline-offset: 8px; }
+  [data-ed-tex], [data-ed-disp] { cursor: pointer; border-radius: 3px; }
+  [data-ed-tex]:hover, [data-ed-disp]:hover { background: rgba(182, 130, 53, 0.14); outline: 1px solid rgba(182, 130, 53, 0.5); }
+  [data-ed-disp] { display: block; }
+  article.body img { cursor: pointer; }
+  article.body img:hover { outline: 2px solid #b68235; outline-offset: 2px; }
+  a { cursor: text; }
+  .ed-raw-tex { font-family: ui-monospace, monospace; font-size: 0.85em; color: #a03a2c; }
+`;
+
+const ed = {
+  target: null,     // { href, title }
+  model: null,      // görsel sekmede açık sayfanın ayrıştırılmış hâli (betikler dahil)
+  tab: null,        // 'visual' | 'code'
+  dirty: false,
+  imgs: {},         // bergec-images verisi (Markdown ile yazılmış sayfalar için)
+  lastRange: null,  // iframe'deki son imleç konumu
+  chip: null,       // penceresi açık formül bloğu
+  img: null         // penceresi açık görsel
+};
+
+function frameDoc() { return $('doc-frame').contentDocument; }
+function frameWin() { return $('doc-frame').contentWindow; }
+
+/** Düzenlenebilir bölgeler; iç içe olanlar (örn. yazının içindeki bir .subtitle) hariç. */
+function regionsOf(d) {
+  return Array.from(d.querySelectorAll(DOC_REGIONS))
+    .filter(el => !(el.parentElement && el.parentElement.closest('article.body')));
+}
+
+function renderTex(tex, display) {
+  if (!window.katex) return '<span class="ed-raw-tex">' + esc(tex) + '</span>';
+  try { return katex.renderToString(tex, { displayMode: display, throwOnError: false }); }
+  catch (e) { return '<span class="ed-raw-tex">' + esc(tex) + '</span>'; }
+}
+
+function makeInlineChip(el, tex) {
+  el.setAttribute('data-ed-tex', tex);
+  el.setAttribute('contenteditable', 'false');
+  el.innerHTML = renderTex(tex, false);
+  return el;
+}
+function makeDisplayChip(d, tex) {
+  const s = d.createElement('span');
+  s.setAttribute('data-ed-disp', tex);
+  s.setAttribute('contenteditable', 'false');
+  s.innerHTML = renderTex(tex, true);
+  return s;
+}
+
+/** .im içeriklerini ve metindeki $$…$$ formüllerini tıklanabilir bloklara çevirir. */
+function chipify(root) {
+  const d = root.ownerDocument;
+  root.querySelectorAll('.im').forEach(el => makeInlineChip(el, el.textContent));
+  const walker = d.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => (n.parentElement.closest('pre, code, script, style, textarea, [data-ed-tex], [data-ed-disp]') || !n.nodeValue.includes('$$'))
+      ? NodeFilter.FILTER_SKIP : NodeFilter.FILTER_ACCEPT
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n => {
+    const parts = n.nodeValue.split(/\$\$([\s\S]*?)\$\$/);
+    if (parts.length < 3) return;
+    const frag = d.createDocumentFragment();
+    parts.forEach((p, i) => {
+      if (i % 2 === 0) { if (p) frag.appendChild(d.createTextNode(p)); }
+      else frag.appendChild(makeDisplayChip(d, p.trim()));
+    });
+    n.replaceWith(frag);
+  });
+}
+
+/** Görsel sekmenin eklediği her şeyi geri alır: formüller LaTeX metnine döner, süsler silinir. */
+function cleanRegion(r) {
+  const d = r.ownerDocument;
+  r.querySelectorAll('[data-ed-tex]').forEach(el => { el.textContent = el.getAttribute('data-ed-tex'); });
+  r.querySelectorAll('[data-ed-disp]').forEach(el => el.replaceWith(d.createTextNode('$$' + el.getAttribute('data-ed-disp') + '$$')));
+  r.querySelectorAll('img[data-bergec-img]').forEach(im => im.removeAttribute('src'));
+  // Tarayıcı, paragrafları birleştirirken yazı tipini korumak için süs <span style> ekler; onları aç.
+  r.querySelectorAll('span[style]:not([data-ed-orig])').forEach(s => {
+    if (s.attributes.length === 1) s.replaceWith(...s.childNodes);
+  });
+  [r, ...r.querySelectorAll('*')].forEach(el => {
+    ['contenteditable', 'spellcheck', 'data-ed-tex', 'data-ed-orig'].forEach(a => el.removeAttribute(a));
+  });
+  r.normalize();
+}
+
+function loadVisual(html) {
+  ed.model = new DOMParser().parseFromString(html, 'text/html');
+  ed.imgs = {};
+  const ji = ed.model.getElementById('bergec-images');
+  if (ji) { try { ed.imgs = JSON.parse(ji.textContent); } catch (e) {} }
+
+  const view = ed.model.cloneNode(true);
+  view.querySelectorAll('script').forEach(s => s.remove());
+  const base = view.createElement('base');
+  base.href = location.href.replace(/[^/]*$/, '');
+  view.head.prepend(base);
+  const kc = view.createElement('link');
+  kc.rel = 'stylesheet'; kc.href = KATEX_BASE + 'katex.min.css';
+  view.head.appendChild(kc);
+  const st = view.createElement('style');
+  st.textContent = DOC_FRAME_CSS;
+  view.head.appendChild(st);
+
+  const frame = $('doc-frame');
+  return new Promise(resolve => {
+    frame.onload = () => { frame.onload = null; prepareFrame(); resolve(); };
+    frame.srcdoc = '<!DOCTYPE html>\n' + view.documentElement.outerHTML;
+  });
+}
+
+function prepareFrame() {
+  const d = frameDoc();
+  try { d.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
+  try { d.execCommand('styleWithCSS', false, false); } catch (e) {}
+  ed.lastRange = null;
+
+  regionsOf(d).forEach(r => {
+    r.setAttribute('contenteditable', 'true');
+    r.setAttribute('spellcheck', 'false');
+    r.querySelectorAll('span[style]').forEach(s => s.setAttribute('data-ed-orig', ''));
+    r.querySelectorAll('img[data-bergec-img]').forEach(im => {
+      const src = ed.imgs[im.getAttribute('data-bergec-img')];
+      if (src) im.src = src;
+    });
+    r.querySelectorAll('img, video, iframe').forEach(el => el.setAttribute('contenteditable', 'false'));
+    // SVG çizimler contenteditable'ı tanımaz; yalnızca çizimi taşıyan kutuyu kilitle.
+    r.querySelectorAll('svg').forEach(svg => {
+      if (svg.parentElement.closest('svg')) return;
+      const box = svg.parentElement;
+      const onlySvg = box !== r && !Array.from(box.childNodes).some(n => n !== svg && (n.nodeType === 1 ? n.tagName !== 'FIGCAPTION' : n.nodeValue.trim()));
+      if (onlySvg) box.setAttribute('contenteditable', 'false');
+    });
+    chipify(r);
+  });
+
+  d.addEventListener('input', () => { ed.dirty = true; });
+  d.addEventListener('selectionchange', () => {
+    const s = d.getSelection();
+    if (s.rangeCount && editableAt(s.anchorNode)) ed.lastRange = s.getRangeAt(0).cloneRange();
+  });
+  d.addEventListener('click', onFrameClick, true);
+  d.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+    d.execCommand('insertText', false, t);
+  });
+  d.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveDoc(); return; }
+    // başlık / alt başlık / yazar tek satırdır
+    if (e.key === 'Enter') {
+      const reg = editableAt(e.target === d.body ? d.getSelection().anchorNode : e.target);
+      if (reg && !reg.matches('article.body')) e.preventDefault();
+    }
+  });
+}
+
+/** Düğümün içinde bulunduğu düzenlenebilir bölge (yoksa null). */
+function editableAt(node) {
+  const el = node && (node.nodeType === 1 ? node : node.parentElement);
+  const reg = el && el.closest('[contenteditable]');
+  return reg && reg.getAttribute('contenteditable') === 'true' ? el.closest('h1.title, .subtitle, .byline, article.body') : null;
+}
+
+/** İmleci, düzenleyicide en son bulunduğu yere geri koyar. */
+function restoreRange() {
+  const d = frameDoc();
+  frameWin().focus();
+  if (!ed.lastRange) return null;
+  const s = d.getSelection();
+  s.removeAllRanges();
+  s.addRange(ed.lastRange);
+  return ed.lastRange;
+}
+
+/** Yeni bir bloğu (görsel, ortalı formül) imlecin bulunduğu bloğun arkasına, imleç yoksa yazının sonuna koyar. */
+function insertBlock(node, range) {
+  const art = frameDoc().querySelector('article.body');
+  let n = range ? range.startContainer : null;
+  if (!n || !art.contains(n) || n === art) { art.appendChild(node); return; }
+  while (n.parentNode !== art) n = n.parentNode;
+  n.after(node);
+}
+
+function serializeVisual() {
+  const out = ed.model.cloneNode(true);
+  const src = regionsOf(frameDoc()), dst = regionsOf(out);
+  if (src.length !== dst.length) throw new Error('Düzenleyici bölgeleri eşleşmedi; Kod sekmesinden kaydedin.');
+  src.forEach((r, i) => {
+    const c = r.cloneNode(true);
+    cleanRegion(c);
+    dst[i].innerHTML = c.innerHTML;
+  });
+  return '<!DOCTYPE html>\n' + out.documentElement.outerHTML;
+}
+
+/** Kaydetmeden önce: Markdown kaynağı artık geçersiz (sayfa buradan düzenlendi); formül varsa KaTeX yüklü olsun. */
+function finalizeDoc(html) {
+  html = html.replace(/\n?<script type="application\/json" id="bergec-source">[\s\S]*?<\/script>/, '');
+  const hasMath = /class="im"/.test(html) || /\$\$[\s\S]*?\$\$/.test(html.replace(/<script[\s\S]*?<\/script>/g, ''));
+  if (hasMath && !/katex\.min\.js/.test(html)) {
+    html = html.replace('</head>',
+      '<link rel="stylesheet" href="' + KATEX_BASE + 'katex.min.css">\n' +
+      '<script src="' + KATEX_BASE + 'katex.min.js"><\/script>\n' +
+      '<script src="' + KATEX_BASE + 'contrib/auto-render.min.js"><\/script>\n</head>');
+    html = html.replace(/<\/body>(?![\s\S]*<\/body>)/,
+      '<script>\n  document.addEventListener(\'DOMContentLoaded\', function () {\n' +
+      '    if (window.renderMathInElement) renderMathInElement(document.body, { delimiters: [{ left: \'$$\', right: \'$$\', display: true }], throwOnError: false });\n' +
+      '    document.querySelectorAll(\'.im\').forEach(function (el) { if (window.katex) { try { katex.render(el.textContent, el, { throwOnError: false, displayMode: false }); } catch (e) {} } });\n' +
+      '  });\n<\/script>\n</body>');
+  }
+  return html;
+}
+
+async function setDocTab(tab) {
+  if (tab === ed.tab) return;
   try {
-    msg('raw-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
-    const enc = await encryptPage($('raw-body').value, state.pw);
+    if (tab === 'code') {
+      if (ed.tab === 'visual') $('doc-code').value = serializeVisual();
+    } else {
+      await loadVisual($('doc-code').value);
+    }
+  } catch (e) { msg('doc-msg', e.message, 'err'); return; }
+  ed.tab = tab;
+  document.querySelectorAll('#p-doc .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  show('doc-visual', tab === 'visual');
+  show('doc-codewrap', tab === 'code');
+}
+
+async function openDoc(target, html) {
+  ed.target = target;
+  ed.tab = null;
+  ed.model = null;
+  $('doc-title').textContent = 'Düzenle · ' + target.title;
+  $('doc-code').value = html;
+  msg('doc-msg', '');
+  showOnly('p-doc');
+  await setDocTab('visual');
+  ed.dirty = false;
+}
+
+async function saveDoc() {
+  const t = ed.target;
+  if (!t) return;
+  const btn = $('btn-doc-save');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const html = finalizeDoc(ed.tab === 'visual' ? serializeVisual() : $('doc-code').value);
+    msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
+    const enc = await encryptPage(html, state.pw);
     await ghCommit([{ path: t.href, text: enc }], 'Yazıyı güncelle: ' + t.title);
-    msg('raw-msg', 'Kaydedildi: ' + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
-  } catch (e) { msg('raw-msg', e.message, 'err'); }
-  finally { ev.target.disabled = false; }
+    ed.dirty = false;
+    msg('doc-msg', 'Kaydedildi: ' + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
+  } catch (e) { msg('doc-msg', e.message, 'err'); }
+  finally { btn.disabled = false; }
+}
+
+document.querySelectorAll('#p-doc .tab').forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); setDocTab(b.dataset.tab); }));
+$('doc-code').addEventListener('input', () => { ed.dirty = true; });
+$('btn-doc-save').addEventListener('click', (e) => { e.preventDefault(); saveDoc(); });
+$('btn-doc-cancel').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (ed.dirty && !confirm('Kaydedilmemiş değişiklikler var. Yine de çıkılsın mı?')) return;
+  ed.dirty = false;
+  showOnly('p-list');
 });
+window.addEventListener('beforeunload', (e) => {
+  if (ed.dirty && !$('p-doc').classList.contains('hidden')) { e.preventDefault(); e.returnValue = ''; }
+});
+
+$('btn-to-doc').addEventListener('click', async (e) => {
+  e.preventDefault();
+  if (!state.editing) return;
+  if (!confirm('Bu yazı bundan sonra Görsel / Kod düzenleyicide açılacak; Markdown kaynağı kaydedince kaldırılır.\nDevam edilsin mi?')) return;
+  await openDoc({ href: state.editing.href, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
+  ed.dirty = true;
+});
+
+/* araç çubuğu */
+
+// Düğmeye basınca düzenleyicideki seçim kaybolmasın.
+$('doc-tools').addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+
+$('doc-tools').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  e.preventDefault();
+  const d = frameDoc();
+  const r = restoreRange();
+  if (b.dataset.cmd === 'undo' || b.dataset.cmd === 'redo') { d.execCommand(b.dataset.cmd); return; }
+  if (!r) { msg('doc-msg', 'Önce yazının içinde bir yere tıklayın.', 'info'); return; }
+  msg('doc-msg', '');
+  if (b.dataset.cmd) {
+    d.execCommand(b.dataset.cmd, false, null);
+  } else if (b.dataset.block) {
+    if (!editableAt(r.startContainer) || !editableAt(r.startContainer).matches('article.body')) return;
+    d.execCommand('formatBlock', false, '<' + b.dataset.block + '>');
+  } else if (b.dataset.act === 'link') {
+    const url = prompt('Bağlantı adresi:', 'https://');
+    if (url) d.execCommand('createLink', false, url);
+  } else if (b.dataset.act === 'math') {
+    openMathDialog(null, false);
+  } else if (b.dataset.act === 'math-block') {
+    openMathDialog(null, true);
+  } else if (b.dataset.act === 'image') {
+    $('doc-img-file').click();
+    return;
+  }
+  ed.dirty = true;
+});
+
+$('doc-img-file').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const src = await shrinkImage(file, 820);
+    const d = frameDoc();
+    const fig = d.createElement('figure');
+    const img = d.createElement('img');
+    img.src = src; img.alt = '';
+    img.setAttribute('contenteditable', 'false');
+    const cap = d.createElement('figcaption');
+    cap.textContent = 'Görselin altyazısı';
+    fig.append(img, cap);
+    insertBlock(fig, ed.lastRange);
+    ed.dirty = true;
+    fig.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } catch (err) { msg('doc-msg', err.message, 'err'); }
+});
+
+/* formül penceresi */
+
+let mathMode = null; // { chip } düzenleme · { display, range } ekleme
+
+function openMathDialog(chip, display) {
+  mathMode = chip ? { chip } : { display, range: ed.lastRange && ed.lastRange.cloneRange() };
+  const isDisp = chip ? chip.hasAttribute('data-ed-disp') : display;
+  const tex = chip ? (chip.getAttribute('data-ed-tex') || chip.getAttribute('data-ed-disp') || '') : '';
+  $('math-head').textContent = (chip ? 'Formülü düzenle' : 'Formül ekle') + (isDisp ? ' (ortalı)' : '');
+  $('math-tex').value = tex;
+  show('math-del', !!chip);
+  updateMathPreview();
+  show('dlg-math', true);
+  setTimeout(() => $('math-tex').focus(), 0);
+}
+function updateMathPreview() {
+  const isDisp = mathMode && (mathMode.chip ? mathMode.chip.hasAttribute('data-ed-disp') : mathMode.display);
+  $('math-prev').innerHTML = $('math-tex').value.trim() ? renderTex($('math-tex').value, !!isDisp) : '';
+}
+function closeMathDialog() { show('dlg-math', false); mathMode = null; }
+
+$('math-tex').addEventListener('input', updateMathPreview);
+$('math-tex').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('math-ok').click(); }
+  if (e.key === 'Escape') closeMathDialog();
+});
+$('math-cancel').addEventListener('click', (e) => { e.preventDefault(); closeMathDialog(); });
+$('math-ok').addEventListener('click', (e) => {
+  e.preventDefault();
+  const tex = $('math-tex').value.trim();
+  const d = frameDoc();
+  if (mathMode && mathMode.chip) {
+    const c = mathMode.chip;
+    if (!tex) { $('math-del').click(); return; }
+    if (c.hasAttribute('data-ed-disp')) { c.setAttribute('data-ed-disp', tex); c.innerHTML = renderTex(tex, true); }
+    else makeInlineChip(c, tex);
+  } else if (mathMode && tex) {
+    if (mathMode.display) {
+      const div = d.createElement('div');
+      div.className = 'eq eq-block';
+      div.appendChild(makeDisplayChip(d, tex));
+      insertBlock(div, mathMode.range);
+    } else {
+      const span = makeInlineChip(d.createElement('span'), tex);
+      span.className = 'im';
+      const r = mathMode.range;
+      if (r && editableAt(r.startContainer)) {
+        r.deleteContents();
+        r.insertNode(span);
+        r.setStartAfter(span); r.collapse(true);
+        const s = d.getSelection(); s.removeAllRanges(); s.addRange(r);
+      } else {
+        const p = d.createElement('p');
+        p.appendChild(span);
+        insertBlock(p, null);
+      }
+    }
+  }
+  ed.dirty = true;
+  closeMathDialog();
+  frameWin().focus();
+});
+$('math-del').addEventListener('click', (e) => {
+  e.preventDefault();
+  const c = mathMode && mathMode.chip;
+  if (c) {
+    const box = c.parentElement;
+    c.remove();
+    if (box && box.matches('.eq') && !box.textContent.trim() && !box.children.length) box.remove();
+    ed.dirty = true;
+  }
+  closeMathDialog();
+});
+
+/* görsel penceresi */
+
+function openImgDialog(img) {
+  ed.img = img;
+  $('img-prev').src = img.src;
+  const m = /^(\d+)%$/.exec(img.style.maxWidth || '');
+  $('img-w').value = m ? m[1] : 100;
+  $('img-w-val').textContent = '· %' + $('img-w').value;
+  show('dlg-img', true);
+}
+$('img-w').addEventListener('input', () => {
+  const v = $('img-w').value;
+  $('img-w-val').textContent = '· %' + v;
+  if (ed.img) { ed.img.style.maxWidth = v + '%'; ed.img.style.width = '100%'; ed.img.style.height = 'auto'; ed.dirty = true; }
+});
+$('img-close').addEventListener('click', (e) => { e.preventDefault(); show('dlg-img', false); ed.img = null; });
+$('img-replace').addEventListener('click', (e) => { e.preventDefault(); $('img-replace-file').click(); });
+$('img-replace-file').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file || !ed.img) return;
+  try {
+    const src = await shrinkImage(file, 820);
+    ed.img.removeAttribute('data-bergec-img');
+    ed.img.src = src;
+    $('img-prev').src = src;
+    ed.dirty = true;
+  } catch (err) { msg('doc-msg', err.message, 'err'); }
+});
+$('img-del').addEventListener('click', (e) => {
+  e.preventDefault();
+  const img = ed.img;
+  if (!img) return;
+  const fig = img.closest('figure');
+  (fig && fig.querySelectorAll('img').length === 1 ? fig : img).remove();
+  ed.dirty = true;
+  show('dlg-img', false);
+  ed.img = null;
+});
+
+function onFrameClick(e) {
+  const chip = e.target.closest('[data-ed-tex], [data-ed-disp]');
+  if (chip && editableAt(chip.parentElement)) { e.preventDefault(); openMathDialog(chip); return; }
+  const img = e.target.closest('img');
+  if (img && editableAt(img.parentElement)) { e.preventDefault(); openImgDialog(img); return; }
+  if (e.target.closest('a')) e.preventDefault(); // düzenleyicide bağlantılar açılmasın
+}
 
 /* ─────────────────────────── arşiv kaydı ─────────────────────────── */
 
