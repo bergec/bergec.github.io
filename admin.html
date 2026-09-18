@@ -98,6 +98,7 @@
   details.help td { padding: 4px 16px 4px 0; vertical-align: top; border-bottom: 1px solid var(--color-divider); }
 
   /* görsel / kod düzenleyici */
+  .newinfo { border: 1px dashed var(--color-accent-400); background: #fff; padding: 14px 16px; margin-bottom: 16px; }
   .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-text); margin-bottom: 12px; }
   .tab {
     font: inherit; font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;
@@ -275,40 +276,6 @@
     <div class="msg" id="edit-msg"></div>
   </section>
 
-  <!-- ══════════════ 3b. YENİ YAZI (HTML) ══════════════ -->
-  <section class="panel hidden" id="p-new">
-    <h2>Yeni yazı (HTML)</h2>
-    <p class="hint">
-      Yazının bilgilerini girin. İsterseniz hazır bir <strong>HTML dosyası</strong> yükleyin — tam bir sayfa ya da yalnızca yazının gövdesi olabilir;
-      yüklemezseniz boş bir sayfayla başlarsınız. Yazı sonra Görsel / Kod düzenleyicide açılır; ilk kaydettiğinizde ana sayfadaki listeye de eklenir.
-    </p>
-    <div class="grid g3">
-      <div><label class="f" for="n-title">Başlık</label><input type="text" id="n-title" placeholder="Yazının başlığı"></div>
-      <div><label class="f" for="n-author">Yazar</label><input type="text" id="n-author" placeholder="Ad Soyad"></div>
-      <div><label class="f" for="n-date">Tarih</label><input type="text" id="n-date" placeholder="GG.AA.YYYY"></div>
-    </div>
-    <div class="grid g2" style="margin-top: 14px;">
-      <div><label class="f" for="n-subtitle">Alt başlık <span style="text-transform: none; letter-spacing: 0;">(isteğe bağlı)</span></label><input type="text" id="n-subtitle"></div>
-      <div><label class="f" for="n-slug">Dosya adı</label><input type="text" id="n-slug" placeholder="yeni-yazi.html"></div>
-    </div>
-    <div style="margin-top: 14px;">
-      <label class="f" for="n-excerpt">Arşiv özeti <span style="text-transform: none; letter-spacing: 0;">(boş bırakırsanız yazının başından alınır)</span></label>
-      <textarea id="n-excerpt" rows="2" style="font-family: var(--font-body); font-size: 14px;"></textarea>
-    </div>
-    <div class="row" style="margin-top: 12px;">
-      <label style="font-size: 13px;"><input type="checkbox" id="n-featured" style="width: auto;"> Ana sayfada manşet yap</label>
-      <span class="sp"></span>
-      <label class="f" for="n-file" style="margin: 0;">HTML dosyası (isteğe bağlı)</label>
-      <input type="file" id="n-file" accept=".html,.htm,text/html" style="font-size: 13px; width: auto;">
-    </div>
-    <div class="bar">
-      <button class="b" id="btn-new-go">Düzenleyicide aç</button>
-      <span class="sp"></span>
-      <button class="b ghost" id="btn-new-cancel">Vazgeç</button>
-    </div>
-    <div class="msg" id="new-msg"></div>
-  </section>
-
   <!-- ══════════════ 4. GÖRSEL / KOD DÜZENLEYİCİ ══════════════ -->
   <section class="panel hidden" id="p-doc">
     <h2 id="doc-title">Düzenle</h2>
@@ -317,6 +284,21 @@
       görsele tıklayıp boyutunu ayarlayın. <strong>Kod</strong> sekmesi sayfanın HTML’ini gösterir; Görsel sekmesine geçince kodda yaptığınız
       değişiklikler orada görünür (önizleme). <strong>Kaydet ve yayınla</strong>’ya basana kadar hiçbir şey siteye gitmez.
     </p>
+    <div id="doc-newinfo" class="newinfo hidden">
+      <p class="hint" style="margin: 0 0 12px;">
+        <strong>Yeni yazı.</strong> Başlığı, alt başlığı ve yazar adını doğrudan aşağıda, sayfanın üzerine yazın.
+        İsterseniz hazır bir HTML dosyası yükleyin (tam sayfa ya da yalnızca yazının gövdesi). İlk kaydettiğinizde yazı ana sayfadaki listeye de eklenir.
+      </p>
+      <div class="grid g2">
+        <div><label class="f" for="d-slug">Dosya adı</label><input type="text" id="d-slug" placeholder="boş bırakırsanız başlıktan üretilir"></div>
+        <div><label class="f" for="d-excerpt">Arşiv özeti <span style="text-transform: none; letter-spacing: 0;">(boşsa yazının başından alınır)</span></label><input type="text" id="d-excerpt"></div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <label style="font-size: 13px;"><input type="checkbox" id="d-featured" style="width: auto;"> Ana sayfada manşet yap</label>
+        <span class="sp"></span>
+        <button class="mini" id="d-upload">HTML dosyası yükle</button>
+      </div>
+    </div>
     <div class="tabs">
       <button class="tab" data-tab="visual">Görsel</button>
       <button class="tab" data-tab="code">Kod</button>
@@ -1310,7 +1292,7 @@ function resetEditor() {
 }
 
 function showOnly(panel) {
-  ['p-list', 'p-edit', 'p-new', 'p-doc', 'p-meta'].forEach(id => show(id, id === panel));
+  ['p-list', 'p-edit', 'p-doc', 'p-meta'].forEach(id => show(id, id === panel));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1494,6 +1476,7 @@ const DOC_FRAME_CSS = `
   article.body img { cursor: pointer; }
   article.body img:hover { outline: 2px solid #b68235; outline-offset: 2px; }
   a { cursor: text; }
+  [data-ph]:empty::before { content: attr(data-ph); color: #b3aca5; font-style: italic; pointer-events: none; }
   .ed-raw-tex { font-family: ui-monospace, monospace; font-size: 0.85em; color: #a03a2c; }
 `;
 
@@ -1570,7 +1553,7 @@ function cleanRegion(r) {
     if (s.attributes.length === 1) s.replaceWith(...s.childNodes);
   });
   [r, ...r.querySelectorAll('*')].forEach(el => {
-    ['contenteditable', 'spellcheck', 'data-ed-tex', 'data-ed-orig'].forEach(a => el.removeAttribute(a));
+    ['contenteditable', 'spellcheck', 'data-ed-tex', 'data-ed-orig', 'data-ph'].forEach(a => el.removeAttribute(a));
   });
   r.normalize();
 }
@@ -1626,7 +1609,23 @@ function prepareFrame() {
     chipify(r);
   });
 
-  d.addEventListener('input', () => { ed.dirty = true; });
+  if (ed.target && ed.target.isNew) {
+    const ph = (sel, text) => { const el = d.querySelector(sel); if (el && !el.textContent.trim() && !el.querySelector('img, svg')) { el.innerHTML = ''; el.setAttribute('data-ph', text); } };
+    ph('h1.title', 'Başlık');
+    ph('.subtitle', 'Alt başlık (isteğe bağlı)');
+    ph('.byline', 'Yazar adı');
+    ph('article.body > p:first-child', 'Yazınızı buraya yazın…');
+  }
+
+  d.addEventListener('input', () => {
+    ed.dirty = true;
+    // Enter, büyük ilk harfli (lede) paragrafı bölünce tarayıcı sınıfı yeni paragrafa da kopyalar; yalnızca ilki kalsın.
+    d.querySelectorAll('article.body p.lede').forEach((p, i) => {
+      if (i === 0) return;
+      p.classList.remove('lede');
+      if (!p.getAttribute('class')) p.removeAttribute('class');
+    });
+  });
   d.addEventListener('selectionchange', () => {
     const s = d.getSelection();
     if (s.rangeCount && editableAt(s.anchorNode)) ed.lastRange = s.getRangeAt(0).cloneRange();
@@ -1723,7 +1722,8 @@ async function openDoc(target, html) {
   ed.target = target;
   ed.tab = null;
   ed.model = null;
-  $('doc-title').textContent = (target.isNew ? 'Yeni yazı · ' : 'Düzenle · ') + target.title;
+  $('doc-title').textContent = target.isNew ? 'Yeni yazı (HTML)' : 'Düzenle · ' + target.title;
+  show('doc-newinfo', !!target.isNew);
   $('doc-code').value = html;
   msg('doc-msg', '');
   showOnly('p-doc');
@@ -1731,35 +1731,70 @@ async function openDoc(target, html) {
   ed.dirty = false;
 }
 
-/** Görsel / Kod düzenleyicide yazılan yeni yazının ilk kaydı: dosya + ana sayfa listesi tek commit'te. */
-async function publishNewDoc(t, html, enc) {
-  const e = t.entry;
+/**
+ * Yeni yazının bilgilerini sayfanın kendisinden okur (başlık, alt başlık, yazar, tarih) ve
+ * sayfayı yayına hazırlar: boş kalan alt başlık / yazar satırı çıkarılır, <title> başlıktan yazılır.
+ */
+function finishNewDoc(html) {
   const d = new DOMParser().parseFromString(html, 'text/html');
+  const h1 = d.querySelector('h1.title');
+  const title = h1 ? h1.textContent.replace(/\s+/g, ' ').trim() : '';
+  if (!title) throw new Error('Başlığı yazın (sayfanın üstündeki büyük başlık).');
+  const sub = d.querySelector('.subtitle');
+  const subtitle = sub ? sub.textContent.trim() : '';
+  if (sub && !subtitle) sub.remove();
+  const by = d.querySelector('.byline');
+  const author = by ? by.textContent.trim().replace(/^Yazar:\s*/i, '') : '';
+  if (by && !author) by.remove();
+  const k = d.querySelector('.kicker');
+  const dm = k && k.textContent.match(/\d{1,2}\.\d{1,2}\.\d{4}/);
+  const date = dm ? dm[0] : todayStr();
+  if (!d.title.replace(/·\s*Bergeç\s*$/, '').trim()) d.title = title + ' · Bergeç';
+
+  let slug = $('d-slug').value.trim() || slugify(title);
+  if (!/\.html$/.test(slug)) slug += '.html';
+  if (!/^[a-z0-9][a-z0-9._-]*\.html$/.test(slug)) throw new Error('Dosya adında yalnızca küçük harf, rakam, nokta, - ve _ kullanın.');
+  $('d-slug').value = slug;
+
   const art = d.querySelector('article.body');
   const paras = art ? Array.from(art.querySelectorAll('p')).map(p => p.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean) : [];
-  const excerpt = e.excerpt || firstSentences(paras.join(' '), 240);
-  const lede = paras.slice(0, 2);
+  return {
+    html: '<!DOCTYPE html>\n' + d.documentElement.outerHTML,
+    info: {
+      title, subtitle, author, date, slug,
+      excerpt: $('d-excerpt').value.trim() || firstSentences(paras.join(' '), 240),
+      lede: paras.slice(0, 2),
+      featured: $('d-featured').checked
+    }
+  };
+}
+
+/** Görsel / Kod düzenleyicide yazılan yeni yazının ilk kaydı: dosya + ana sayfa listesi tek commit'te. */
+async function publishNewDoc(t, e, enc) {
   msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
   let shas;
   try {
-    shas = await saveIndex('Yeni yazı: ' + e.title, [{ path: t.href, text: enc }], data => {
+    shas = await saveIndex('Yeni yazı: ' + e.title, [{ path: e.slug, text: enc }], data => {
       const arr = flattenOf(data);
-      const entry = { title: e.title, date: e.date, author: e.author, href: t.href, excerpt: excerpt };
+      const entry = { title: e.title, date: e.date, author: e.author, href: e.slug, excerpt: e.excerpt };
       arr.splice(e.featured || !arr.length ? 0 : 1, 0, entry); // manşet değilse manşetin altına
-      if (e.featured) { entry.lede = lede; if (e.subtitle) entry.kicker = e.subtitle; }
+      if (e.featured) { entry.lede = e.lede; if (e.subtitle) entry.kicker = e.subtitle; }
       unflattenInto(data, arr);
-    }, { [t.href]: null });
+    }, { [e.slug]: null });
   } catch (err) {
-    if (err instanceof ConflictError && err.paths.includes(t.href)) {
-      throw new Error('“' + t.href + '” adında bir dosya bu arada oluşturulmuş. Kod sekmesindeki HTML’i kopyalayıp başka bir dosya adıyla yeni yazı açın.');
+    if (err instanceof ConflictError && err.paths.includes(e.slug)) {
+      throw new Error('“' + e.slug + '” adında bir dosya zaten var; yukarıdan başka bir dosya adı yazıp yeniden kaydedin.');
     }
     throw err;
   }
   t.isNew = false;
-  t.sha = shas[t.href];
+  t.href = e.slug;
+  t.title = e.title;
+  t.sha = shas[e.slug];
   $('doc-title').textContent = 'Düzenle · ' + e.title;
+  show('doc-newinfo', false);
   renderList();
-  msg('doc-msg', 'Yayınlandı ve listeye eklendi: ' + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
+  msg('doc-msg', 'Yayınlandı ve listeye eklendi: ' + e.slug + ' — site ~30 saniye içinde güncellenir.', 'ok');
 }
 
 async function saveDoc() {
@@ -1771,12 +1806,17 @@ async function saveDoc() {
   try {
     const html = finalizeDoc(ed.tab === 'visual' ? serializeVisual() : $('doc-code').value);
     msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
-    const enc = await encryptPage(html, state.pw);
     if (t.isNew) {
-      await publishNewDoc(t, html, enc);
+      const r = finishNewDoc(html);
+      const enc = await encryptPage(r.html, state.pw);
+      await publishNewDoc(t, r.info, enc);
+      // kaydedilen hâli (boş alt başlık vb. temizlenmiş) düzenleyiciye geri yükle
+      $('doc-code').value = r.html;
+      if (ed.tab === 'visual') await loadVisual(r.html);
       ed.dirty = false;
       return;
     }
+    const enc = await encryptPage(html, state.pw);
     const files = [{ path: t.href, text: enc }], message = 'Yazıyı güncelle: ' + t.title;
     let res;
     try {
@@ -1813,10 +1853,10 @@ $('btn-to-doc').addEventListener('click', async (e) => {
     const m = currentMeta();
     if (!m.title) { msg('edit-msg', 'Başlık gerekli.', 'err'); return; }
     if (!m.slug) { msg('edit-msg', 'Dosya adı gerekli.', 'err'); return; }
-    const slug = /\.html$/.test(m.slug) ? m.slug : m.slug + '.html';
-    await openDoc({ href: slug, sha: null, title: m.title, isNew: true,
-      entry: { title: m.title, author: m.author, date: m.date, subtitle: m.subtitle, excerpt: m.excerpt, featured: $('f-featured').checked } },
-      buildCurrentArticle());
+    $('d-slug').value = /\.html$/.test(m.slug) ? m.slug : m.slug + '.html';
+    $('d-excerpt').value = m.excerpt;
+    $('d-featured').checked = $('f-featured').checked;
+    await openDoc({ href: null, sha: null, title: m.title, isNew: true }, buildCurrentArticle());
     ed.dirty = true;
     return;
   }
@@ -1832,71 +1872,28 @@ function todayStr() {
   return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
 }
 
-/**
- * Yüklenen HTML'den yazı sayfası üretir. Tam bir Bergeç sayfasıysa (içinde <article class="body"> var)
- * olduğu gibi kullanılır; değilse <body>'sinin içeriği (ve varsa <head>'deki <style>'lar) yazının gövdesi olur.
- */
-function pageFromUpload(text, meta) {
-  if (text && /<article[^>]*class="[^"]*\bbody\b/.test(text)) return text;
-  let body = '<p class="lede">Yazınızı buraya yazın…</p>';
-  if (text && text.trim()) {
-    const d = new DOMParser().parseFromString(text, 'text/html');
-    d.querySelectorAll('script').forEach(x => x.remove());
-    const styles = Array.from(d.head.querySelectorAll('style')).map(x => x.outerHTML).join('\n');
-    body = (styles ? styles + '\n' : '') + d.body.innerHTML.trim();
-  }
-  return buildArticle(Object.assign({ katex: true, lede: true, body: '' }, meta), body, []);
+
+/** Boş yazı sayfası: başlık, alt başlık, yazar ve ilk paragraf boş gelir; düzenleyicide ipucu gösterilir. */
+function newDocTemplate() {
+  const M = '\u0000';
+  return buildArticle({ title: M, subtitle: M, author: M, date: todayStr(), katex: true, lede: true, body: '' }, '<p class="lede"></p>', [])
+    .split(M).join('');
 }
 
-$('btn-new-html').addEventListener('click', () => {
-  ['n-title', 'n-author', 'n-subtitle', 'n-slug', 'n-excerpt'].forEach(id => $(id).value = '');
-  delete $('n-slug').dataset.touched;
-  $('n-date').value = todayStr();
-  $('n-featured').checked = false;
-  $('n-file').value = '';
-  msg('new-msg', '');
-  showOnly('p-new');
-});
-$('btn-new-cancel').addEventListener('click', (e) => { e.preventDefault(); showOnly('p-list'); });
-$('n-title').addEventListener('input', () => {
-  // dosya adını başlıktan öner (kullanıcı değiştirmediyse)
-  if ($('n-slug').dataset.touched) return;
-  const t = $('n-title').value.toLocaleLowerCase('tr')
+function slugify(t) {
+  const s = String(t || '').toLocaleLowerCase('tr')
     .replace(/[çğıöşü]/g, c => ({ ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' })[c])
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  $('n-slug').value = t ? t + '.html' : '';
-});
-$('n-slug').addEventListener('input', () => { $('n-slug').dataset.touched = '1'; });
+  return s ? s + '.html' : '';
+}
 
-$('btn-new-go').addEventListener('click', async (e) => {
-  e.preventDefault();
-  const meta = {
-    title: $('n-title').value.trim(), author: $('n-author').value.trim(), date: $('n-date').value.trim(),
-    subtitle: $('n-subtitle').value.trim(), excerpt: $('n-excerpt').value.trim()
-  };
-  let slug = $('n-slug').value.trim();
-  if (!meta.title) { msg('new-msg', 'Başlık gerekli.', 'err'); return; }
-  if (!slug) { msg('new-msg', 'Dosya adı gerekli.', 'err'); return; }
-  if (!/\.html$/.test(slug)) slug += '.html';
-  if (!/^[a-z0-9][a-z0-9._-]*\.html$/.test(slug)) { msg('new-msg', 'Dosya adında yalnızca küçük harf, rakam, nokta, - ve _ kullanın.', 'err'); return; }
-  const btn = e.target;
-  btn.disabled = true;
-  try {
-    msg('new-msg', 'Kontrol ediliyor…', 'info');
-    if (await gh(repoPath(`/contents/${encPath(slug)}?ref=${encodeURIComponent(state.branch)}`))) {
-      throw new Error('“' + slug + '” adında bir dosya zaten var; başka bir dosya adı seçin.');
-    }
-    const file = $('n-file').files && $('n-file').files[0];
-    const text = file ? await file.text() : '';
-    msg('new-msg', '');
-    await openDoc({ href: slug, sha: null, title: meta.title, isNew: true,
-      entry: Object.assign({ featured: $('n-featured').checked }, meta) }, pageFromUpload(text, meta));
-    ed.dirty = true;
-  } catch (err) { msg('new-msg', err.message, 'err'); }
-  finally { btn.disabled = false; }
+$('btn-new-html').addEventListener('click', async () => {
+  $('d-slug').value = ''; $('d-excerpt').value = ''; $('d-featured').checked = false;
+  await openDoc({ href: null, sha: null, title: 'Yeni yazı', isNew: true }, newDocTemplate());
 });
 
 $('doc-code-load').addEventListener('click', (e) => { e.preventDefault(); $('doc-code-file').click(); });
+$('d-upload').addEventListener('click', (e) => { e.preventDefault(); $('doc-code-file').click(); });
 $('doc-code-file').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
   e.target.value = '';
@@ -1905,20 +1902,26 @@ $('doc-code-file').addEventListener('change', async (e) => {
   const full = /<article[^>]*class="[^"]*\bbody\b/.test(text);
   if (!confirm(full ? 'Yüklenen dosya tam bir sayfa: sayfanın tamamı onunla değiştirilsin mi?'
                     : 'Yüklenen dosya yazının içeriği olarak kullanılacak (başlık ve sayfa düzeni aynı kalır). Devam edilsin mi?')) return;
-  if (full) {
-    $('doc-code').value = text;
-  } else {
-    const cur = new DOMParser().parseFromString($('doc-code').value, 'text/html');
-    const up = new DOMParser().parseFromString(text, 'text/html');
-    up.querySelectorAll('script').forEach(x => x.remove());
-    const art = cur.querySelector('article.body');
-    if (!art) { msg('doc-msg', 'Bu sayfada yazı gövdesi (<article class="body">) bulunamadı; tam bir sayfa yükleyin.', 'err'); return; }
-    const styles = Array.from(up.head.querySelectorAll('style')).map(x => x.outerHTML).join('\n');
-    art.innerHTML = '\n' + (styles ? styles + '\n' : '') + up.body.innerHTML.trim() + '\n';
-    $('doc-code').value = '<!DOCTYPE html>\n' + cur.documentElement.outerHTML;
-  }
-  ed.dirty = true;
-  msg('doc-msg', 'Dosya yüklendi. Görsel sekmesinde önizleyebilirsiniz; kaydetmeden siteye gitmez.', 'ok');
+  try {
+    const current = ed.tab === 'visual' ? serializeVisual() : $('doc-code').value;
+    let next;
+    if (full) {
+      next = text;
+    } else {
+      const cur = new DOMParser().parseFromString(current, 'text/html');
+      const up = new DOMParser().parseFromString(text, 'text/html');
+      up.querySelectorAll('script').forEach(x => x.remove());
+      const art = cur.querySelector('article.body');
+      if (!art) throw new Error('Bu sayfada yazı gövdesi (<article class="body">) bulunamadı; tam bir sayfa yükleyin.');
+      const styles = Array.from(up.head.querySelectorAll('style')).map(x => x.outerHTML).join('\n');
+      art.innerHTML = '\n' + (styles ? styles + '\n' : '') + up.body.innerHTML.trim() + '\n';
+      next = '<!DOCTYPE html>\n' + cur.documentElement.outerHTML;
+    }
+    $('doc-code').value = next;
+    if (ed.tab === 'visual') await loadVisual(next);
+    ed.dirty = true;
+    msg('doc-msg', 'Dosya yüklendi. Kaydedene kadar siteye gitmez.', 'ok');
+  } catch (err) { msg('doc-msg', err.message, 'err'); }
 });
 
 /* araç çubuğu */
