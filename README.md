@@ -1,82 +1,120 @@
 # Bergeç — içerik düzenleme rehberi
 
-Site parola korumalı olarak yayınlanıyor: her sayfa istemci tarafında AES-256-GCM ile şifrelenmiş durumda, tarayıcı doğru parolayı girene kadar hiçbir metin okunamaz. Bu yüzden dosyaları **iki kopya** olarak tutuyoruz:
+Site parola korumalı olarak yayınlanıyor: her sayfa istemci tarafında AES-256-GCM ile şifrelenmiş durumda, tarayıcı doğru parolayı girene kadar hiçbir metin okunamaz.
 
-- `_source_plaintext_DO_NOT_PUBLISH/` — düzenlenebilir, şifresiz asıl kaynaklar. **Bu klasör `.gitignore`'da, asla GitHub'a gönderilmez.**
-- Repo kökündeki `*.html` dosyaları (`index.html`, `godel-mektubu.html`, `enigma-1.html` vb.) — yukarıdakilerin şifrelenmiş, yayınlanan hâli. **Bunları elle düzenlemeyin**, script her seferinde yeniden üretir.
+Artık iki yol var:
 
-## Bir yazıyı düzenlemek
+- **Yönetim ekranı** (`admin.html`) — tarayıcıdan yazı ekleyip düzenlersiniz, görselleri sürükleyip yerini ayarlarsınız. Şifreleme ve GitHub'a gönderme otomatik. **Normalde bunu kullanın.**
+- **Elle düzenleme** — `_source_plaintext_DO_NOT_PUBLISH/` içindeki kaynakları metin editörüyle değiştirip `tools/encrypt.js` ile şifrelemek. Eski, elle yazılmış yazılar (Enigma, Knuth, Gödel…) böyle hazırlandı.
 
-1. `_source_plaintext_DO_NOT_PUBLISH/<dosya>.html` içindeki metni normal bir metin editörüyle düzenleyin (düz HTML — başlıklar `<h2>`, paragraflar `<p>`, matematik `<span class="im">...</span>` veya `<div class="eq eq-block">$$...$$</div>` içinde LaTeX).
+Parola şu an: `QH3S9ZtPGWGuh9z7`
 
-   **Dikkat:** Metin veya formül içinde literal `<` ya da `>` kullanmayın (örn. "i<j", "n>0") — tarayıcı bunu HTML etiketi sanıp sayfayı bozar. Bunun yerine `&lt;` ve `&gt;` yazın.
+---
 
-2. Değişikliği şifreleyip yayınlanacak dosyayı güncelleyin:
+## 1. Yönetim ekranı
 
-   ```bash
-   cd "Bergeç nostalgic website redesign"
-   node tools/encrypt.js "PAROLA" "_source_plaintext_DO_NOT_PUBLISH/<dosya>.html" "<dosya>.html"
-   ```
+Adres: **https://bergec.github.io/admin.html**
 
-   Parola şu an: `QH3S9ZtPGWGuh9z7`
+### İlk kurulum (bir kez)
 
-3. Yerelde kontrol edin (isteğe bağlı ama önerilir):
+1. GitHub'da [fine-grained token](https://github.com/settings/personal-access-tokens/new) oluşturun:
+   - **Repository access** → *Only select repositories* → `bergec/bergec.github.io`
+   - **Permissions** → *Repository permissions* → **Contents: Read and write**
+   - Son kullanma tarihini istediğiniz gibi verin (süresi dolunca yenisini üretirsiniz).
+2. `admin.html`'i açın, anahtarı ve site parolasını girin, **Bağlan**'a basın.
 
-   ```bash
-   python3 -m http.server 8000
-   ```
-   sonra tarayıcıda `http://127.0.0.1:8000/<dosya>.html` açıp parolayı girin.
+Anahtar yalnızca kendi tarayıcınızın `localStorage`'ında durur; hiçbir sunucuya gitmez. Ortak/halka açık bir bilgisayarda çalıştıysanız işiniz bitince **Anahtarı unut** düğmesine basın.
 
-4. Gönderin:
+> `admin.html` herkese açık bir adres, ama anahtar + parola olmadan hiçbir şey göstermez ve hiçbir şey yapmaz.
 
-   ```bash
-   git add <dosya>.html
-   git commit -m "..."
-   git push
-   ```
+### Yeni yazı eklemek
 
-   Push'tan ~30 saniye sonra `https://bergec.github.io/` üzerinde güncellenir.
+1. **+ Yeni yazı**.
+2. Başlık, yazar, tarih, dosya adı ve arşiv özetini doldurun (dosya adı başlıktan otomatik önerilir).
+3. Görselleri **Görseller** bölümünden seçin. Otomatik olarak küçültülüp (varsayılan en fazla 820 px) sayfanın içine gömülürler — böylece onlar da parolanın arkasında kalır.
+   Her görselin altından **alt yazı**, **genişlik (%)** ve **hizalama** (tam / sola sarılı / sağa sarılı) ayarlanır. **Metne ekle** düğmesi imlecin olduğu yere `[[gorsel:1]]` işaretini koyar; görsel yazıda tam o noktada çıkar.
+4. Metni yazın. Sağdaki önizleme sayfanın gerçek hâlini canlı gösterir.
+5. **Yayınla**. Sayfa şifrelenir, yazı ve ana sayfa tek bir commit'le gönderilir, ~30 saniye sonra sitede görünür.
 
-## Yeni bir yazı eklemek
+### Yazım kuralları
 
-1. `_source_plaintext_DO_NOT_PUBLISH/` içine, mevcut bir makaleyi (örn. `godel-mektubu.html`) kopyalayıp şablon olarak kullanın — aynı CSS sınıfları ve KaTeX script'i zaten içinde.
-2. İçeriği yazın, yukarıdaki `<`/`>` kuralına dikkat edin.
-3. `node tools/encrypt.js "PAROLA" "_source_plaintext_DO_NOT_PUBLISH/yeni-yazi.html" "yeni-yazi.html"` ile şifreleyin.
-4. Anasayfaya link eklemek için `_source_plaintext_DO_NOT_PUBLISH/index.html` içinde `posts` dizisine (JS array, dosyanın sonlarında `<script data-dc-script>` içinde) yeni bir satır ekleyip index.html'i de aynı şekilde yeniden şifreleyin.
-5. Hepsini `git add`, `commit`, `push`.
+| Yazdığınız | Sonuç |
+|---|---|
+| `## Başlık` | bölüm başlığı |
+| `### Ara başlık` | alt başlık |
+| boş satır | yeni paragraf |
+| `**kalın**` `*italik*` `` `kod` `` | vurgular |
+| `- madde` / `1. madde` | listeler |
+| `> alıntı` | alıntı bloğu |
+| ` ``` ` … ` ``` ` | kod bloğu |
+| `$a^2+b^2$` | satır içi formül (KaTeX) |
+| `$$ … $$` | ortalanmış formül |
+| `[metin](adres)` | bağlantı |
+| `[[gorsel:1]]` | görseli buraya koy |
+| `---` | ayraç çizgisi |
 
-## Fotoğraf/görsel eklemek
+`<` ve `>` işaretlerini serbestçe kullanabilirsiniz; metin otomatik güvenli hâle getirilir.
 
-Görseller ayrı dosya olarak DEĞİL, `<img src="data:image/jpeg;base64,...">` şeklinde HTML'in içine gömülüyor — böylece şifrelenince onlar da parola arkasında kalıyor. Bir görseli base64'e çevirip HTML'e gömmek için:
+### Var olan yazıyı düzenlemek
+
+Listedeki **Yazıyı düzenle**'ye basın. Yönetim ekranıyla yazılmış yazılar aynı düzenleyicide (metin + görseller) açılır. Elle hazırlanmış eski yazılar ise **ham HTML** olarak açılır — doğrudan HTML'i düzenlersiniz.
+
+**Arşiv kaydı** düğmesi yalnızca ana sayfadaki bilgiyi (başlık, tarih, özet, manşet girişi) değiştirir, yazının kendi sayfasına dokunmaz.
+
+`↑ ↓` sıralamayı değiştirir; listenin en üstündeki yazı ana sayfanın manşetidir. **Sil** yazıyı arşivden çıkarır, isterseniz dosyasını da depodan siler.
+
+---
+
+## 2. Elle düzenleme
+
+`_source_plaintext_DO_NOT_PUBLISH/` düzenlenebilir, şifresiz kaynakları tutar ve **`.gitignore`'da — asla GitHub'a gönderilmez.** Repo kökündeki `*.html` bunların şifreli hâlidir; elle düzenlemeyin.
 
 ```bash
-python3 -c "
-from PIL import Image, io, base64
-im = Image.open('foto.png').convert('RGB')
-if im.width > 820:
-    im = im.resize((820, int(im.height*820/im.width)))
-im.save('/tmp/foto.jpg', format='JPEG', quality=82)
-print(base64.b64encode(open('/tmp/foto.jpg','rb').read()).decode())
-" > foto.b64.txt
+cd "Bergeç nostalgic website redesign"
+node tools/encrypt.js "QH3S9ZtPGWGuh9z7" "_source_plaintext_DO_NOT_PUBLISH/knuth-1.html" "knuth-1.html"
+git add knuth-1.html && git commit -m "…" && git push
 ```
 
-Sonra çıkan metni `<img src="data:image/jpeg;base64,BURAYA_YAPIŞTIR">` şeklinde ilgili `_source_plaintext_DO_NOT_PUBLISH/*.html` dosyasına ekleyip yeniden şifreleyin.
+Yerelde denemek için: `python3 -m http.server 8000`, sonra `http://127.0.0.1:8000/knuth-1.html`.
 
-## Parolayı değiştirmek
+**Dikkat:** Elle yazılan HTML'de metin veya formül içinde literal `<` ya da `>` kullanmayın (örn. "i<j") — tarayıcı bunu etiket sanıp sayfayı bozar. `&lt;` ve `&gt;` yazın. (Yönetim ekranında bu sorun yok.)
+
+### Ana sayfadaki liste
+
+Ana sayfa verisi `_source_plaintext_DO_NOT_PUBLISH/index.html` içindeki tek bir JSON bloğunda:
+
+```html
+<script type="application/json" id="bergec-index"> … </script>
+```
+
+`featured` manşeti, `posts` arşiv listesini tutar; "Son Postlar" kutusu bu ikisinden otomatik üretilir. Yönetim ekranı **yalnızca bu bloğu** değiştirir, sayfanın kalanına dokunmaz.
+
+---
+
+## 3. Parolayı değiştirmek
 
 Tüm sayfaları yeni parolayla yeniden şifrelemeniz gerekir (hepsi aynı parolayı paylaşıyor):
 
 ```bash
-for f in index godel-mektubu enigma-1 enigma-2 enigma-3 knuth-1 knuth-2; do
+for f in index godel-mektubu enigma-1 enigma-2 enigma-3 knuth-1 knuth-2 berelim-y-ile kodlarin-seruveni; do
   node tools/encrypt.js "YENİ_PAROLA" "_source_plaintext_DO_NOT_PUBLISH/$f.html" "$f.html"
 done
 git add *.html && git commit -m "Parolayı değiştir" && git push
 ```
 
-## Dizin yapısı özeti
+---
 
-- `_ds/` — tasarım sistemi (renkler, fontlar, `styles.css`) — bunu değiştirmek tüm sitenin görünümünü etkiler.
-- `_source_plaintext_DO_NOT_PUBLISH/` — düzenlenebilir kaynaklar (git'e gönderilmez).
-- `tools/encrypt.js` — şifreleme scripti (Node.js, ekstra kurulum gerektirmez).
-- `yazılar/` — orijinal PDF makaleler (git'e gönderilmez, yalnızca referans).
-- Repo kökündeki `*.html` — yayınlanan, şifreli sayfalar.
+## Dizin yapısı
+
+| Yol | Ne |
+|---|---|
+| `index.html`, `*.html` (kök) | yayınlanan, şifreli sayfalar |
+| `admin.html` | yönetim ekranı (şifresiz; anahtar + parola ister) |
+| `assets/bergec.css` | sitenin tek stil dosyası — renkler, yazı tipleri, yazı sayfası düzeni |
+| `.nojekyll` | GitHub Pages'in `_` ile başlayan klasörleri yok saymasını engeller |
+| `_source_plaintext_DO_NOT_PUBLISH/` | düzenlenebilir kaynaklar (git'e gönderilmez) |
+| `tools/encrypt.js` | şifreleme scripti (Node.js, ek kurulum gerektirmez) |
+| `yazılar/` | orijinal PDF makaleler (git'e gönderilmez) |
+| `_ds/` | tasarım sisteminin asıl kaynağı; `assets/bergec.css` buradan türetildi |
+
+> **Not:** Stil dosyası önceden `_ds/…/styles.css` adresinden çekiliyordu. GitHub Pages `_` ile başlayan klasörleri yayınlamadığı için bu dosya sitede 404 veriyordu ve yazı sayfaları stilsiz görünüyordu. Stil artık `assets/bergec.css`'te.
