@@ -697,16 +697,45 @@ async function ghGetFile(path) {
  * files: [{ path, text }]  — text null ise dosya silinir.
  * Contents API'nin 1 MB sınırı burada yok; büyük, görsel gömülü sayfalar da geçer.
  */
-async function ghCommit(files, message) {
+/** Kaydedilecek dosya, siz açtıktan sonra depoda değişmiş (ya da yeni dosyanın adı zaten kullanılıyor). */
+class ConflictError extends Error {
+  constructor(paths) {
+    super(paths.length
+      ? 'Şu dosya siz açtıktan sonra başka biri tarafından değiştirildi: ' + paths.join(', ') + '. Hiçbir şey kaydedilmedi.'
+      : 'Siz kaydederken depoya başka bir değişiklik geldi. Hiçbir şey kaydedilmedi; tekrar deneyin.');
+    this.paths = paths;
+  }
+}
+
+/**
+ * Dosyaları tek commit'te yazar.
+ * expect: { yol: açıldığı andaki blob sha'sı, ya da null = dosya henüz yok olmalı }.
+ * Depodaki hâl beklenenden farklıysa hiçbir şey yazmadan ConflictError fırlatır;
+ * böylece başkasının (ya da başka bir sekmenin) değişikliği sessizce ezilmez.
+ * Dönüş: { commit, shas: { yol: yeni blob sha'sı | null } }.
+ */
+async function ghCommit(files, message, expect) {
   const ref = await gh(repoPath(`/git/ref/heads/${encodeURIComponent(state.branch)}`));
   if (!ref) throw new Error('Dal bulunamadı: ' + state.branch);
   const baseSha = ref.object.sha;
   const baseCommit = await gh(repoPath(`/git/commits/${baseSha}`));
 
+  const checkPaths = Object.keys(expect || {});
+  if (checkPaths.length) {
+    const t = await gh(repoPath(`/git/trees/${baseCommit.tree.sha}?recursive=1`));
+    if (!t || t.truncated) throw new Error('Depo ağacı okunamadı; çakışma denetimi yapılamadı.');
+    const cur = {};
+    t.tree.forEach(e => { if (e.type === 'blob') cur[e.path] = e.sha; });
+    const changed = checkPaths.filter(p => (cur[p] || null) !== (expect[p] || null));
+    if (changed.length) throw new ConflictError(changed);
+  }
+
   const tree = [];
+  const shas = {};
   for (const f of files) {
     if (f.text === null) {
       tree.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+      shas[f.path] = null;
       continue;
     }
     const blob = await gh(repoPath('/git/blobs'), {
@@ -714,6 +743,7 @@ async function ghCommit(files, message) {
       body: JSON.stringify({ content: utf8ToB64(f.text), encoding: 'base64' })
     });
     tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+    shas[f.path] = blob.sha;
   }
 
   const newTree = await gh(repoPath('/git/trees'), {
@@ -724,11 +754,17 @@ async function ghCommit(files, message) {
     method: 'POST',
     body: JSON.stringify({ message: message, tree: newTree.sha, parents: [baseSha] })
   });
-  await gh(repoPath(`/git/refs/heads/${encodeURIComponent(state.branch)}`), {
-    method: 'PATCH',
-    body: JSON.stringify({ sha: commit.sha })
-  });
-  return commit;
+  // force: false → arada başka bir commit geldiyse GitHub reddeder (ileri sarma değil).
+  try {
+    await gh(repoPath(`/git/refs/heads/${encodeURIComponent(state.branch)}`), {
+      method: 'PATCH',
+      body: JSON.stringify({ sha: commit.sha, force: false })
+    });
+  } catch (e) {
+    if (/fast.?forward/i.test(e.message)) throw new ConflictError([]);
+    throw e;
+  }
+  return { commit, shas };
 }
 
 /* ─────────────────── ana sayfa verisi (bergec-index) ─────────────────── */
@@ -753,12 +789,32 @@ function writeIndexData(plain, data) {
   return plain.replace(INDEX_RE, (all, a, body, c) => a + '\n' + jsonForScript(data, 2) + '\n' + c);
 }
 
-/** Ana sayfayı (ve istenirse yanında başka dosyaları) tek commit'te kaydeder. */
-async function saveIndex(message, extraFiles) {
-  const plain = writeIndexData(state.indexPlain, state.index);
-  const enc = await encryptPage(plain, state.pw);
-  await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: enc }]), message);
-  state.indexPlain = plain;
+/**
+ * Ana sayfa listesini değiştirip (istenirse yanında başka dosyalarla) tek commit'te kaydeder.
+ * mutate(liste) değişikliği yazıları adresleriyle (href) bulup uygular. Liste siz açtıktan
+ * sonra başkası tarafından değiştirildiyse güncel hâli indirilir ve aynı işlem onun üzerine
+ * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
+ * extraExpect: yanındaki dosyalar için ghCommit'in expect'i.
+ */
+async function saveIndex(message, extraFiles, mutate, extraExpect) {
+  for (let attempt = 0; ; attempt++) {
+    const data = JSON.parse(JSON.stringify(state.index));
+    if (mutate) mutate(data);
+    const plain = writeIndexData(state.indexPlain, data);
+    const enc = await encryptPage(plain, state.pw);
+    try {
+      const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: enc }]), message,
+        Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
+      state.index = data;
+      state.indexPlain = plain;
+      state.indexSha = shas['index.html'];
+      return shas;
+    } catch (e) {
+      const onlyIndex = e instanceof ConflictError && e.paths.every(p => p === 'index.html');
+      if (!onlyIndex || attempt >= 2) throw e;
+      await loadIndex(); // güncel listeyi al, işlemi onun üzerine yeniden uygula
+    }
+  }
 }
 
 /* ─────────────────────────── metin → HTML ─────────────────────────── */
@@ -1183,33 +1239,36 @@ function renderList() {
 }
 
 /** Manşet + arşiv tek bir dizi gibi davranır; 0. sıra manşettir. */
-function flatten() {
+function flattenOf(data) {
   const arr = [];
-  if (state.index.featured) arr.push(state.index.featured);
-  (state.index.posts || []).forEach(p => arr.push(p));
+  if (data.featured) arr.push(data.featured);
+  (data.posts || []).forEach(p => arr.push(p));
   return arr;
 }
-function unflatten(arr) {
+function unflattenInto(data, arr) {
   const a = arr.slice();
-  state.index.featured = a.shift() || null;
-  state.index.posts = a;
-  if (state.index.featured && !state.index.featured.lede) {
-    state.index.featured.lede = [state.index.featured.excerpt || ''];
-  }
+  data.featured = a.shift() || null;
+  data.posts = a;
+  if (data.featured && !data.featured.lede) data.featured.lede = [data.featured.excerpt || ''];
 }
+function flatten() { return flattenOf(state.index); }
 
 async function move(idx, delta) {
-  const arr = flatten();
-  const j = idx + delta;
-  if (j < 0 || j >= arr.length) return;
-  const t = arr[idx]; arr[idx] = arr[j]; arr[j] = t;
-  unflatten(arr);
-  renderList();
+  const item = flatten()[idx];
+  if (!item) return;
+  const href = item.href;
   try {
     msg('list-msg', 'Sıra kaydediliyor…', 'info');
-    await saveIndex('Yazı sırasını güncelle');
+    await saveIndex('Yazı sırasını güncelle', [], data => {
+      const arr = flattenOf(data);
+      const i = arr.findIndex(x => x.href === href), j = i + delta;
+      if (i < 0 || j < 0 || j >= arr.length) return;
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      unflattenInto(data, arr);
+    });
     msg('list-msg', 'Sıra güncellendi.', 'ok');
   } catch (e) { msg('list-msg', e.message, 'err'); }
+  renderList();
 }
 
 async function removeEntry(p) {
@@ -1217,15 +1276,15 @@ async function removeEntry(p) {
   const alsoFile = p.href && /\.html$/.test(p.href) &&
     confirm(p.href + ' dosyası da depodan silinsin mi?\n\nİptal derseniz yazı sadece ana sayfadaki listeden çıkar, adresi çalışmaya devam eder.');
 
-  const arr = flatten().filter(x => x !== p);
-  unflatten(arr);
-  renderList();
+  const href = p.href;
   try {
     msg('list-msg', 'Kaydediliyor…', 'info');
-    const extra = alsoFile ? [{ path: p.href, text: null }] : [];
-    await saveIndex('Arşivden kaldır: ' + p.title, extra);
+    const extra = alsoFile ? [{ path: href, text: null }] : [];
+    await saveIndex('Arşivden kaldır: ' + p.title, extra,
+      data => unflattenInto(data, flattenOf(data).filter(x => x.href !== href)));
     msg('list-msg', 'Arşivden kaldırıldı.' + (alsoFile ? ' Dosya da silindi.' : ''), 'ok');
   } catch (e) { msg('list-msg', e.message, 'err'); }
+  renderList();
 }
 
 /* ─────────────────────────── açma / kaydetme ─────────────────────────── */
@@ -1269,7 +1328,7 @@ async function openArticle(p) {
     const m = plain.match(/<script type="application\/json" id="bergec-source">([\s\S]*?)<\/script>/);
     if (!m) {
       // Markdown kaynağı yok (elle hazırlanmış ya da görsel düzenleyicide kaydedilmiş) → görsel / kod düzenleyici
-      await openDoc({ href: p.href, title: p.title }, plain);
+      await openDoc({ href: p.href, sha: f.sha, title: p.title }, plain);
       msg('list-msg', '');
       return;
     }
@@ -1318,35 +1377,56 @@ $('btn-publish').addEventListener('click', async (ev) => {
     const html = buildCurrentArticle();
     const enc = await encryptPage(html, state.pw);
 
-    // arşiv kaydı
-    const arr = flatten();
-    let entry = state.editing ? arr.find(x => x.href === state.editing.href) : null;
-    if (!entry) { entry = {}; arr.unshift(entry); }
-    entry.title = meta.title;
-    entry.date = meta.date;
-    entry.author = meta.author;
-    entry.href = slug;
-    entry.excerpt = meta.excerpt || firstSentences(meta.body, 240);
-
-    if ($('f-featured').checked) {
-      const i = arr.indexOf(entry);
-      arr.splice(i, 1);
-      arr.unshift(entry);
-      entry.lede = ledeParagraphs(meta.body);
-      if (!entry.kicker) entry.kicker = meta.subtitle || '';
-    }
-    unflatten(arr);
-
-    msg('edit-msg', 'GitHub’a gönderiliyor…', 'info');
+    // arşiv kaydı — en güncel listeye uygulanır (bkz. saveIndex)
+    const featured = $('f-featured').checked;
+    const excerpt = meta.excerpt || firstSentences(meta.body, 240);
+    const lede = ledeParagraphs(meta.body);
     const wasEditing = !!state.editing;
     const old = state.editing && state.editing.href;
+    const updateIndex = data => {
+      const arr = flattenOf(data);
+      let entry = old ? arr.find(x => x.href === old) : null;
+      if (!entry) { entry = {}; arr.unshift(entry); }
+      entry.title = meta.title;
+      entry.date = meta.date;
+      entry.author = meta.author;
+      entry.href = slug;
+      entry.excerpt = excerpt;
+      if (featured) {
+        arr.splice(arr.indexOf(entry), 1);
+        arr.unshift(entry);
+        entry.lede = lede;
+        if (!entry.kicker) entry.kicker = meta.subtitle || '';
+      }
+      unflattenInto(data, arr);
+    };
+
+    msg('edit-msg', 'GitHub’a gönderiliyor…', 'info');
     const files = [{ path: slug, text: enc }];
+    // Aynı dosya adıyla (yeni yazı / ad değişikliği) var olan bir dosyanın üzerine yazılmasın;
+    // düzenlenen yazı da açıldığından beri başkası tarafından değiştirilmemiş olsun.
+    const expect = {};
+    if (!old || old !== slug) expect[slug] = null;
+    if (old && state.editing.sha) expect[old] = state.editing.sha;
     if (old && old !== slug && confirm('Dosya adı değişti (' + old + ' → ' + slug + ').\nEski dosya depodan silinsin mi?')) {
       files.push({ path: old, text: null });
     }
-    await saveIndex((wasEditing ? 'Yazıyı güncelle: ' : 'Yeni yazı: ') + meta.title, files);
+    const title = (wasEditing ? 'Yazıyı güncelle: ' : 'Yeni yazı: ') + meta.title;
+    let shas;
+    try {
+      shas = await saveIndex(title, files, updateIndex, expect);
+    } catch (e) {
+      if (!(e instanceof ConflictError)) throw e;
+      const taken = e.paths.includes(slug) && expect[slug] === null;
+      const q = taken
+        ? '“' + slug + '” adında bir dosya zaten var. Üzerine yazılsın mı?\n\n(İptal: dosya adını değiştirip yeniden yayınlayın.)'
+        : 'Bu yazı siz açtıktan sonra başka biri tarafından değiştirildi.\n\nÜzerine yazılsın mı? Tamam derseniz onun değişiklikleri kaybolur.';
+      if (!e.paths.length) throw e;
+      if (!confirm(q)) throw taken ? new Error('“' + slug + '” adında bir dosya zaten var; dosya adını değiştirip yeniden yayınlayın.') : e;
+      shas = await saveIndex(title, files, updateIndex, {});
+    }
 
-    state.editing = { href: slug };
+    state.editing = { href: slug, sha: shas[slug] };
     renderList();
     msg('edit-msg', 'Yayınlandı: ' + slug + ' — GitHub Pages ~30 saniye içinde güncellenir.', 'ok');
   } catch (e) {
@@ -1654,7 +1734,16 @@ async function saveDoc() {
     const html = finalizeDoc(ed.tab === 'visual' ? serializeVisual() : $('doc-code').value);
     msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
     const enc = await encryptPage(html, state.pw);
-    await ghCommit([{ path: t.href, text: enc }], 'Yazıyı güncelle: ' + t.title);
+    const files = [{ path: t.href, text: enc }], message = 'Yazıyı güncelle: ' + t.title;
+    let res;
+    try {
+      res = await ghCommit(files, message, t.sha ? { [t.href]: t.sha } : {});
+    } catch (e) {
+      if (!(e instanceof ConflictError) || !e.paths.length) throw e;
+      if (!confirm('Bu yazı siz açtıktan sonra başka biri tarafından değiştirildi.\n\nÜzerine yazılsın mı? Tamam derseniz onun değişiklikleri kaybolur.\n(İptal: Kod sekmesindeki HTML’i bir yere kopyalayıp yazıyı yeniden açabilirsiniz.)')) throw e;
+      res = await ghCommit(files, message, {});
+    }
+    t.sha = res.shas[t.href];
     ed.dirty = false;
     msg('doc-msg', 'Kaydedildi: ' + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
   } catch (e) { msg('doc-msg', e.message, 'err'); }
@@ -1678,7 +1767,7 @@ $('btn-to-doc').addEventListener('click', async (e) => {
   e.preventDefault();
   if (!state.editing) return;
   if (!confirm('Bu yazı bundan sonra Görsel / Kod düzenleyicide açılacak; Markdown kaynağı kaydedince kaldırılır.\nDevam edilsin mi?')) return;
-  await openDoc({ href: state.editing.href, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
+  await openDoc({ href: state.editing.href, sha: state.editing.sha, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
   ed.dirty = true;
 });
 
@@ -1878,31 +1967,38 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
   const p = state.metaTarget;
   if (!p) return;
   ev.target.disabled = true;
+  const origHref = p.href;
+  const f = {
+    title: $('m-title').value.trim(),
+    author: $('m-author').value.trim(),
+    date: $('m-date').value.trim(),
+    href: $('m-href').value.trim(),
+    excerpt: $('m-excerpt').value.trim(),
+    kicker: $('m-kicker').value.trim(),
+    lede: $('m-lede').value.split(/\n{2,}/).map(s => s.trim()).filter(Boolean),
+    featured: $('m-featured').checked
+  };
   try {
-    p.title = $('m-title').value.trim();
-    p.author = $('m-author').value.trim();
-    p.date = $('m-date').value.trim();
-    p.href = $('m-href').value.trim();
-    p.excerpt = $('m-excerpt').value.trim();
-    const kicker = $('m-kicker').value.trim();
-    if (kicker) p.kicker = kicker; else delete p.kicker;
-    const lede = $('m-lede').value.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
-
-    const arr = flatten();
-    if ($('m-featured').checked) {
-      const i = arr.indexOf(p);
-      if (i > 0) { arr.splice(i, 1); arr.unshift(p); }
-      p.lede = lede.length ? lede : [p.excerpt || ''];
-    } else if (arr[0] === p && arr.length > 1) {
-      arr.splice(0, 1);
-      arr.splice(1, 0, p);
-    } else if (lede.length) {
-      p.lede = lede;
-    }
-    unflatten(arr);
-
     msg('meta-msg', 'Kaydediliyor…', 'info');
-    await saveIndex('Arşiv kaydını güncelle: ' + p.title);
+    await saveIndex('Arşiv kaydını güncelle: ' + f.title, [], data => {
+      const arr = flattenOf(data);
+      const q = arr.find(x => x.href === origHref);
+      if (!q) throw new Error('Bu yazı bu arada listeden kaldırılmış.');
+      q.title = f.title; q.author = f.author; q.date = f.date; q.href = f.href; q.excerpt = f.excerpt;
+      if (f.kicker) q.kicker = f.kicker; else delete q.kicker;
+      if (f.featured) {
+        const i = arr.indexOf(q);
+        if (i > 0) { arr.splice(i, 1); arr.unshift(q); }
+        q.lede = f.lede.length ? f.lede : [q.excerpt || ''];
+      } else if (arr[0] === q && arr.length > 1) {
+        arr.splice(0, 1);
+        arr.splice(1, 0, q);
+      } else if (f.lede.length) {
+        q.lede = f.lede;
+      }
+      unflattenInto(data, arr);
+    });
+    state.metaTarget = flatten().find(x => x.href === f.href) || null;
     renderList();
     msg('meta-msg', 'Kaydedildi.', 'ok');
   } catch (e) { msg('meta-msg', e.message, 'err'); }
