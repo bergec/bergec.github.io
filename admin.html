@@ -138,23 +138,21 @@
       <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Fine-grained token</a>
       sayfasından yalnızca bu depoya, <em>Repository permissions → Contents: Read and write</em> yetkisiyle bir anahtar üretin
       (depo <code>bergec</code> hesabında olduğu için anahtarı o hesapla üretin).
-      Anahtar yalnızca bu tarayıcıda, sizin belirlediğiniz <strong>admin şifresiyle</strong> şifrelenmiş olarak saklanır; hiçbir yere gönderilmez.
+      Anahtar yalnızca bu tarayıcıda saklanır, hiçbir yere gönderilmez.
     </p>
     <div class="grid g3">
       <div><label class="f" for="owner">GitHub kullanıcı</label><input type="text" id="owner" value="bergec" autocomplete="off"></div>
       <div><label class="f" for="repo">Depo</label><input type="text" id="repo" value="bergec.github.io" autocomplete="off"></div>
       <div><label class="f" for="branch">Dal</label><input type="text" id="branch" value="main" autocomplete="off"></div>
     </div>
-    <div class="grid g3" style="margin-top: 14px;">
+    <div class="grid g2" style="margin-top: 14px;">
       <div><label class="f" for="token">GitHub anahtarı</label><input type="password" id="token" placeholder="github_pat_…" autocomplete="off"></div>
-      <div><label class="f" for="adminpw">Admin şifresi</label><input type="password" id="adminpw" placeholder="anahtarı kilitleyen şifre" autocomplete="off"></div>
       <div><label class="f" for="sitepw">Site parolası</label><input type="password" id="sitepw" placeholder="sayfaların şifrelendiği parola" autocomplete="off"></div>
     </div>
-    <p class="hint" id="lock-hint" style="margin: 10px 0 0;"></p>
     <div class="row" style="margin-top: 14px;">
       <button class="b" id="btn-connect">Bağlan</button>
       <label style="font-size: 12.5px; color: var(--color-neutral-700);">
-        <input type="checkbox" id="remember" checked style="width: auto;"> Anahtarı bu tarayıcıda hatırla (admin şifresiyle kilitli)
+        <input type="checkbox" id="remember" checked style="width: auto;"> Anahtarı bu tarayıcıda hatırla
       </label>
       <span class="sp"></span>
       <button class="b ghost hidden" id="btn-forget">Anahtarı unut</button>
@@ -174,6 +172,7 @@
     </table>
     <div class="bar">
       <button class="b" id="btn-new">+ Yeni yazı</button>
+      <button class="b ghost" id="btn-new-html">+ Yeni yazı (HTML)</button>
       <span class="sp"></span>
       <button class="b ghost" id="btn-reload">Yenile</button>
     </div>
@@ -276,12 +275,47 @@
     <div class="msg" id="edit-msg"></div>
   </section>
 
+  <!-- ══════════════ 3b. YENİ YAZI (HTML) ══════════════ -->
+  <section class="panel hidden" id="p-new">
+    <h2>Yeni yazı (HTML)</h2>
+    <p class="hint">
+      Yazının bilgilerini girin. İsterseniz hazır bir <strong>HTML dosyası</strong> yükleyin — tam bir sayfa ya da yalnızca yazının gövdesi olabilir;
+      yüklemezseniz boş bir sayfayla başlarsınız. Yazı sonra Görsel / Kod düzenleyicide açılır; ilk kaydettiğinizde ana sayfadaki listeye de eklenir.
+    </p>
+    <div class="grid g3">
+      <div><label class="f" for="n-title">Başlık</label><input type="text" id="n-title" placeholder="Yazının başlığı"></div>
+      <div><label class="f" for="n-author">Yazar</label><input type="text" id="n-author" placeholder="Ad Soyad"></div>
+      <div><label class="f" for="n-date">Tarih</label><input type="text" id="n-date" placeholder="GG.AA.YYYY"></div>
+    </div>
+    <div class="grid g2" style="margin-top: 14px;">
+      <div><label class="f" for="n-subtitle">Alt başlık <span style="text-transform: none; letter-spacing: 0;">(isteğe bağlı)</span></label><input type="text" id="n-subtitle"></div>
+      <div><label class="f" for="n-slug">Dosya adı</label><input type="text" id="n-slug" placeholder="yeni-yazi.html"></div>
+    </div>
+    <div style="margin-top: 14px;">
+      <label class="f" for="n-excerpt">Arşiv özeti <span style="text-transform: none; letter-spacing: 0;">(boş bırakırsanız yazının başından alınır)</span></label>
+      <textarea id="n-excerpt" rows="2" style="font-family: var(--font-body); font-size: 14px;"></textarea>
+    </div>
+    <div class="row" style="margin-top: 12px;">
+      <label style="font-size: 13px;"><input type="checkbox" id="n-featured" style="width: auto;"> Ana sayfada manşet yap</label>
+      <span class="sp"></span>
+      <label class="f" for="n-file" style="margin: 0;">HTML dosyası (isteğe bağlı)</label>
+      <input type="file" id="n-file" accept=".html,.htm,text/html" style="font-size: 13px; width: auto;">
+    </div>
+    <div class="bar">
+      <button class="b" id="btn-new-go">Düzenleyicide aç</button>
+      <span class="sp"></span>
+      <button class="b ghost" id="btn-new-cancel">Vazgeç</button>
+    </div>
+    <div class="msg" id="new-msg"></div>
+  </section>
+
   <!-- ══════════════ 4. GÖRSEL / KOD DÜZENLEYİCİ ══════════════ -->
   <section class="panel hidden" id="p-doc">
     <h2 id="doc-title">Düzenle</h2>
     <p class="hint">
       <strong>Görsel</strong> sekmesinde yazı sitede göründüğü gibi açılır: metne tıklayıp yazın, formüle tıklayıp LaTeX’ini değiştirin,
-      görsele tıklayıp boyutunu ayarlayın. <strong>Kod</strong> sekmesi sayfanın HTML’ini gösterir. Kaydettiğinizde sayfa şifrelenip gönderilir.
+      görsele tıklayıp boyutunu ayarlayın. <strong>Kod</strong> sekmesi sayfanın HTML’ini gösterir; Görsel sekmesine geçince kodda yaptığınız
+      değişiklikler orada görünür (önizleme). <strong>Kaydet ve yayınla</strong>’ya basana kadar hiçbir şey siteye gitmez.
     </p>
     <div class="tabs">
       <button class="tab" data-tab="visual">Görsel</button>
@@ -311,6 +345,10 @@
       <iframe id="doc-frame" title="Görsel düzenleyici"></iframe>
     </div>
     <div id="doc-codewrap" class="hidden">
+      <div class="toolbar">
+        <button class="mini" id="doc-code-load" title="Tam bir sayfa yüklerseniz sayfanın tamamı, yalnızca gövde yüklerseniz yazının içeriği değişir">HTML dosyası yükle</button>
+        <input type="file" id="doc-code-file" accept=".html,.htm,text/html" class="hidden">
+      </div>
       <textarea id="doc-code" spellcheck="false"></textarea>
     </div>
     <div class="bar">
@@ -403,10 +441,8 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 const ITERATIONS = 250000;
-const LS_TOKEN = 'bergec-admin-token';          // eski: şifresiz anahtar (varsa bir kez taşınır)
-const LS_TOKEN_ENC = 'bergec-admin-token-enc';  // admin şifresiyle şifrelenmiş anahtar
-const TOKEN_ITERATIONS = 600000;                // admin şifresi için PBKDF2 tur sayısı
-const ADMIN_PW_MIN = 8;
+const LS_TOKEN = 'bergec-admin-token';
+const LS_TOKEN_ENC_OLD = 'bergec-admin-token-enc'; // kaldırılan admin şifresi sürümünün kaydı; açılışta silinir
 const LS_REPO  = 'bergec-admin-repo';
 const SS_PW    = 'bergec-pw';
 
@@ -447,10 +483,10 @@ function bytesToB64(bytes) {
 function utf8ToB64(str) { return bytesToB64(new TextEncoder().encode(str)); }
 function b64ToUtf8(b64) { return new TextDecoder().decode(b64ToBytes(b64)); }
 
-async function deriveKey(password, saltBytes, usages, iterations) {
+async function deriveKey(password, saltBytes, usages) {
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: saltBytes, iterations: iterations || ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
     km, { name: 'AES-GCM', length: 256 }, false, usages
   );
 }
@@ -480,36 +516,6 @@ async function encryptPage(plaintext, password) {
   const key = await deriveKey(password, salt, ['encrypt']);
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plaintext));
   return lockPage(bytesToB64(salt), bytesToB64(iv), bytesToB64(ct));
-}
-
-/* GitHub anahtarı tarayıcıda düz metin durmasın: admin şifresiyle AES-GCM şifrelenip saklanır.
-   localStorage'ı okuyabilen biri (ortak bilgisayar, kötü amaçlı bir betik) yalnızca şifreli hâli görür. */
-async function lockToken(token, adminPw) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(adminPw, salt, ['encrypt'], TOKEN_ITERATIONS);
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(token));
-  return JSON.stringify({ v: 1, it: TOKEN_ITERATIONS, salt: bytesToB64(salt), iv: bytesToB64(iv), ct: bytesToB64(ct) });
-}
-async function unlockToken(stored, adminPw) {
-  const o = JSON.parse(stored);
-  const key = await deriveKey(adminPw, b64ToBytes(o.salt), ['decrypt'], o.it);
-  try {
-    const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(o.iv) }, key, b64ToBytes(o.ct));
-    return new TextDecoder().decode(buf);
-  } catch (e) {
-    throw new Error('Admin şifresi yanlış.');
-  }
-}
-function storedLockedToken() {
-  try { return localStorage.getItem(LS_TOKEN_ENC); } catch (e) { return null; }
-}
-function updateLockHint() {
-  const locked = !!storedLockedToken();
-  $('token').placeholder = locked ? 'kayıtlı (kilitli) — değiştirmek için yenisini yapıştırın' : 'github_pat_…';
-  $('lock-hint').textContent = locked
-    ? 'Bu tarayıcıda kilitli bir anahtar kayıtlı: admin şifresini ve site parolasını girip Bağlan’a basmanız yeterli.'
-    : 'Anahtarı hatırlatmak için bir admin şifresi belirleyin (en az ' + ADMIN_PW_MIN + ' karakter). Sonraki girişlerde anahtar yerine bu şifreyi yazarsınız.';
 }
 
 /** tools/encrypt.js ile birebir aynı kilit sayfası. */
@@ -1304,13 +1310,13 @@ function resetEditor() {
 }
 
 function showOnly(panel) {
-  ['p-list', 'p-edit', 'p-doc', 'p-meta'].forEach(id => show(id, id === panel));
+  ['p-list', 'p-edit', 'p-new', 'p-doc', 'p-meta'].forEach(id => show(id, id === panel));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 $('btn-new').addEventListener('click', () => {
   resetEditor();
-  show('btn-to-doc', false);
+  show('btn-to-doc', true);
   $('edit-title').textContent = 'Yeni yazı';
   showOnly('p-edit');
   renderPreview();
@@ -1386,7 +1392,8 @@ $('btn-publish').addEventListener('click', async (ev) => {
     const updateIndex = data => {
       const arr = flattenOf(data);
       let entry = old ? arr.find(x => x.href === old) : null;
-      if (!entry) { entry = {}; arr.unshift(entry); }
+      // yeni yazı: manşet değilse manşetin altına, arşivin başına
+      if (!entry) { entry = {}; arr.splice(featured || !arr.length ? 0 : 1, 0, entry); }
       entry.title = meta.title;
       entry.date = meta.date;
       entry.author = meta.author;
@@ -1716,12 +1723,43 @@ async function openDoc(target, html) {
   ed.target = target;
   ed.tab = null;
   ed.model = null;
-  $('doc-title').textContent = 'Düzenle · ' + target.title;
+  $('doc-title').textContent = (target.isNew ? 'Yeni yazı · ' : 'Düzenle · ') + target.title;
   $('doc-code').value = html;
   msg('doc-msg', '');
   showOnly('p-doc');
   await setDocTab('visual');
   ed.dirty = false;
+}
+
+/** Görsel / Kod düzenleyicide yazılan yeni yazının ilk kaydı: dosya + ana sayfa listesi tek commit'te. */
+async function publishNewDoc(t, html, enc) {
+  const e = t.entry;
+  const d = new DOMParser().parseFromString(html, 'text/html');
+  const art = d.querySelector('article.body');
+  const paras = art ? Array.from(art.querySelectorAll('p')).map(p => p.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean) : [];
+  const excerpt = e.excerpt || firstSentences(paras.join(' '), 240);
+  const lede = paras.slice(0, 2);
+  msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
+  let shas;
+  try {
+    shas = await saveIndex('Yeni yazı: ' + e.title, [{ path: t.href, text: enc }], data => {
+      const arr = flattenOf(data);
+      const entry = { title: e.title, date: e.date, author: e.author, href: t.href, excerpt: excerpt };
+      arr.splice(e.featured || !arr.length ? 0 : 1, 0, entry); // manşet değilse manşetin altına
+      if (e.featured) { entry.lede = lede; if (e.subtitle) entry.kicker = e.subtitle; }
+      unflattenInto(data, arr);
+    }, { [t.href]: null });
+  } catch (err) {
+    if (err instanceof ConflictError && err.paths.includes(t.href)) {
+      throw new Error('“' + t.href + '” adında bir dosya bu arada oluşturulmuş. Kod sekmesindeki HTML’i kopyalayıp başka bir dosya adıyla yeni yazı açın.');
+    }
+    throw err;
+  }
+  t.isNew = false;
+  t.sha = shas[t.href];
+  $('doc-title').textContent = 'Düzenle · ' + e.title;
+  renderList();
+  msg('doc-msg', 'Yayınlandı ve listeye eklendi: ' + t.href + ' — site ~30 saniye içinde güncellenir.', 'ok');
 }
 
 async function saveDoc() {
@@ -1734,6 +1772,11 @@ async function saveDoc() {
     const html = finalizeDoc(ed.tab === 'visual' ? serializeVisual() : $('doc-code').value);
     msg('doc-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
     const enc = await encryptPage(html, state.pw);
+    if (t.isNew) {
+      await publishNewDoc(t, html, enc);
+      ed.dirty = false;
+      return;
+    }
     const files = [{ path: t.href, text: enc }], message = 'Yazıyı güncelle: ' + t.title;
     let res;
     try {
@@ -1765,10 +1808,117 @@ window.addEventListener('beforeunload', (e) => {
 
 $('btn-to-doc').addEventListener('click', async (e) => {
   e.preventDefault();
-  if (!state.editing) return;
+  if (!state.editing) {
+    // henüz yayınlanmamış yeni yazı: bilgileri formdan al, ilk kayıtta listeye eklenir
+    const m = currentMeta();
+    if (!m.title) { msg('edit-msg', 'Başlık gerekli.', 'err'); return; }
+    if (!m.slug) { msg('edit-msg', 'Dosya adı gerekli.', 'err'); return; }
+    const slug = /\.html$/.test(m.slug) ? m.slug : m.slug + '.html';
+    await openDoc({ href: slug, sha: null, title: m.title, isNew: true,
+      entry: { title: m.title, author: m.author, date: m.date, subtitle: m.subtitle, excerpt: m.excerpt, featured: $('f-featured').checked } },
+      buildCurrentArticle());
+    ed.dirty = true;
+    return;
+  }
   if (!confirm('Bu yazı bundan sonra Görsel / Kod düzenleyicide açılacak; Markdown kaynağı kaydedince kaldırılır.\nDevam edilsin mi?')) return;
   await openDoc({ href: state.editing.href, sha: state.editing.sha, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
   ed.dirty = true;
+});
+
+/* yeni yazı (HTML) */
+
+function todayStr() {
+  const d = new Date();
+  return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
+}
+
+/**
+ * Yüklenen HTML'den yazı sayfası üretir. Tam bir Bergeç sayfasıysa (içinde <article class="body"> var)
+ * olduğu gibi kullanılır; değilse <body>'sinin içeriği (ve varsa <head>'deki <style>'lar) yazının gövdesi olur.
+ */
+function pageFromUpload(text, meta) {
+  if (text && /<article[^>]*class="[^"]*\bbody\b/.test(text)) return text;
+  let body = '<p class="lede">Yazınızı buraya yazın…</p>';
+  if (text && text.trim()) {
+    const d = new DOMParser().parseFromString(text, 'text/html');
+    d.querySelectorAll('script').forEach(x => x.remove());
+    const styles = Array.from(d.head.querySelectorAll('style')).map(x => x.outerHTML).join('\n');
+    body = (styles ? styles + '\n' : '') + d.body.innerHTML.trim();
+  }
+  return buildArticle(Object.assign({ katex: true, lede: true, body: '' }, meta), body, []);
+}
+
+$('btn-new-html').addEventListener('click', () => {
+  ['n-title', 'n-author', 'n-subtitle', 'n-slug', 'n-excerpt'].forEach(id => $(id).value = '');
+  delete $('n-slug').dataset.touched;
+  $('n-date').value = todayStr();
+  $('n-featured').checked = false;
+  $('n-file').value = '';
+  msg('new-msg', '');
+  showOnly('p-new');
+});
+$('btn-new-cancel').addEventListener('click', (e) => { e.preventDefault(); showOnly('p-list'); });
+$('n-title').addEventListener('input', () => {
+  // dosya adını başlıktan öner (kullanıcı değiştirmediyse)
+  if ($('n-slug').dataset.touched) return;
+  const t = $('n-title').value.toLocaleLowerCase('tr')
+    .replace(/[çğıöşü]/g, c => ({ ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' })[c])
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  $('n-slug').value = t ? t + '.html' : '';
+});
+$('n-slug').addEventListener('input', () => { $('n-slug').dataset.touched = '1'; });
+
+$('btn-new-go').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const meta = {
+    title: $('n-title').value.trim(), author: $('n-author').value.trim(), date: $('n-date').value.trim(),
+    subtitle: $('n-subtitle').value.trim(), excerpt: $('n-excerpt').value.trim()
+  };
+  let slug = $('n-slug').value.trim();
+  if (!meta.title) { msg('new-msg', 'Başlık gerekli.', 'err'); return; }
+  if (!slug) { msg('new-msg', 'Dosya adı gerekli.', 'err'); return; }
+  if (!/\.html$/.test(slug)) slug += '.html';
+  if (!/^[a-z0-9][a-z0-9._-]*\.html$/.test(slug)) { msg('new-msg', 'Dosya adında yalnızca küçük harf, rakam, nokta, - ve _ kullanın.', 'err'); return; }
+  const btn = e.target;
+  btn.disabled = true;
+  try {
+    msg('new-msg', 'Kontrol ediliyor…', 'info');
+    if (await gh(repoPath(`/contents/${encPath(slug)}?ref=${encodeURIComponent(state.branch)}`))) {
+      throw new Error('“' + slug + '” adında bir dosya zaten var; başka bir dosya adı seçin.');
+    }
+    const file = $('n-file').files && $('n-file').files[0];
+    const text = file ? await file.text() : '';
+    msg('new-msg', '');
+    await openDoc({ href: slug, sha: null, title: meta.title, isNew: true,
+      entry: Object.assign({ featured: $('n-featured').checked }, meta) }, pageFromUpload(text, meta));
+    ed.dirty = true;
+  } catch (err) { msg('new-msg', err.message, 'err'); }
+  finally { btn.disabled = false; }
+});
+
+$('doc-code-load').addEventListener('click', (e) => { e.preventDefault(); $('doc-code-file').click(); });
+$('doc-code-file').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const text = await file.text();
+  const full = /<article[^>]*class="[^"]*\bbody\b/.test(text);
+  if (!confirm(full ? 'Yüklenen dosya tam bir sayfa: sayfanın tamamı onunla değiştirilsin mi?'
+                    : 'Yüklenen dosya yazının içeriği olarak kullanılacak (başlık ve sayfa düzeni aynı kalır). Devam edilsin mi?')) return;
+  if (full) {
+    $('doc-code').value = text;
+  } else {
+    const cur = new DOMParser().parseFromString($('doc-code').value, 'text/html');
+    const up = new DOMParser().parseFromString(text, 'text/html');
+    up.querySelectorAll('script').forEach(x => x.remove());
+    const art = cur.querySelector('article.body');
+    if (!art) { msg('doc-msg', 'Bu sayfada yazı gövdesi (<article class="body">) bulunamadı; tam bir sayfa yükleyin.', 'err'); return; }
+    const styles = Array.from(up.head.querySelectorAll('style')).map(x => x.outerHTML).join('\n');
+    art.innerHTML = '\n' + (styles ? styles + '\n' : '') + up.body.innerHTML.trim() + '\n';
+    $('doc-code').value = '<!DOCTYPE html>\n' + cur.documentElement.outerHTML;
+  }
+  ed.dirty = true;
+  msg('doc-msg', 'Dosya yüklendi. Görsel sekmesinde önizleyebilirsiniz; kaydetmeden siteye gitmez.', 'ok');
 });
 
 /* araç çubuğu */
@@ -2023,25 +2173,13 @@ $('btn-connect').addEventListener('click', async (ev) => {
   state.branch = $('branch').value.trim() || 'main';
   state.token = $('token').value.trim();
   state.pw = $('sitepw').value;
-  const adminPw = $('adminpw').value;
-  const remember = $('remember').checked;
-  const locked = storedLockedToken();
 
   if (!state.owner || !state.repo) { msg('conn-msg', 'Kullanıcı ve depo adı gerekli.', 'err'); return; }
-  if (!state.token && !locked) { msg('conn-msg', 'GitHub anahtarı gerekli.', 'err'); return; }
-  if (!state.token && !adminPw) { msg('conn-msg', 'Kayıtlı anahtarı açmak için admin şifresini girin.', 'err'); return; }
-  if (state.token && remember && adminPw.length < ADMIN_PW_MIN) {
-    msg('conn-msg', 'Anahtarı hatırlatmak için en az ' + ADMIN_PW_MIN + ' karakterlik bir admin şifresi belirleyin (ya da “hatırla”yı kapatın).', 'err');
-    return;
-  }
+  if (!state.token) { msg('conn-msg', 'GitHub anahtarı gerekli.', 'err'); return; }
   if (!state.pw) { msg('conn-msg', 'Site parolası gerekli.', 'err'); return; }
 
   btn.disabled = true;
   try {
-    if (!state.token) {
-      msg('conn-msg', 'Anahtarın kilidi açılıyor…', 'info');
-      state.token = await unlockToken(locked, adminPw);
-    }
     msg('conn-msg', 'Bağlanılıyor…', 'info');
     const repo = await gh(`/repos/${state.owner}/${state.repo}`);
     if (!repo) throw new Error('Depo bulunamadı ya da anahtarın bu depoya erişimi yok.');
@@ -2050,19 +2188,12 @@ $('btn-connect').addEventListener('click', async (ev) => {
     msg('conn-msg', 'Ana sayfa çözülüyor…', 'info');
     await loadIndex();
 
-    // Anahtar yalnızca doğrulandıktan sonra, admin şifresiyle kilitlenip saklanır.
-    try {
-      localStorage.removeItem(LS_TOKEN); // eski, şifresiz kayıt
-      if (remember) {
-        if ($('token').value.trim() || !locked) localStorage.setItem(LS_TOKEN_ENC, await lockToken(state.token, adminPw));
+    if ($('remember').checked) {
+      try {
+        localStorage.setItem(LS_TOKEN, state.token);
         localStorage.setItem(LS_REPO, JSON.stringify({ owner: state.owner, repo: state.repo, branch: state.branch }));
-      } else {
-        localStorage.removeItem(LS_TOKEN_ENC);
-      }
-    } catch (e) {}
-    $('token').value = '';
-    $('adminpw').value = '';
-    updateLockHint();
+      } catch (e) {}
+    }
     try { sessionStorage.setItem(SS_PW, state.pw); } catch (e) {}
 
     $('who').textContent = state.owner + '/' + state.repo + ' · ' + state.branch;
@@ -2081,10 +2212,9 @@ $('btn-connect').addEventListener('click', async (ev) => {
 
 $('btn-forget').addEventListener('click', (e) => {
   e.preventDefault();
-  try { localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_TOKEN_ENC); localStorage.removeItem(LS_REPO); } catch (err) {}
+  try { localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_REPO); } catch (err) {}
   try { sessionStorage.removeItem(SS_PW); } catch (err) {}
   $('token').value = '';
-  updateLockHint();
   msg('conn-msg', 'Anahtar bu tarayıcıdan silindi.', 'ok');
   show('btn-forget', false);
 });
@@ -2093,16 +2223,14 @@ $('btn-forget').addEventListener('click', (e) => {
 
 (function init() {
   try {
-    // Eski sürümün şifresiz sakladığı anahtar: alana doldur; Bağlan'da admin şifresiyle kilitlenip bu kayıt silinir.
+    localStorage.removeItem(LS_TOKEN_ENC_OLD);
     const t = localStorage.getItem(LS_TOKEN);
     if (t) { $('token').value = t; show('btn-forget', true); }
-    if (localStorage.getItem(LS_TOKEN_ENC)) show('btn-forget', true);
     const r = JSON.parse(localStorage.getItem(LS_REPO) || 'null');
     if (r) { $('owner').value = r.owner; $('repo').value = r.repo; $('branch').value = r.branch; }
     const pw = sessionStorage.getItem(SS_PW);
     if (pw) $('sitepw').value = pw;
   } catch (e) {}
-  updateLockHint();
   if (!window.crypto || !window.crypto.subtle) {
     msg('conn-msg', 'Bu sayfa şifreleme için https (veya localhost) gerektirir.', 'err');
   }
