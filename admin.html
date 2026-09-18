@@ -107,6 +107,8 @@
   }
   .tab.on { border-color: var(--color-text); background: #fff; color: var(--color-text); }
   .toolbar.sticky { position: sticky; top: 0; z-index: 5; background: var(--color-surface); padding: 8px 0; margin: 0; align-items: center; }
+  .mini-select { font: inherit; font-size: 11px; padding: 4px 6px; width: auto; border: 1px solid var(--color-neutral-400); border-radius: 2px; background: #fff; cursor: pointer; }
+  .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
   .tsep { width: 1px; height: 20px; background: var(--color-divider); margin: 0 4px; }
   #doc-frame { display: block; width: 100%; height: 76vh; min-height: 480px; border: 1px solid var(--color-divider); background: #fff; }
   #doc-code { min-height: 76vh; white-space: pre; overflow-wrap: normal; overflow-x: auto; }
@@ -315,6 +317,8 @@
         <span class="tsep"></span>
         <button class="mini" data-cmd="bold" title="Kalın (Ctrl+B)"><b>K</b></button>
         <button class="mini" data-cmd="italic" title="İtalik (Ctrl+I)"><i>İ</i></button>
+        <button class="mini" data-act="color-accent" title="Seçili metni sitenin kahverengisiyle yaz (başlıklarla aynı renk)"><span class="swatch" style="background: var(--color-accent-700);"></span>Kahverengi</button>
+        <button class="mini" data-act="color-none" title="Seçili metnin rengini normale (siyah) döndür"><span class="swatch" style="background: var(--color-text);"></span>Siyah</button>
         <button class="mini" data-cmd="insertUnorderedList">• Liste</button>
         <button class="mini" data-cmd="insertOrderedList">1. Liste</button>
         <button class="mini" data-act="link">Bağlantı</button>
@@ -323,6 +327,34 @@
         <button class="mini" data-act="math-block">Ortalı formül</button>
         <button class="mini" data-act="image">Görsel ekle</button>
         <input type="file" id="doc-img-file" accept="image/*" class="hidden">
+        <span class="tsep"></span>
+        <button class="mini" data-act="code-inline" title="Seçili metni kod olarak yaz"><code>Kod</code></button>
+        <select id="doc-insert" class="mini-select" title="Yazıya kutu, tablo, dipnot vb. ekle">
+          <option value="">Ekle…</option>
+          <optgroup label="Matematik">
+            <option value="def">Tanım kutusu</option>
+            <option value="thm">Teorem kutusu</option>
+            <option value="proof">Kanıt</option>
+            <option value="algo">Algoritma kutusu</option>
+          </optgroup>
+          <optgroup label="Metin">
+            <option value="quote">Kaynaklı alıntı</option>
+            <option value="steps">Adımlar listesi</option>
+            <option value="table">Tablo</option>
+            <option value="pre">Kod bloğu</option>
+            <option value="fn">Dipnot</option>
+            <option value="refs">Kaynakça</option>
+            <option value="hr">Ayraç çizgisi</option>
+          </optgroup>
+          <optgroup label="Düzenle">
+            <option value="row-add">Tabloya satır ekle</option>
+            <option value="col-add">Tabloya sütun ekle</option>
+            <option value="row-del">Tablodan satırı sil</option>
+            <option value="col-del">Tablodan sütunu sil</option>
+            <option value="unwrap">Kutuyu kaldır (içerik kalsın)</option>
+            <option value="del-block">Bulunduğum bloğu sil</option>
+          </optgroup>
+        </select>
       </div>
       <iframe id="doc-frame" title="Görsel düzenleyici"></iframe>
     </div>
@@ -1557,12 +1589,32 @@ function cleanRegion(r) {
   r.querySelectorAll('[data-ed-tex]').forEach(el => { el.textContent = el.getAttribute('data-ed-tex'); });
   r.querySelectorAll('[data-ed-disp]').forEach(el => el.replaceWith(d.createTextNode('$$' + el.getAttribute('data-ed-disp') + '$$')));
   r.querySelectorAll('img[data-bergec-img]').forEach(im => im.removeAttribute('src'));
+  // Paragrafın içine düşmüş bloklar (tarayıcının biçim komutları bazen <p><blockquote>… üretir): HTML'de geçersizdir,
+  // sayfa yeniden açılınca bozulur. Paragrafı böl: satır içi parçalar paragraf olarak kalır, bloklar dışarı çıkar.
+  const BLOCK = /^(DIV|BLOCKQUOTE|UL|OL|TABLE|PRE|H1|H2|H3|H4|H5|H6|FIGURE|HR|P)$/;
+  [...r.querySelectorAll('p')].reverse().forEach(p => {
+    if (![...p.children].some(c => BLOCK.test(c.tagName))) return;
+    const frag = d.createDocumentFragment();
+    let run = null;
+    [...p.childNodes].forEach(n => {
+      if (n.nodeType === 1 && BLOCK.test(n.tagName)) { run = null; frag.appendChild(n); }
+      else {
+        if (!run) { run = p.cloneNode(false); frag.appendChild(run); }
+        run.appendChild(n);
+      }
+    });
+    p.replaceWith(frag);
+  });
+  // boş paragraflar (kutudan çıkarken ya da Enter'la açılıp yazılmadan kalan satırlar) sayfada boşluk bırakmasın
+  r.querySelectorAll('p').forEach(p => {
+    if (!p.textContent.replace(/\u00a0/g, ' ').trim() && !p.querySelector('img, svg, [data-ed-tex], [data-ed-disp], iframe, video')) p.remove();
+  });
   // Tarayıcı, paragrafları birleştirirken yazı tipini korumak için süs <span style> ekler; onları aç.
   r.querySelectorAll('span[style]:not([data-ed-orig])').forEach(s => {
     if (s.attributes.length === 1) s.replaceWith(...s.childNodes);
   });
   [r, ...r.querySelectorAll('*')].forEach(el => {
-    ['contenteditable', 'spellcheck', 'data-ed-tex', 'data-ed-orig', 'data-ph'].forEach(a => el.removeAttribute(a));
+    ['contenteditable', 'spellcheck', 'data-ed-tex', 'data-ed-orig', 'data-ph', 'data-ed-select'].forEach(a => el.removeAttribute(a));
   });
   r.normalize();
 }
@@ -1647,6 +1699,71 @@ function prepareFrame() {
   });
   d.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); saveDoc(); return; }
+    // kod bloğunda Enter yeni satır, Tab girinti
+    const at = d.getSelection().anchorNode;
+    const atEl = at && (at.nodeType === 1 ? at : at.parentElement);
+    if (atEl && atEl.closest('pre') && (e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey) {
+      e.preventDefault();
+      // gerçek satır sonu karakteri (tarayıcı <br> koyardı; kod kopyalanınca satırlar kaybolurdu)
+      const pre = atEl.closest('pre');
+      const r = d.getSelection().getRangeAt(0);
+      r.deleteContents();
+      const t = d.createTextNode(e.key === 'Enter' ? '\n' : '  ');
+      r.insertNode(t);
+      const tail = d.createRange(); tail.setStartAfter(t); tail.setEnd(pre, pre.childNodes.length);
+      if (e.key === 'Enter' && !tail.toString()) t.after(d.createTextNode('\n')); // sondaki boş satır görünsün
+      const nr = d.createRange(); nr.setStartAfter(t); nr.collapse(true);
+      const sel = d.getSelection(); sel.removeAllRanges(); sel.addRange(nr);
+      ed.dirty = true;
+      return;
+    }
+    if (e.key === 'Enter' && atEl) {
+      // tablo hücresinde Enter hücre içinde alt satır
+      if (atEl.closest('td, th')) { e.preventDefault(); d.execCommand('insertLineBreak'); ed.dirty = true; return; }
+      // metni doğrudan kutunun içinde duran kutular (Tanım, Teorem, alıntı): tarayıcı Enter'da kutuyu ikiye böler.
+      // Bunun yerine: kutunun sonundaysa kutudan çık, ortasındaysa (ya da Shift+Enter) kutu içinde alt satıra geç.
+      const box = atEl.closest(BOXES);
+      const para = atEl.closest('p, li');
+      if (box && !(para && box.contains(para))) {
+        e.preventDefault();
+        const r = d.getSelection().getRangeAt(0);
+        const rest = d.createRange(); rest.setStart(r.endContainer, r.endOffset); rest.setEnd(box, box.childNodes.length);
+        const after = rest.cloneContents();
+        const atEnd = !after.textContent.trim() && !after.querySelector('img, [data-ed-tex], [data-ed-disp]');
+        if (atEnd && !e.shiftKey) {
+          let p = box.nextElementSibling;
+          if (!(p && p.tagName === 'P' && !p.textContent.trim())) { p = d.createElement('p'); p.innerHTML = '<br>'; box.after(p); }
+          const nr = d.createRange(); nr.setStart(p, 0); nr.collapse(true);
+          const sel = d.getSelection(); sel.removeAllRanges(); sel.addRange(nr);
+        } else {
+          d.execCommand('insertLineBreak');
+        }
+        ed.dirty = true;
+        return;
+      }
+    }
+    // kutunun sonundaki boş satırda Enter → kutudan çık
+    if (e.key === 'Enter' && !e.shiftKey && atEl) {
+      const box = atEl.closest(BOXES + ', .steps');
+      const line = atEl.closest('p, li, div');
+      // kanıtın sonundaki ∎ satırı "boş" sayılır; çıkarken ∎ bir önceki paragrafın sonuna döner
+      const qed = line && line.querySelector(':scope > .qed');
+      const lineText = line ? [...line.childNodes].filter(n => n !== qed).map(n => n.textContent).join('') : '';
+      if (box && line && line !== box && box.contains(line) && !lineText.trim() && !line.querySelector('img, [data-ed-tex], [data-ed-disp]')
+          && (line === box.lastElementChild || line.parentElement.lastElementChild === line && line.parentElement.parentElement === box && line.parentElement === box.lastElementChild)) {
+        e.preventDefault();
+        const holder = line.parentElement !== box && line.parentElement.children.length === 1 ? line.parentElement : line;
+        const prev = holder.previousElementSibling;
+        if (qed && prev && prev.tagName === 'P') prev.append(' ', qed);
+        holder.remove();
+        const p = d.createElement('p'); p.innerHTML = '<br>';
+        box.after(p);
+        const r = d.createRange(); r.setStart(p, 0); r.collapse(true);
+        const sel = d.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        ed.dirty = true;
+        return;
+      }
+    }
     // başlık / alt başlık / yazar tek satırdır
     if (e.key === 'Enter') {
       const reg = editableAt(e.target === d.body ? d.getSelection().anchorNode : e.target);
@@ -1952,9 +2069,18 @@ $('doc-tools').addEventListener('click', (e) => {
   } else if (b.dataset.block) {
     if (!editableAt(r.startContainer) || !editableAt(r.startContainer).matches('article.body')) return;
     d.execCommand('formatBlock', false, '<' + b.dataset.block + '>');
+    if (b.dataset.block === 'blockquote') {
+      const sel = d.getSelection();
+      const q = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement).closest('blockquote');
+      if (q) q.classList.add('quote'); // bütün alıntılar aynı biçimde
+    }
   } else if (b.dataset.act === 'link') {
     const url = prompt('Bağlantı adresi:', 'https://');
     if (url) d.execCommand('createLink', false, url);
+  } else if (b.dataset.act === 'code-inline') {
+    if (!wrapSelection('code', 'inl')) { msg('doc-msg', 'Önce kod olarak yazılacak metni seçin.', 'info'); return; }
+  } else if (b.dataset.act === 'color-accent' || b.dataset.act === 'color-none') {
+    if (!colorSelection(b.dataset.act === 'color-accent')) { msg('doc-msg', 'Önce renklendirmek istediğiniz metni seçin.', 'info'); return; }
   } else if (b.dataset.act === 'math') {
     openMathDialog(null, false);
   } else if (b.dataset.act === 'math-block') {
@@ -1984,6 +2110,282 @@ $('doc-img-file').addEventListener('change', async (e) => {
     ed.dirty = true;
     fig.scrollIntoView({ block: 'center', behavior: 'smooth' });
   } catch (err) { msg('doc-msg', err.message, 'err'); }
+});
+
+/* renk: seçili metni sitenin vurgu rengine boyar ya da normale döndürür.
+   Renk sabit bir renk kodu değil, bergec.css'teki .vurgu sınıfıdır; sitenin rengi değişirse bunlar da değişir. */
+
+const COLOR_CLASS = 'vurgu';
+
+/** Seçimin kapsadığı metin düğümleri (formül blokları hariç); sınırdaki düğümler seçim noktasından bölünür. */
+function selectedTextNodes(r) {
+  if (r.startContainer.nodeType === 3 && r.startOffset > 0 && r.startOffset < r.startContainer.length) {
+    const rest = r.startContainer.splitText(r.startOffset);
+    if (r.endContainer === r.startContainer) r.setEnd(rest, r.endOffset - r.startOffset);
+    r.setStart(rest, 0);
+  }
+  if (r.endContainer.nodeType === 3 && r.endOffset > 0 && r.endOffset < r.endContainer.length) {
+    r.endContainer.splitText(r.endOffset);
+  }
+  const root = r.commonAncestorContainer.nodeType === 3 ? r.commonAncestorContainer.parentNode : r.commonAncestorContainer;
+  const d = root.ownerDocument;
+  const w = d.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const out = [];
+  if (root.nodeType === 3) out.push(root);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (!r.intersectsNode(n) || !n.nodeValue) continue;
+    if (n === r.endContainer && r.endOffset === 0) continue;
+    if (n === r.startContainer && r.startOffset === n.length) continue;
+    const el = n.parentElement;
+    if (el.closest('[contenteditable="false"]') || !editableAt(n)) continue;
+    out.push(n);
+  }
+  return out;
+}
+
+/** Düğümü, atası olan renk kutusundan ayırır: kutu [önce][düğüm][sonra] diye bölünür, ortadaki açılır. */
+function liftOut(node, box) {
+  const d = node.ownerDocument;
+  const rb = d.createRange(); rb.setStart(box, 0); rb.setEndBefore(node);
+  const before = rb.extractContents();
+  const ra = d.createRange(); ra.setStartAfter(node); ra.setEnd(box, box.childNodes.length);
+  const after = ra.extractContents();
+  if (before.textContent) { const b = box.cloneNode(false); b.appendChild(before); box.before(b); }
+  if (after.textContent) { const a = box.cloneNode(false); a.appendChild(after); box.after(a); }
+  box.replaceWith(...box.childNodes);
+}
+
+function colorSelection(on) { return wrapSelection('span', COLOR_CLASS, on); }
+
+/**
+ * Seçili metni <tag class="cls"> ile sarar (on) ya da o sarmalayıcıdan çıkarır (!on).
+ * on verilmezse aç/kapa: seçimin tamamı zaten sarılıysa çıkarır.
+ */
+function wrapSelection(tag, cls, on) {
+  const d = frameDoc();
+  const s = d.getSelection();
+  if (!s.rangeCount || s.isCollapsed) return false;
+  const r = s.getRangeAt(0);
+  const nodes = selectedTextNodes(r);
+  if (!nodes.length) return false;
+  const sel = tag + '.' + cls;
+  if (on === undefined) on = !nodes.every(n => n.parentElement.closest(sel));
+  nodes.forEach(n => {
+    const box = n.parentElement.closest(sel);
+    if (on && !box) {
+      const el = d.createElement(tag);
+      el.className = cls;
+      n.replaceWith(el);
+      el.appendChild(n);
+    } else if (!on && box) {
+      liftOut(n, box);
+    }
+  });
+  // yan yana kalan aynı sarmalayıcıları birleştir, boşları at
+  d.querySelectorAll(sel).forEach(el => {
+    if (!el.textContent) { el.remove(); return; }
+    const prev = el.previousSibling;
+    if (prev && prev.nodeType === 1 && prev.matches(sel) && prev.attributes.length === 1 && el.attributes.length === 1) {
+      prev.append(...el.childNodes); el.remove();
+    }
+  });
+  regionsOf(d).forEach(x => x.normalize());
+  // seçimi koru
+  const first = nodes.find(n => n.isConnected), last = [...nodes].reverse().find(n => n.isConnected);
+  if (first && last) {
+    const nr = d.createRange(); nr.setStart(first, 0); nr.setEnd(last, last.length);
+    s.removeAllRanges(); s.addRange(nr);
+  }
+  ed.dirty = true;
+  return true;
+}
+
+/* "Ekle…" menüsü: eski yazılardaki bütün blok biçimleri. İşaretleme eski yazılardakiyle aynıdır;
+   görünüşü bergec.css belirler, böylece her yazıda aynı görünür. */
+
+const BOXES = '.def, .thm, .proof, .algo, blockquote';
+
+function caretEl() {
+  const r = ed.lastRange;
+  if (!r) return null;
+  const n = r.startContainer;
+  return n.nodeType === 1 ? (n.childNodes[r.startOffset] && n.childNodes[r.startOffset].nodeType === 1 ? n.childNodes[r.startOffset] : n) : n.parentElement;
+}
+
+/** Aynı türden bir önceki kutunun numarası + 1 ("Teorem 7." → 8). Diziler (Enigma 1-2-3) kaldığı yerden devam eder. */
+function nextNumber(word, labelSel) {
+  const art = frameDoc().querySelector('article.body');
+  const here = caretEl();
+  let last = 0;
+  art.querySelectorAll(labelSel).forEach(l => {
+    if (here && art.contains(here) && (l.compareDocumentPosition(here) & Node.DOCUMENT_POSITION_PRECEDING)) return; // imleçten sonra gelenler
+    const m = l.textContent.match(new RegExp(word + '\\s+(\\d+)'));
+    if (m) last = Math.max(last, +m[1]);
+  });
+  return last + 1;
+}
+function lastTheoremNumber() {
+  const n = nextNumber('(?:Teorem|Lemma|Önerme|Sonuç)', '.thm > .label') - 1;
+  return n > 0 ? n : 1;
+}
+
+/** Yeni bloğu yerleştirir, sonrasına yazmaya devam edilecek bir paragraf bırakır, yer tutucu metni seçer. */
+function placeBlock(html) {
+  const d = frameDoc();
+  const tpl = d.createElement('template');
+  tpl.innerHTML = html.trim();
+  const node = tpl.content.firstElementChild;
+  insertBlock(node, ed.lastRange);
+  if (!node.nextElementSibling) { const p = d.createElement('p'); p.innerHTML = '<br>'; node.after(p); }
+  chipify(node);
+  const ph = node.querySelector('[data-ed-select]');
+  let target = node;
+  if (ph) { target = ph.firstChild || ph; ph.replaceWith(...ph.childNodes); } // yer tutucu metin seçili kalsın, sarmalayıcı kalmasın
+  const r = d.createRange();
+  r.selectNodeContents(target);
+  const s = d.getSelection(); s.removeAllRanges(); s.addRange(r);
+  ed.lastRange = r.cloneRange();
+  frameWin().focus();
+  node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  ed.dirty = true;
+}
+
+function insertKind(kind) {
+  const d = frameDoc();
+  const art = d.querySelector('article.body');
+  const here = caretEl();
+  switch (kind) {
+    case 'def':
+      return placeBlock(`<div class="def"><span class="label">Tanım ${nextNumber('Tanım', '.def > .label')}.</span> <span data-ed-select>Tanımı buraya yazın.</span></div>`);
+    case 'thm':
+      return placeBlock(`<div class="thm"><span class="label">Teorem ${nextNumber('(?:Teorem|Lemma|Önerme|Sonuç)', '.thm > .label')}.</span> <span data-ed-select>Teoremi buraya yazın.</span></div>`);
+    case 'proof':
+      return placeBlock(`<div class="proof"><span class="label">Kanıt ${lastTheoremNumber()}.</span><p><span data-ed-select>Kanıtı buraya yazın.</span> <span class="qed">∎</span></p></div>`);
+    case 'algo':
+      return placeBlock(`<div class="algo"><span class="algo-title">Algoritma ${nextNumber('Algoritma', '.algo > .algo-title')}: <span data-ed-select>Başlık</span></span><ol><li>İlk adım</li></ol></div>`);
+    case 'quote':
+      return placeBlock(`<blockquote class="quote"><span data-ed-select>Alıntı metni.</span><cite>Kaynak</cite></blockquote>`);
+    case 'steps':
+      return placeBlock(`<ul class="steps"><li><b>Adım 1:</b> <span data-ed-select>İlk adımı yazın.</span></li><li><b>Adım 2:</b> …</li></ul>`);
+    case 'pre':
+      return placeBlock(`<pre class="code"><span data-ed-select>// kod</span></pre>`);
+    case 'hr':
+      return placeBlock(`<hr class="hr">`);
+    case 'table': {
+      const cols = Math.max(1, Math.min(12, parseInt(prompt('Kaç sütun?', '3'), 10) || 0));
+      if (!cols) return;
+      const rows = Math.max(1, Math.min(50, parseInt(prompt('Başlık satırından başka kaç satır?', '2'), 10) || 0));
+      const head = '<tr>' + Array.from({ length: cols }, (_, i) => `<th>${i ? 'Başlık ' + (i + 1) : '<span data-ed-select>Başlık 1</span>'}</th>`).join('') + '</tr>';
+      const body = Array.from({ length: rows }, () => '<tr>' + '<td><br></td>'.repeat(cols) + '</tr>').join('');
+      return placeBlock(`<table class="tm">${head}${body}</table>`);
+    }
+    case 'fn': {
+      if (!ed.lastRange || !art.contains(ed.lastRange.startContainer)) { msg('doc-msg', 'Önce dipnot işaretinin geleceği yere tıklayın.', 'info'); return; }
+      const n = art.querySelectorAll('sup.fn').length + 1;
+      const sup = d.createElement('sup'); sup.className = 'fn'; sup.textContent = n;
+      const r = ed.lastRange; r.collapse(false); r.insertNode(sup);
+      // not metni: kaynakça varsa onun altındaki dipnot paragrafına, yoksa yazının sonuna
+      let notes = art.querySelector('.refs p.fn') || [...art.querySelectorAll(':scope > p.fn')].pop();
+      const num = d.createTextNode(n + '. ');
+      const text = d.createTextNode('Dipnot metnini buraya yazın.');
+      if (notes) { notes.append(d.createElement('br'), num, text); }
+      else {
+        notes = d.createElement('p'); notes.className = 'fn'; notes.append(num, text);
+        const refs = art.querySelector('.refs');
+        if (refs) refs.appendChild(notes); else art.appendChild(notes);
+      }
+      const rr = d.createRange(); rr.selectNodeContents(text); // yazınca yer tutucunun yerine geçsin, numara kalsın
+      const s = d.getSelection(); s.removeAllRanges(); s.addRange(rr);
+      ed.lastRange = rr.cloneRange();
+      notes.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      ed.dirty = true;
+      return;
+    }
+    case 'refs': {
+      const refs = art.querySelector('.refs');
+      if (refs) {
+        const ol = refs.querySelector('ol') || refs.appendChild(d.createElement('ol'));
+        const li = d.createElement('li'); li.innerHTML = 'Yazar, <em>Eser adı</em>. Yayınevi, Yıl.';
+        ol.appendChild(li);
+        const r = d.createRange(); r.selectNodeContents(li);
+        const s = d.getSelection(); s.removeAllRanges(); s.addRange(r);
+        li.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        ed.dirty = true;
+        return;
+      }
+      const div = d.createElement('div');
+      div.className = 'refs';
+      div.innerHTML = '<h2>Kaynakça</h2><ol><li>Yazar, <em>Eser adı</em>. Yayınevi, Yıl.</li></ol>';
+      art.appendChild(div);
+      const r = d.createRange(); r.selectNodeContents(div.querySelector('li'));
+      const s = d.getSelection(); s.removeAllRanges(); s.addRange(r);
+      div.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      ed.dirty = true;
+      return;
+    }
+  }
+}
+
+function editKind(kind) {
+  const here = caretEl();
+  const d = frameDoc();
+  const art = d.querySelector('article.body');
+  if (!here || !art.contains(here)) { msg('doc-msg', 'Önce yazının içinde ilgili yere tıklayın.', 'info'); return; }
+  const cell = here.closest('td, th');
+  const table = here.closest('table');
+  if (/^(row|col)-/.test(kind) && !cell) { msg('doc-msg', 'Önce tablonun içinde bir hücreye tıklayın.', 'info'); return; }
+  if (kind === 'row-add') {
+    const tr = cell.parentElement, nt = d.createElement('tr');
+    nt.innerHTML = '<td><br></td>'.repeat(tr.children.length);
+    tr.after(nt);
+  } else if (kind === 'col-add') {
+    const i = cell.cellIndex;
+    table.querySelectorAll('tr').forEach(tr => {
+      const ref = tr.children[i];
+      const c = d.createElement(ref && ref.tagName === 'TH' ? 'th' : 'td');
+      c.innerHTML = '<br>';
+      if (ref) ref.after(c); else tr.appendChild(c);
+    });
+  } else if (kind === 'row-del') {
+    if (table.querySelectorAll('tr').length <= 1) { msg('doc-msg', 'Tablonun son satırı silinemez; tabloyu “Bulunduğum bloğu sil” ile kaldırın.', 'info'); return; }
+    cell.parentElement.remove();
+  } else if (kind === 'col-del') {
+    const i = cell.cellIndex;
+    if (cell.parentElement.children.length <= 1) { msg('doc-msg', 'Tablonun son sütunu silinemez.', 'info'); return; }
+    table.querySelectorAll('tr').forEach(tr => { if (tr.children[i]) tr.children[i].remove(); });
+  } else if (kind === 'unwrap') {
+    const box = here.closest(BOXES + ', .steps, .refs');
+    if (!box || !art.contains(box)) { msg('doc-msg', 'İmleç bir kutunun içinde değil.', 'info'); return; }
+    const lab = box.querySelector(':scope > .label, :scope > .algo-title');
+    if (lab && confirm('Kutunun başlığı (“' + lab.textContent.trim() + '”) da silinsin mi?')) lab.remove();
+    box.querySelectorAll(':scope > cite').forEach(c => { const p = d.createElement('p'); p.append(...c.childNodes); c.replaceWith(p); });
+    // kutunun içinde paragrafa sarılmamış metin kalmasın
+    const frag = d.createDocumentFragment();
+    let loose = null;
+    [...box.childNodes].forEach(n => {
+      const block = n.nodeType === 1 && /^(P|DIV|UL|OL|TABLE|PRE|FIGURE|H2|H3|BLOCKQUOTE)$/.test(n.tagName);
+      if (block) { loose = null; frag.appendChild(n); }
+      else if (n.nodeType === 1 || n.nodeValue.trim()) { if (!loose) { loose = d.createElement('p'); frag.appendChild(loose); } loose.appendChild(n); }
+    });
+    box.replaceWith(frag);
+  } else if (kind === 'del-block') {
+    let b = here;
+    while (b.parentElement && b.parentElement !== art) b = b.parentElement;
+    if (b === art) return;
+    const what = b.matches(BOXES) ? 'kutu' : b.tagName === 'TABLE' ? 'tablo' : 'blok';
+    if (!confirm('Bu ' + what + ' tamamen silinsin mi?\n\n“' + b.textContent.trim().slice(0, 80) + '…”')) return;
+    b.remove();
+  }
+  ed.dirty = true;
+}
+
+$('doc-insert').addEventListener('change', (e) => {
+  const v = e.target.value;
+  e.target.value = '';
+  if (!v) return;
+  msg('doc-msg', '');
+  restoreRange();
+  if (/^(row|col)-|^unwrap$|^del-block$/.test(v)) editKind(v); else insertKind(v);
 });
 
 /* formül penceresi */

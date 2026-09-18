@@ -293,6 +293,7 @@ article.body { margin-top: 40px; }
 article.body h2 {
   font-family: var(--font-heading); font-weight: 400; font-size: 26px;
   margin: 48px 0 4px; border-top: 1px solid var(--color-divider); padding-top: 24px;
+  color: var(--color-accent-700);
 }
 article.body h3 {
   font-family: var(--font-heading); font-weight: 400; font-style: italic; font-size: 19px;
@@ -404,5 +405,35 @@ footer.bottom {
   article.body table.tm th, article.body table.tm td { padding: 6px 5px; }
 }
 
+/* Yönetim ekranındaki "Altın" rengi: metni sitenin vurgu renginin okunaklı tonuyla yazar. */
+.vurgu { color: var(--color-accent-700); }
+
 /* Izgara listelerde (.steps) sütun, içindeki en uzun formül kadar genişlemesin. */
 article.body .steps { grid-template-columns: minmax(0, 1fr); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Yazı bileşenleri — eskiden bazı yazıların kendi <style>'ında duruyordu.
+   Artık bütün yazılar biçimlerini yalnızca bu dosyadan alır; bir biçimi
+   değiştirmek için burayı değiştirmek yeterli, her yazıda aynı görünür.
+   ══════════════════════════════════════════════════════════════════════ */
+.def ul, .thm ul { margin: 10px 0 0; padding-left: 20px; }
+.fig { background: var(--color-surface); border: 1px solid var(--color-divider); padding: 14px 20px; margin: 0 0 22px; font-size: 14px; line-height: 1.6; font-style: italic; color: var(--color-neutral-700); text-align: center; }
+.steps { margin: 0 0 22px; padding-left: 0; list-style: none; display: grid; gap: 14px; }
+.steps li { font-size: 16px; line-height: 1.78; }
+.steps b { font-family: var(--font-heading); font-style: italic; color: var(--color-accent-700); }
+.cipher { font-family: var(--font-heading); font-size: 17px; letter-spacing: 0.06em; text-align: center; margin: 0 0 20px; word-break: break-all; }
+.diagram { background: var(--color-surface); border: 1px solid var(--color-divider); padding: 18px 20px; margin: 0 0 22px; font-size: 14px; line-height: 1.65; color: var(--color-neutral-800); font-style: italic; }
+blockquote.quote { margin: 0 0 24px; padding: 4px 0 4px 22px; border-left: 2px solid var(--color-accent); font-family: var(--font-heading); font-style: italic; font-size: 18px; line-height: 1.6; color: var(--color-neutral-800); }
+blockquote.quote cite { display: block; margin-top: 10px; font-family: var(--font-body); font-style: normal; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); }
+.figures { margin-top: 22px; display: flex; gap: 22px; flex-wrap: wrap; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); }
+article.body .letter { border-left: 2px solid var(--color-divider); padding: 4px 0 4px 22px; margin: 0 0 18px; font-style: italic; color: var(--color-neutral-800); }
+article.body .letter p { text-align: left; font-style: italic; }
+.sig { text-align: right; font-style: italic; margin-top: -8px; }
+.ast { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; }
+.ast .edge { fill: none; stroke: var(--color-neutral-700); stroke-width: 1.2; }
+.ast .node { fill: var(--color-bg); stroke: var(--color-text); stroke-width: 1.2; }
+.ast text { font-family: var(--font-body); font-size: 15px; fill: var(--color-text); text-anchor: middle; dominant-baseline: middle; }
+.ast text.sm { font-size: 13px; }
+@media (max-width: 620px) {
+  .letter { padding-left: 14px; }
+}
