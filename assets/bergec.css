@@ -376,9 +376,9 @@ article.body figure figcaption {
   color: var(--color-neutral-600); text-align: center;
 }
 /* Yan yana görseller (yönetim ekranı: Ekle… → Yan yana görseller). Telefonda alt alta dizilir. */
-article.body .fig-row { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: flex-start; margin: 0 0 24px; clear: both; }
-article.body .fig-row > figure { margin: 0; flex: 1 1 240px; min-width: 0; }
-article.body .fig-row > figure img { width: 100%; height: auto; }
+article.body .fig-row, .home-extra .fig-row { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: flex-start; margin: 0 0 24px; clear: both; }
+article.body .fig-row > figure, .home-extra .fig-row > figure { margin: 0; flex: 1 1 240px; min-width: 0; }
+article.body .fig-row > figure img, .home-extra .fig-row > figure img { width: 100%; height: auto; }
 article.body figure.left { float: left; margin: 4px 24px 12px 0; max-width: 46%; }
 article.body figure.right { float: right; margin: 4px 0 12px 24px; max-width: 46%; }
 article.body figure.left + *, article.body figure.right + * { text-align: justify; }
@@ -441,3 +441,30 @@ article.body .letter p { text-align: left; font-style: italic; }
 @media (max-width: 620px) {
   .letter { padding-left: 14px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Ana sayfa: serbest alanlar (manşetin üstü, arşivin altı), yan sütuna eklenen
+   bölümler ve yazarlar listesi. Yönetim ekranındaki "Ana sayfayı düzenle" ve
+   "Yazarlar" buradaki biçimleri kullanır.
+   ══════════════════════════════════════════════════════════════════════ */
+.home-extra { margin: 0 0 36px; }
+.home-extra:empty { display: none; }
+.home-extra > :last-child { margin-bottom: 0; }
+.home-extra p { font-size: 16px; line-height: 1.75; margin: 0 0 14px; }
+.home-extra h2 { font-family: var(--font-heading); font-weight: 400; font-size: 28px; line-height: 1.2; color: var(--color-accent-700); margin: 0 0 10px; }
+.home-extra h3 { font-family: var(--font-heading); font-weight: 400; font-style: italic; font-size: 20px; color: var(--color-accent-700); margin: 18px 0 8px; }
+.home-extra ul, .home-extra ol { margin: 0 0 14px; padding-left: 22px; line-height: 1.7; }
+.home-extra blockquote { margin: 0 0 16px; padding: 4px 0 4px 20px; border-left: 2px solid var(--color-accent); font-family: var(--font-heading); font-style: italic; font-size: 18px; line-height: 1.6; color: var(--color-neutral-800); }
+.home-extra figure { margin: 0 0 18px; text-align: center; }
+.home-extra figure img { display: block; margin: 0 auto; max-width: 100%; height: auto; border: 6px solid var(--color-surface); outline: 1px solid var(--color-divider); }
+.home-extra figcaption { margin-top: 8px; font-size: 12.5px; font-style: italic; color: var(--color-neutral-600); }
+.home-extra hr, .home-extra .hr { height: 1px; border: 0; margin: 20px 0; background: var(--color-divider); }
+.home-top { padding-bottom: 28px; border-bottom: 1px solid var(--color-divider); }
+.home-top:empty { padding: 0; border: 0; }
+aside .home-sec p { font-size: 14px; line-height: 1.75; margin: 0 0 10px; }
+aside .home-sec > :last-child { margin-bottom: 0; }
+aside .home-sec img { max-width: 100%; height: auto; }
+ul.authors li { display: flex; gap: 10px; align-items: center; }
+ul.authors .a-foto { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid var(--color-divider); }
+ul.authors .a-text { display: grid; gap: 1px; min-width: 0; }
+ul.authors .a-bio { font-style: normal; font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-600); }

@@ -140,6 +140,14 @@
   body.has-pending .shell { padding-bottom: 150px; }
   table.list .pend { color: var(--color-accent-700); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
 
+  .arow { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
+  .arow .ph { width: 64px; height: 64px; border-radius: 50%; background: var(--color-neutral-200); border: 1px dashed var(--color-neutral-400); cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 10.5px; color: var(--color-neutral-600); text-align: center; line-height: 1.2; }
+  .arow .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .arow .fields { display: grid; gap: 6px; }
+  .arow textarea { font-family: var(--font-body); font-size: 13.5px; min-height: 0; }
+  .arow .acts { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+  @media (max-width: 760px) { .arow { grid-template-columns: 56px minmax(0, 1fr); } .arow .acts { grid-column: 1 / -1; justify-content: flex-start; } }
+
   .hidden { display: none !important; }
   .bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--color-divider); }
   .sp { flex: 1; }
@@ -210,6 +218,8 @@
     <div class="bar">
       <button class="b" id="btn-new">+ Yeni yazı</button>
       <button class="b ghost" id="btn-new-html">+ Yeni yazı (HTML)</button>
+      <button class="b ghost" id="btn-home">Ana sayfayı düzenle</button>
+      <button class="b ghost" id="btn-authors">Yazarlar</button>
       <span class="sp"></span>
       <button class="b ghost" id="btn-reload">Yenile</button>
     </div>
@@ -390,6 +400,11 @@
             <option value="col-del">Tablodan sütunu sil</option>
             <option value="unwrap">Kutuyu kaldır (içerik kalsın)</option>
             <option value="del-block">Bulunduğum bloğu sil</option>
+            <option value="block-up">Bloğu yukarı taşı</option>
+            <option value="block-down">Bloğu aşağı taşı</option>
+          </optgroup>
+          <optgroup label="Ana sayfa">
+            <option value="section">Yan sütuna yeni bölüm</option>
           </optgroup>
         </select>
       </div>
@@ -444,6 +459,24 @@
       </div>
     </div>
   </div>
+
+  <!-- ══════════════ 4b. YAZARLAR ══════════════ -->
+  <section class="panel hidden" id="p-authors">
+    <h2>Yazarlar</h2>
+    <p class="hint">Ana sayfadaki “Yazarlar” listesi. Sırayı ↑↓ ile değiştirin; fotoğraf isteğe bağlıdır (küçültülüp saklanır). Kaydettikleriniz alttaki çubukta birikir.</p>
+    <div id="authors-list"></div>
+    <div class="row" style="margin-top: 12px;">
+      <button class="b ghost" id="btn-author-add">+ Yazar ekle</button>
+      <button class="b ghost" id="btn-author-suggest" title="Yazılarda adı geçen ama listede olmayan yazarları ekler">Yazılardaki yazarları ekle</button>
+      <input type="file" id="author-photo-file" accept="image/*" class="hidden">
+    </div>
+    <div class="bar">
+      <button class="b" id="btn-authors-save">Kaydet</button>
+      <span class="sp"></span>
+      <button class="b ghost" id="btn-authors-cancel">Vazgeç</button>
+    </div>
+    <div class="msg" id="authors-msg"></div>
+  </section>
 
   <!-- ══════════════ 5. ARŞİV KAYDI ══════════════ -->
   <section class="panel hidden" id="p-meta">
@@ -863,6 +896,11 @@ function jsonForScript(value, indent) {
   return JSON.stringify(value, null, indent).replace(/</g, '\\u003c');
 }
 
+/** Ana sayfanın veri bloğu çıkarılmış hâli: sabit kısımları (metinler, düzen) karşılaştırmak için. */
+function staticOf(plain) {
+  return String(plain || '').replace(INDEX_RE, (all, a, body, c) => a + c);
+}
+
 function readIndexData(plain) {
   const m = plain.match(INDEX_RE);
   if (!m) throw new Error('Ana sayfada "bergec-index" veri bloğu bulunamadı.');
@@ -879,11 +917,11 @@ function writeIndexData(plain, data) {
  * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
  * extraExpect: yanındaki dosyalar için ghCommit'in expect'i.
  */
-async function saveIndex(message, extraFiles, mutate, extraExpect) {
+async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
   for (let attempt = 0; ; attempt++) {
     const data = JSON.parse(JSON.stringify(state.repoIndex)); // depodaki hâl (bekleyen değişiklikler mutate ile gelir)
     if (mutate) mutate(data);
-    const plain = writeIndexData(state.indexPlain, data);
+    const plain = writeIndexData(basePlain || state.indexPlain, data); // basePlain: ana sayfa düzenleyicisinde düzenlenmiş hâli
     const enc = await encryptPage(plain, state.pw);
     try {
       const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: enc }]), message,
@@ -1355,6 +1393,7 @@ function applyOp(data, op) {
       }
       return unflattenInto(data, arr);
     }
+    case 'authors': data.authors = JSON.parse(JSON.stringify(op.list)); return;
     case 'add': { // Görsel / Kod düzenleyicide yeni yazı
       if (arr.some(x => x.href === op.entry.href)) return;
       const entry = Object.assign({}, op.entry);
@@ -1380,6 +1419,7 @@ function stage(desc, op, files) {
     // dosya ilk açıldığındaki sürüm korunur; bekleyen yeni bir dosyanın silinmesi = hiç eklenmemesi
     if (f.plain === null && prev && prev.expect === null) { delete pending.files[path]; return; }
     pending.files[path] = { plain: f.plain, expect: prev ? prev.expect : f.expect, desc: f.desc || desc };
+    if (f.baseStatic !== undefined || (prev && prev.baseStatic !== undefined)) pending.files[path].baseStatic = prev && prev.baseStatic !== undefined ? prev.baseStatic : f.baseStatic;
   });
   // liste işlemleri toplamda hiçbir şeyi değiştirmiyorsa (ör. sıra eski hâline döndü) hepsini at
   if (pending.ops.length && state.repoIndex && JSON.stringify(applyPending(state.repoIndex)) === JSON.stringify(state.repoIndex)) pending.ops = [];
@@ -1440,9 +1480,19 @@ async function publishPending() {
     const snapOps = pending.ops.slice();
     const snapFiles = Object.assign({}, pending.files);
     const files = [], expect = {};
+    let homePlain = null;
     for (const [path, f] of Object.entries(snapFiles)) {
+      if (path === 'index.html') { homePlain = f.plain; continue; } // ana sayfa: liste verisiyle birlikte yazılır
       files.push({ path, text: f.plain === null ? null : await encryptPage(f.plain, state.pw) });
       if (f.expect !== undefined) expect[path] = f.expect;
+    }
+    if (homePlain) {
+      // ana sayfanın sabit kısmını siz açtıktan sonra başkası değiştirdiyse sor (liste verisi zaten birleşir)
+      await loadIndex();
+      if (snapFiles['index.html'].baseStatic !== undefined && staticOf(state.indexPlain) !== snapFiles['index.html'].baseStatic &&
+          !confirm('Ana sayfanın metinleri/düzeni siz açtıktan sonra başka biri tarafından değiştirildi.\n\nSizin düzenlemeniz onun üzerine yazılsın mı?')) {
+        throw new Error('Ana sayfa başka biri tarafından değiştirildi; hiçbir şey kaydedilmedi. Ana sayfayı yeniden açıp düzenleyin.');
+      }
     }
     const descs = [];
     snapOps.forEach(o => { if (o.desc && !descs.includes(o.desc)) descs.push(o.desc); });
@@ -1452,7 +1502,7 @@ async function publishPending() {
     const mutate = data => snapOps.forEach(op => { try { applyOp(data, op); } catch (e) {} });
     let shas;
     try {
-      shas = await saveIndex(message, files, mutate, expect);
+      shas = await saveIndex(message, files, mutate, expect, homePlain);
     } catch (e) {
       if (!(e instanceof ConflictError) || !e.paths.length || e.paths.every(x => x === 'index.html')) throw e;
       const taken = e.paths.filter(x => expect[x] === null), changed = e.paths.filter(x => expect[x] !== null && x !== 'index.html');
@@ -1462,7 +1512,7 @@ async function publishPending() {
       if (!confirm(q)) throw e;
       const exp2 = Object.assign({}, expect);
       e.paths.forEach(x => delete exp2[x]);
-      shas = await saveIndex(message, files, mutate, exp2);
+      shas = await saveIndex(message, files, mutate, exp2, homePlain);
     }
     // açık düzenleyiciler artık yeni sürümü baz alsın
     if (ed.target && ed.target.href && ed.target.href in shas) ed.target.sha = shas[ed.target.href];
@@ -1717,7 +1767,7 @@ function resetEditor() {
 }
 
 function showOnly(panel) {
-  ['p-list', 'p-edit', 'p-doc', 'p-meta'].forEach(id => show(id, id === panel));
+  ['p-list', 'p-edit', 'p-doc', 'p-meta', 'p-authors'].forEach(id => show(id, id === panel));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1914,6 +1964,7 @@ const DOC_FRAME_CSS = `
   article.body img { cursor: pointer; }
   article.body img:hover { outline: 2px solid #b68235; outline-offset: 2px; }
   a { cursor: text; }
+  .home-extra[data-edit] { display: block !important; min-height: 46px; outline: 1px dashed #d8c7a8; outline-offset: 6px; margin-bottom: 30px; }
   .ed-empty { position: relative; }
   .ed-empty::before { content: attr(data-ph); position: absolute; left: 0; top: 0; color: #b3aca5; font-style: italic; pointer-events: none; white-space: nowrap; }
   .ed-raw-tex { font-family: ui-monospace, monospace; font-size: 0.85em; color: #a03a2c; }
@@ -1935,9 +1986,14 @@ function frameWin() { return $('doc-frame').contentWindow; }
 
 /** Düzenlenebilir bölgeler; iç içe olanlar (örn. yazının içindeki bir .subtitle) hariç. */
 function regionsOf(d) {
+  // Sayfa düzenlenebilir bölgelerini kendisi işaretliyorsa (ana sayfa: data-edit) onlar; değilse yazı bölgeleri.
+  const marked = d.querySelectorAll('[data-edit]');
+  if (marked.length) return Array.from(marked);
   return Array.from(d.querySelectorAll(DOC_REGIONS))
     .filter(el => !(el.parentElement && el.parentElement.closest('article.body')));
 }
+const REGION_SEL = 'h1.title, .subtitle, .byline, article.body, [data-edit]';
+const SINGLE_LINE = 'h1.title, .subtitle, .byline';
 
 function renderTex(tex, display) {
   if (!window.katex) return '<span class="ed-raw-tex">' + esc(tex) + '</span>';
@@ -1987,6 +2043,7 @@ function cleanRegion(r) {
   r.querySelectorAll('[data-ed-tex]').forEach(el => { el.textContent = el.getAttribute('data-ed-tex'); });
   r.querySelectorAll('[data-ed-disp]').forEach(el => el.replaceWith(d.createTextNode('$$' + el.getAttribute('data-ed-disp') + '$$')));
   r.querySelectorAll('img[data-bergec-img]').forEach(im => im.removeAttribute('src'));
+  r.querySelectorAll('[data-ed-dyn]').forEach(el => { el.innerHTML = ''; el.removeAttribute('data-ed-dyn'); }); // veriden çizilir
   // Paragrafın içine düşmüş bloklar (tarayıcının biçim komutları bazen <p><blockquote>… üretir): HTML'de geçersizdir,
   // sayfa yeniden açılınca bozulur. Paragrafı böl: satır içi parçalar paragraf olarak kalır, bloklar dışarı çıkar.
   const BLOCK = /^(DIV|BLOCKQUOTE|UL|OL|TABLE|PRE|H1|H2|H3|H4|H5|H6|FIGURE|HR|P)$/;
@@ -2029,7 +2086,13 @@ function loadVisual(html) {
   if (ji) { try { ed.imgs = JSON.parse(ji.textContent); } catch (e) {} }
 
   const view = ed.model.cloneNode(true);
-  view.querySelectorAll('script').forEach(s => s.remove());
+  const home = view.getElementById('bergec-index');
+  view.querySelectorAll('script').forEach(s => {
+    // ana sayfa: veri + onu çizen betik kalsın (manşet, arşiv, son yazılar, yazarlar önizlemede görünsün)
+    if (home && (s === home || (!s.src && /bergec-index/.test(s.textContent)))) return;
+    s.remove();
+  });
+  if (home && state.index) home.textContent = jsonForScript(state.index); // ekranda bekleyen değişikliklerle
   // Sitenin stil dosyası tarayıcı önbelleğinden eski hâliyle gelmesin (yeni biçimler, ör. .vurgu, görünmezdi).
   // Yalnızca düzenleyicideki görünüm için; kaydedilen sayfaya dokunmaz.
   const bust = 'v=' + Date.now();
@@ -2078,6 +2141,12 @@ function prepareFrame() {
       if (onlySvg) box.setAttribute('contenteditable', 'false');
     });
     chipify(r);
+  });
+  // ana sayfa: veriden çizilen listeler düzenlenmez ve kaydedilmez; logo çizimi kilitli, yalnızca yazıları düzenlenir
+  d.querySelectorAll('#recent, #authors').forEach(el => { el.setAttribute('data-ed-dyn', ''); el.setAttribute('contenteditable', 'false'); });
+  d.querySelectorAll('[data-edit] .mark').forEach(m => {
+    m.setAttribute('contenteditable', 'false');
+    m.querySelectorAll('.screen > span, .wordmark > span').forEach(t => t.setAttribute('contenteditable', 'true'));
   });
 
   refreshPlaceholders();
@@ -2174,7 +2243,7 @@ function prepareFrame() {
     // başlık / alt başlık / yazar tek satırdır
     if (e.key === 'Enter') {
       const reg = editableAt(e.target === d.body ? d.getSelection().anchorNode : e.target);
-      if (reg && !reg.matches('article.body')) e.preventDefault();
+      if (reg && reg.matches(SINGLE_LINE)) e.preventDefault();
     }
   });
 }
@@ -2184,8 +2253,17 @@ function prepareFrame() {
  * görünmez bir <br> bıraksa bile) ipucu geri gelir; bütün paragraflar silinirse ilk paragraf yeniden açılır.
  */
 function refreshPlaceholders() {
-  if (!ed.target || !ed.target.isNew) return;
   const d = frameDoc();
+  if (ed.target && ed.target.isHome) {
+    d.querySelectorAll('.home-extra[data-edit]').forEach(el => {
+      el.setAttribute('data-ph', el.classList.contains('home-top') ? 'Duyuru alanı: buraya metin, görsel ya da bağlantı ekleyebilirsiniz (boş kalırsa ana sayfada görünmez).' : 'Serbest alan: arşivin altında görünür (boş kalırsa görünmez).');
+      const empty = !el.textContent.replace(/\u00a0/g, ' ').trim() && !el.querySelector('img, svg, table, [data-ed-tex], [data-ed-disp]');
+      if (empty && !el.querySelector('p')) el.innerHTML = '<p><br></p>';
+      el.classList.toggle('ed-empty', empty);
+    });
+    return;
+  }
+  if (!ed.target || !ed.target.isNew) return;
   const art = d.querySelector('article.body');
   if (art && !art.querySelector('p, h2, h3, div, ul, ol, table, pre, figure, blockquote')) {
     art.innerHTML = '<p class="lede"><br></p>';
@@ -2208,7 +2286,7 @@ function refreshPlaceholders() {
 function editableAt(node) {
   const el = node && (node.nodeType === 1 ? node : node.parentElement);
   const reg = el && el.closest('[contenteditable]');
-  return reg && reg.getAttribute('contenteditable') === 'true' ? el.closest('h1.title, .subtitle, .byline, article.body') : null;
+  return reg && reg.getAttribute('contenteditable') === 'true' ? el.closest(REGION_SEL) : null;
 }
 
 /** İmleci, düzenleyicide en son bulunduğu yere geri koyar. */
@@ -2222,13 +2300,24 @@ function restoreRange() {
   return ed.lastRange;
 }
 
-/** Yeni bir bloğu (görsel, ortalı formül) imlecin bulunduğu bloğun arkasına, imleç yoksa yazının sonuna koyar. */
+/** Yeni bir bloğu (görsel, ortalı formül…) imlecin bulunduğu bloğun arkasına koyar; imleç yoksa yazının
+    (yazı yoksa ilk serbest bölgenin) sonuna. Başlık gibi tek satırlık bölgelerde değil, onlardan sonraki gövdeye. */
 function insertBlock(node, range) {
-  const art = frameDoc().querySelector('article.body');
+  const d = frameDoc();
+  let region = range ? editableAt(range.startContainer) : null;
+  if (!region || region.matches(SINGLE_LINE)) region = d.querySelector('article.body') || regionsOf(d).find(r => !r.matches(SINGLE_LINE));
   let n = range ? range.startContainer : null;
-  if (!n || !art.contains(n) || n === art) { art.appendChild(node); return; }
-  while (n.parentNode !== art) n = n.parentNode;
+  if (!n || !region.contains(n) || n === region) { region.appendChild(node); return; }
+  while (n.parentNode !== region) n = n.parentNode;
   n.after(node);
+}
+/** İmlecin bulunduğu, bölgenin doğrudan çocuğu olan blok (yan sütunda: bölüm). */
+function topBlockAt(here) {
+  const region = here && editableAt(here);
+  if (!region || region.matches(SINGLE_LINE)) return null;
+  let b = here;
+  while (b && b.parentElement !== region) b = b.parentElement;
+  return b && b !== region ? b : null;
 }
 
 function serializeVisual() {
@@ -2330,7 +2419,7 @@ function finishNewDoc(html) {
 /** Yeni ya da taslak yazıda "Kaydet" (taslak) + "Paylaş"; yayındaki yazıda tek "Kaydet ve yayınla". */
 function updateDocButtons() {
   const t = ed.target;
-  const draftish = !!(t && (t.isNew || t.taslak));
+  const draftish = !!(t && !t.isHome && (t.isNew || t.taslak));
   show('btn-doc-draft', draftish);
   $('btn-doc-save').textContent = draftish ? 'Paylaş' : 'Kaydet';
 }
@@ -2341,6 +2430,7 @@ async function saveDoc(draft, leave) {
   const t = ed.target;
   if (!t) return;
   if (draft === undefined) draft = !!(t.isNew || t.taslak); // Ctrl+S: taslaksa taslak olarak kaydet
+  if (t.isHome) draft = false;
   const btn = $('btn-doc-save');
   if (btn.disabled) return;
   btn.disabled = $('btn-doc-draft').disabled = true;
@@ -2371,9 +2461,9 @@ async function saveDoc(draft, leave) {
       if (!changed && !sharing) { noChange(leave, 'doc-msg'); return; }
       const backToRepo = changed && t.repoCanon && c === t.repoCanon; // düzenlemeler geri alındı: yayındaki hâline döndü
       if (backToRepo) delete pending.files[t.href];
-      stage((draft ? 'Taslak: ' : sharing ? 'Paylaş: ' : 'Yazıyı güncelle: ') + t.title,
+      stage(t.isHome ? 'Ana sayfa' : (draft ? 'Taslak: ' : sharing ? 'Paylaş: ' : 'Yazıyı güncelle: ') + t.title,
         sharing ? { kind: 'draft', href: t.href, on: false } : null,
-        changed && !backToRepo ? { [t.href]: { plain: html, expect: t.sha } } : null);
+        changed && !backToRepo ? { [t.href]: { plain: html, expect: t.sha, baseStatic: t.isHome ? t.baseStatic : undefined } } : null);
       t.baseCanon = c;
       if (sharing) { t.taslak = false; updateDocButtons(); }
       if (backToRepo && !sharing) {
@@ -2422,6 +2512,113 @@ $('btn-to-doc').addEventListener('click', async (e) => {
   await openDoc({ href: state.editing.href, sha: state.editing.sha, taslak: !!state.editing.taslak, title: $('f-title').value.trim() || state.editing.href }, buildCurrentArticle());
   ed.dirty = true;
 });
+
+/* yazarlar
+   Liste verisinde (index.html) tutulur: { id, ad, bio, foto }. Eski biçim (yalnızca ad) de okunur.
+   id adın dosya adı biçimidir; ileride yazar sayfaları için. */
+
+let authorsEdit = [];
+let authorPhotoTarget = null;
+
+function normAuthors(list) {
+  return (list || []).map(a => typeof a === 'string' ? { ad: a } : Object.assign({}, a))
+    .map(a => ({ id: a.id || slugify(a.ad || ''), ad: a.ad || '', bio: a.bio || '', foto: a.foto || '' }));
+}
+function authorsForSave() {
+  return authorsEdit.filter(a => a.ad.trim()).map(a => {
+    const o = { id: slugify(a.ad.trim()), ad: a.ad.trim() };
+    if (a.bio.trim()) o.bio = a.bio.trim();
+    if (a.foto) o.foto = a.foto;
+    return o;
+  });
+}
+function renderAuthors() {
+  const box = $('authors-list');
+  box.innerHTML = '';
+  if (!authorsEdit.length) box.innerHTML = '<p class="hint" style="margin: 8px 0;">Henüz yazar yok.</p>';
+  authorsEdit.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.className = 'arow';
+    row.innerHTML =
+      '<div class="ph" title="Fotoğraf seç">' + (a.foto ? '<img alt="" src="' + esc(a.foto) + '">' : 'fotoğraf<br>ekle') + '</div>' +
+      '<div class="fields">' +
+        '<input type="text" class="ad" placeholder="Ad Soyad" value="' + esc(a.ad) + '">' +
+        '<textarea class="bio" rows="2" placeholder="Kısa tanıtım (isteğe bağlı)">' + esc(a.bio) + '</textarea>' +
+      '</div>' +
+      '<div class="acts">' +
+        '<button class="mini up" title="Yukarı">↑</button><button class="mini dn" title="Aşağı">↓</button>' +
+        (a.foto ? '<button class="mini nofoto">Fotoğrafı kaldır</button>' : '') +
+        '<button class="mini rm" style="color: #8d3427;">Sil</button>' +
+      '</div>';
+    row.querySelector('.ad').addEventListener('input', e => { a.ad = e.target.value; });
+    row.querySelector('.bio').addEventListener('input', e => { a.bio = e.target.value; });
+    row.querySelector('.ph').addEventListener('click', () => { authorPhotoTarget = a; $('author-photo-file').click(); });
+    row.querySelector('.up').addEventListener('click', () => { if (i > 0) { authorsEdit.splice(i, 1); authorsEdit.splice(i - 1, 0, a); renderAuthors(); } });
+    row.querySelector('.dn').addEventListener('click', () => { if (i < authorsEdit.length - 1) { authorsEdit.splice(i, 1); authorsEdit.splice(i + 1, 0, a); renderAuthors(); } });
+    row.querySelector('.rm').addEventListener('click', () => { if (!a.ad.trim() || confirm('“' + a.ad + '” listeden çıkarılsın mı?')) { authorsEdit.splice(i, 1); renderAuthors(); } });
+    const nf = row.querySelector('.nofoto');
+    if (nf) nf.addEventListener('click', () => { a.foto = ''; renderAuthors(); });
+    box.appendChild(row);
+  });
+}
+$('btn-authors').addEventListener('click', (e) => {
+  e.preventDefault();
+  authorsEdit = normAuthors(state.index.authors);
+  renderAuthors();
+  msg('authors-msg', '');
+  showOnly('p-authors');
+});
+$('btn-author-add').addEventListener('click', (e) => {
+  e.preventDefault();
+  authorsEdit.push({ id: '', ad: '', bio: '', foto: '' });
+  renderAuthors();
+  const inputs = $('authors-list').querySelectorAll('.ad');
+  inputs[inputs.length - 1].focus();
+});
+$('btn-author-suggest').addEventListener('click', (e) => {
+  e.preventDefault();
+  const have = new Set(authorsEdit.map(a => a.ad.trim().toLocaleLowerCase('tr')));
+  const add = [];
+  flatten().forEach(p => (p.author || '').split(/\s*(?:,|&| ve )\s*/).map(x => x.trim()).filter(Boolean).forEach(n => {
+    const k = n.toLocaleLowerCase('tr');
+    if (!have.has(k)) { have.add(k); add.push(n); }
+  }));
+  add.forEach(n => authorsEdit.push({ id: '', ad: n, bio: '', foto: '' }));
+  renderAuthors();
+  msg('authors-msg', add.length ? add.length + ' yazar eklendi: ' + add.join(', ') : 'Yazılardaki bütün yazarlar zaten listede.', add.length ? 'ok' : 'info');
+});
+$('author-photo-file').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file || !authorPhotoTarget) return;
+  try { authorPhotoTarget.foto = await shrinkImage(file, 160); renderAuthors(); }
+  catch (err) { msg('authors-msg', err.message, 'err'); }
+});
+$('btn-authors-cancel').addEventListener('click', (e) => { e.preventDefault(); showOnly('p-list'); });
+$('btn-authors-save').addEventListener('click', (e) => {
+  e.preventDefault();
+  const list = authorsForSave();
+  const ids = list.map(a => a.id);
+  const dup = ids.find((x, i) => ids.indexOf(x) !== i);
+  if (dup) { msg('authors-msg', 'Aynı adda iki yazar var: ' + list.find(a => a.id === dup).ad, 'err'); return; }
+  if (JSON.stringify(list) === JSON.stringify(normAuthors(state.index.authors).map(a => { const o = { id: a.id, ad: a.ad }; if (a.bio) o.bio = a.bio; if (a.foto) o.foto = a.foto; return o; }))) { noChange(); return; }
+  stage('Yazarlar', { kind: 'authors', list });
+  backToList('Yazarlar listesi kaydedildi');
+});
+
+/* ana sayfa */
+
+async function openHome() {
+  try {
+    msg('list-msg', '');
+    const pf = pending.files['index.html'];
+    const plain = pf ? pf.plain : state.indexPlain;
+    await openDoc({ href: 'index.html', sha: state.indexSha, title: 'Ana sayfa', isHome: true,
+      baseCanon: canonHtml(plain), repoCanon: canonHtml(state.indexPlain), baseStatic: pf ? pf.baseStatic : staticOf(state.indexPlain) }, plain);
+    $('doc-title').textContent = 'Ana sayfa';
+  } catch (e) { msg('list-msg', e.message, 'err'); }
+}
+$('btn-home').addEventListener('click', (e) => { e.preventDefault(); openHome(); });
 
 /* yeni yazı (HTML) */
 
@@ -2497,7 +2694,7 @@ $('doc-tools').addEventListener('click', (e) => {
   if (b.dataset.cmd) {
     d.execCommand(b.dataset.cmd, false, null);
   } else if (b.dataset.block) {
-    if (!editableAt(r.startContainer) || !editableAt(r.startContainer).matches('article.body')) return;
+    if (!editableAt(r.startContainer) || editableAt(r.startContainer).matches(SINGLE_LINE)) return;
     d.execCommand('formatBlock', false, '<' + b.dataset.block + '>');
     if (b.dataset.block === 'blockquote') {
       const sel = d.getSelection();
@@ -2694,7 +2891,7 @@ function caretEl() {
 
 /** Aynı türden bir önceki kutunun numarası + 1 ("Teorem 7." → 8). Diziler (Enigma 1-2-3) kaldığı yerden devam eder. */
 function nextNumber(word, labelSel) {
-  const art = frameDoc().querySelector('article.body');
+  const art = frameDoc().querySelector('article.body') || frameDoc().body;
   const here = caretEl();
   let last = 0;
   art.querySelectorAll(labelSel).forEach(l => {
@@ -2734,6 +2931,22 @@ function insertKind(kind) {
   const d = frameDoc();
   const art = d.querySelector('article.body');
   const here = caretEl();
+  if (!art && /^(fn|refs)$/.test(kind)) { msg('doc-msg', 'Dipnot ve kaynakça yalnızca yazılarda kullanılır.', 'info'); return; }
+  if (kind === 'section') {
+    const aside = here && here.closest('aside[data-edit]') || d.querySelector('aside[data-edit]');
+    if (!aside) { msg('doc-msg', 'Yan sütun bölümü yalnızca ana sayfada eklenir.', 'info'); return; }
+    const sec = d.createElement('section');
+    sec.className = 'home-sec';
+    sec.innerHTML = '<h3>Yeni bölüm</h3><p>Metni buraya yazın.</p>';
+    const after = here && aside.contains(here) ? topBlockAt(here) : null;
+    if (after) after.after(sec); else aside.appendChild(sec);
+    const r = d.createRange(); r.selectNodeContents(sec.querySelector('h3'));
+    const s = d.getSelection(); s.removeAllRanges(); s.addRange(r);
+    ed.lastRange = r.cloneRange();
+    sec.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    ed.dirty = true;
+    return;
+  }
   switch (kind) {
     case 'def':
       return placeBlock(`<div class="def"><span class="label">Tanım ${nextNumber('Tanım', '.def > .label')}.</span> <span data-ed-select>Tanımı buraya yazın.</span></div>`);
@@ -2814,9 +3027,19 @@ function editKind(kind) {
   const here = caretEl();
   const d = frameDoc();
   const art = d.querySelector('article.body');
-  if (!here || !art.contains(here)) { msg('doc-msg', 'Önce yazının içinde ilgili yere tıklayın.', 'info'); return; }
+  if (!here || !editableAt(here)) { msg('doc-msg', 'Önce düzenlenecek yere tıklayın.', 'info'); return; }
   const cell = here.closest('td, th');
   const table = here.closest('table');
+  if (kind === 'block-up' || kind === 'block-down') {
+    const b = topBlockAt(here);
+    if (!b) { msg('doc-msg', 'İmleç taşınabilecek bir bloğun içinde değil.', 'info'); return; }
+    const sib = kind === 'block-up' ? b.previousElementSibling : b.nextElementSibling;
+    if (!sib) return;
+    if (kind === 'block-up') sib.before(b); else sib.after(b);
+    b.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    ed.dirty = true;
+    return;
+  }
   if (/^(row|col)-/.test(kind) && !cell) { msg('doc-msg', 'Önce tablonun içinde bir hücreye tıklayın.', 'info'); return; }
   if (kind === 'row-add') {
     const tr = cell.parentElement, nt = d.createElement('tr');
@@ -2839,7 +3062,7 @@ function editKind(kind) {
     table.querySelectorAll('tr').forEach(tr => { if (tr.children[i]) tr.children[i].remove(); });
   } else if (kind === 'unwrap') {
     const box = here.closest(BOXES + ', .steps, .refs');
-    if (!box || !art.contains(box)) { msg('doc-msg', 'İmleç bir kutunun içinde değil.', 'info'); return; }
+    if (!box || !editableAt(box)) { msg('doc-msg', 'İmleç bir kutunun içinde değil.', 'info'); return; }
     const lab = box.querySelector(':scope > .label, :scope > .algo-title');
     if (lab && confirm('Kutunun başlığı (“' + lab.textContent.trim() + '”) da silinsin mi?')) lab.remove();
     box.querySelectorAll(':scope > cite').forEach(c => { const p = d.createElement('p'); p.append(...c.childNodes); c.replaceWith(p); });
@@ -2853,9 +3076,8 @@ function editKind(kind) {
     });
     box.replaceWith(frag);
   } else if (kind === 'del-block') {
-    let b = here;
-    while (b.parentElement && b.parentElement !== art) b = b.parentElement;
-    if (b === art) return;
+    const b = topBlockAt(here);
+    if (!b) return;
     const what = b.matches(BOXES) ? 'kutu' : b.tagName === 'TABLE' ? 'tablo' : 'blok';
     if (!confirm('Bu ' + what + ' tamamen silinsin mi?\n\n“' + b.textContent.trim().slice(0, 80) + '…”')) return;
     b.remove();
@@ -2869,7 +3091,7 @@ $('doc-insert').addEventListener('change', (e) => {
   if (!v) return;
   msg('doc-msg', '');
   restoreRange();
-  if (/^(row|col)-|^unwrap$|^del-block$/.test(v)) editKind(v); else insertKind(v);
+  if (/^(row|col)-|^unwrap$|^del-block$|^block-(up|down)$/.test(v)) editKind(v); else insertKind(v);
 });
 
 $('doc-imgs-file').addEventListener('change', async (e) => {
