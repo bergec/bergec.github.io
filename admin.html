@@ -140,6 +140,8 @@
   body.has-pending .shell { padding-bottom: 150px; }
   table.list .pend { color: var(--color-accent-700); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
 
+  .share-wrap { margin-top: 16px; display: flex; justify-content: center; background: var(--color-neutral-200); padding: 16px; }
+  .share-wrap canvas { max-width: 100%; max-height: 62vh; height: auto; box-shadow: var(--shadow-md); background: #f3f2f2; }
   .arow { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
   .arow .ph { width: 64px; height: 64px; border-radius: 50%; background: var(--color-neutral-200); border: 1px dashed var(--color-neutral-400); cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 10.5px; color: var(--color-neutral-600); text-align: center; line-height: 1.2; }
   .arow .ph img { width: 100%; height: 100%; object-fit: cover; }
@@ -476,6 +478,42 @@
       <button class="b ghost" id="btn-authors-cancel">Vazgeç</button>
     </div>
     <div class="msg" id="authors-msg"></div>
+  </section>
+
+  <!-- ══════════════ 4c. PAYLAŞIM GÖRSELİ ══════════════ -->
+  <section class="panel hidden" id="p-share">
+    <h2 id="share-title">Paylaşım görseli</h2>
+    <p class="hint">
+      Yazının başlığı ve arşiv özetiyle, yazarın fotoğrafıyla ve Bergeç logosuyla bir görsel üretir.
+      <strong>Hiçbir yere yüklenmez</strong> — yalnızca burada görünür; indirip Instagram’da kendiniz paylaşırsınız.
+    </p>
+    <div class="grid g3">
+      <div><label class="f" for="sh-format">Boyut</label>
+        <select id="sh-format">
+          <option value="kare">Kare · 1080×1080 (gönderi)</option>
+          <option value="hikaye">Dikey · 1080×1920 (hikâye)</option>
+          <option value="bag">Yatay · 1200×630 (bağlantı önizlemesi)</option>
+        </select>
+      </div>
+      <div><label class="f" for="sh-author">Yazar</label><input type="text" id="sh-author"></div>
+      <div><label class="f" for="sh-date">Tarih</label><input type="text" id="sh-date"></div>
+    </div>
+    <div class="grid g2" style="margin-top: 14px;">
+      <div><label class="f" for="sh-heading">Başlık</label><textarea id="sh-heading" rows="2" style="font-family: var(--font-body); font-size: 14px;"></textarea></div>
+      <div><label class="f" for="sh-text">Metin <span style="text-transform: none; letter-spacing: 0;">(arşiv özetinden gelir)</span></label><textarea id="sh-text" rows="2" style="font-family: var(--font-body); font-size: 14px;"></textarea></div>
+    </div>
+    <div class="row" style="margin-top: 12px;">
+      <label style="font-size: 13px;"><input type="checkbox" id="sh-photo" checked style="width: auto;"> Yazar fotoğrafı</label>
+      <label style="font-size: 13px;"><input type="checkbox" id="sh-logo" checked style="width: auto;"> Bergeç logosu ve adres</label>
+    </div>
+    <div class="share-wrap"><canvas id="sh-canvas"></canvas></div>
+    <div class="bar">
+      <button class="b" id="btn-share-download">PNG indir</button>
+      <button class="b ghost" id="btn-share-copy">Panoya kopyala</button>
+      <span class="sp"></span>
+      <button class="b ghost" id="btn-share-close">Kapat</button>
+    </div>
+    <div class="msg" id="share-msg"></div>
   </section>
 
   <!-- ══════════════ 5. ARŞİV KAYDI ══════════════ -->
@@ -1605,6 +1643,7 @@ function renderList() {
       '<td><div class="row" style="gap: 5px; flex-wrap: nowrap;">' +
         '<button class="mini e">Yazıyı düzenle</button>' +
         '<button class="mini m">Arşiv kaydı</button>' +
+        '<button class="mini sh" title="Instagram vb. için paylaşım görseli üret (hiçbir yere yüklenmez)">Görsel</button>' +
         '<button class="mini pub" title="' + (p.taslak ? 'Ana sayfada göster' : 'Ana sayfadan kaldır, taslak olarak sakla') + '">' + (p.taslak ? 'Paylaş' : 'Taslağa al') + '</button>' +
         '<button class="mini up">↑</button>' +
         '<button class="mini dn">↓</button>' +
@@ -1616,6 +1655,7 @@ function renderList() {
     tr.querySelector('.dn').addEventListener('click', () => move(idx, 1));
     tr.querySelector('.rm').addEventListener('click', () => removeEntry(p));
     tr.querySelector('.pub').addEventListener('click', () => togglePublish(p));
+    tr.querySelector('.sh').addEventListener('click', () => openShare(p));
     tb.appendChild(tr);
   });
 }
@@ -1767,7 +1807,7 @@ function resetEditor() {
 }
 
 function showOnly(panel) {
-  ['p-list', 'p-edit', 'p-doc', 'p-meta', 'p-authors'].forEach(id => show(id, id === panel));
+  ['p-list', 'p-edit', 'p-doc', 'p-meta', 'p-authors', 'p-share'].forEach(id => show(id, id === panel));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -2604,6 +2644,243 @@ $('btn-authors-save').addEventListener('click', (e) => {
   if (JSON.stringify(list) === JSON.stringify(normAuthors(state.index.authors).map(a => { const o = { id: a.id, ad: a.ad }; if (a.bio) o.bio = a.bio; if (a.foto) o.foto = a.foto; return o; }))) { noChange(); return; }
   stage('Yazarlar', { kind: 'authors', list });
   backToList('Yazarlar listesi kaydedildi');
+});
+
+/* paylaşım görseli (Instagram vb.)
+   Tarayıcıda, sitenin yazı tipleri ve renkleriyle çizilir; hiçbir yere yüklenmez, depoya girmez.
+   Başlık ve metin arşiv kaydından, fotoğraf Yazarlar listesinden gelir. */
+
+const SHARE_SIZES = { kare: [1080, 1080], hikaye: [1080, 1920], bag: [1200, 630] };
+const SHARE = { bg: '#f3f2f2', ink: '#201f1d', accent: '#7d5411', muted: '#605d5d', line: 'rgba(32, 31, 29, 0.18)', surface: '#eae9e9' };
+let shareTarget = null;
+let shareSeq = 0; // aynı anda iki çizim üst üste binmesin (boyut hızlı değişirse)
+
+function findAuthor(name) {
+  const key = String(name || '').trim().toLocaleLowerCase('tr');
+  if (!key) return null;
+  return normAuthors(state.index.authors).find(a => a.ad.trim().toLocaleLowerCase('tr') === key) || null;
+}
+
+function openShare(p) {
+  shareTarget = p;
+  $('share-title').textContent = 'Paylaşım görseli · ' + (p.title || '');
+  $('sh-heading').value = p.title || '';
+  $('sh-text').value = p.excerpt || '';
+  $('sh-author').value = p.author || '';
+  $('sh-date').value = p.date || '';
+  msg('share-msg', '');
+  showOnly('p-share');
+  drawShare();
+}
+$('btn-share-close').addEventListener('click', (e) => { e.preventDefault(); showOnly('p-list'); });
+['sh-format', 'sh-author', 'sh-date', 'sh-heading', 'sh-text', 'sh-photo', 'sh-logo']
+  .forEach(id => { $(id).addEventListener('input', drawShare); $(id).addEventListener('change', drawShare); });
+
+/** Metni genişliğe sarar; en çok maxLines satır, taşan son satır … ile biter. */
+function wrapLines(ctx, text, maxW, maxLines) {
+  const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (ctx.measureText(t).width <= maxW || !line) { line = t; continue; }
+    lines.push(line);
+    line = w;
+    if (lines.length === maxLines) break;
+  }
+  if (lines.length < maxLines && line) lines.push(line);
+  if (lines.length === maxLines && words.length) {
+    // son satır taşıyorsa kısalt (zaten … ile bitiyorsa ikinci … eklenmez)
+    const used = lines.join(' ').split(' ').length;
+    if (used < words.length) {
+      let last = lines[maxLines - 1];
+      while (last && ctx.measureText(last + '…').width > maxW) last = last.replace(/\s*\S+$/, '');
+      lines[maxLines - 1] = /[…]$/.test(last) ? last : (last || '').replace(/[.,;:\s]+$/, '') + '…';
+    }
+  }
+  return lines;
+}
+/** Harf aralıklı (letter-spacing) yazı: küçük büyük harfli etiketler için. */
+function drawTracked(ctx, text, cx, y, spacing) {
+  const chars = [...String(text)];
+  const w = chars.reduce((a, ch) => a + ctx.measureText(ch).width + spacing, -spacing);
+  let x = cx - w / 2;
+  chars.forEach(ch => { ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + spacing; });
+  return w;
+}
+function loadImage(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Fotoğraf okunamadı.')); i.src = src; });
+}
+function drawCircleImage(ctx, img, cx, cy, r) {
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  const k = Math.max(2 * r / img.width, 2 * r / img.height);
+  const w = img.width * k, h = img.height * k;
+  ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+  ctx.restore();
+  ctx.strokeStyle = SHARE.line; ctx.lineWidth = Math.max(1, r / 22);
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+}
+
+async function drawShare() {
+  const mySeq = ++shareSeq;
+  const c = $('sh-canvas');
+  const fmt = $('sh-format').value;
+  const [W, H] = SHARE_SIZES[fmt] || SHARE_SIZES.kare;
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const s = W / 1080;
+  const wide = fmt === 'bag';
+  const heading = $('sh-heading').value.trim();
+  const text = $('sh-text').value.trim();
+  const authorName = $('sh-author').value.trim();
+  const date = $('sh-date').value.trim();
+  const withLogo = $('sh-logo').checked;
+  const a = $('sh-photo').checked ? findAuthor(authorName) : null;
+
+  try { await document.fonts.load('400 100px "Cormorant Garamond"'); await document.fonts.load('400 40px "Lora"'); await document.fonts.ready; } catch (e) {}
+  if (mySeq !== shareSeq) return; // bu arada yeni çizim başladı
+
+  ctx.fillStyle = SHARE.bg; ctx.fillRect(0, 0, W, H);
+  const m = (wide ? 64 : 92) * s;                      // kenar boşluğu
+  ctx.strokeStyle = SHARE.line; ctx.lineWidth = Math.max(1, 1.5 * s);
+  ctx.strokeRect(m * 0.55, m * 0.55, W - m * 1.1, H - m * 1.1);
+
+  let y = m + (wide ? 34 : 52) * s;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+
+  if (withLogo) {
+    ctx.fillStyle = SHARE.muted;
+    ctx.font = (wide ? 15 : 20) * s + 'px Lora, serif';
+    drawTracked(ctx, 'BİLGİSAYAR BİLİMİ · MATEMATİK · MANTIK', W / 2, y, (wide ? 3.4 : 4.6) * s);
+    y += (wide ? 36 : 54) * s;
+    ctx.fillStyle = SHARE.ink;
+    ctx.font = (wide ? 44 : 64) * s + 'px "Cormorant Garamond", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('bergeç', W / 2, y);
+    ctx.textAlign = 'left';
+    const rw = (wide ? 120 : 150) * s, gap = ctx.measureText('bergeç').width / 2 + 28 * s;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - gap - rw, y - (wide ? 14 : 20) * s); ctx.lineTo(W / 2 - gap, y - (wide ? 14 : 20) * s);
+    ctx.moveTo(W / 2 + gap, y - (wide ? 14 : 20) * s); ctx.lineTo(W / 2 + gap + rw, y - (wide ? 14 : 20) * s);
+    ctx.stroke();
+    y += (wide ? 52 : 86) * s;
+  }
+
+  // başlık
+  const maxW = W - m * 2;
+  if (fmt === 'hikaye') y = Math.max(y, H * 0.2); // hikâyede içerik biraz aşağıdan başlasın
+  // başlık uzadıkça küçülsün: metne yer kalsın
+  const maxTitleLines = wide ? 3 : 4;
+  let titleSize = (wide ? 62 : fmt === 'hikaye' ? 104 : 92) * s;
+  let titleLines;
+  const minTitle = titleSize * 0.62;
+  for (;;) {
+    ctx.font = titleSize + 'px "Cormorant Garamond", serif';
+    titleLines = wrapLines(ctx, heading, maxW, maxTitleLines);
+    const fits = titleLines.length <= (wide ? 2 : 3) || titleSize <= minTitle;
+    if (fits) break;
+    titleSize *= 0.92;
+  }
+  ctx.fillStyle = SHARE.ink;
+  ctx.font = titleSize + 'px "Cormorant Garamond", serif';
+  titleLines.forEach(l => { ctx.fillText(l, m, y + titleSize * 0.78); y += titleSize * 1.06; });
+
+  // tarih
+  if (date) {
+    y += (wide ? 16 : 26) * s;
+    ctx.fillStyle = SHARE.accent;
+    ctx.font = (wide ? 17 : 22) * s + 'px Lora, serif';
+    ctx.textAlign = 'left';
+    const chars = [...date];
+    let x = m;
+    chars.forEach(ch => { ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + 3.4 * s; });
+    y += (wide ? 20 : 26) * s;
+  }
+
+  // metin
+  if (text) {
+    y += (wide ? 26 : 44) * s;
+    ctx.fillStyle = SHARE.muted;
+    const size = (wide ? 26 : fmt === 'hikaye' ? 38 : 34) * s;
+    ctx.font = size + 'px Lora, serif';
+    const bottomRoom = H - m - (wide ? 84 : 150) * s; // alttaki yazar satırının üstüne kadar
+    const maxLines = Math.max(1, Math.min(fmt === 'hikaye' ? 9 : 6, Math.floor((bottomRoom - y) / (size * 1.55))));
+    wrapLines(ctx, text, maxW, maxLines).forEach(l => { ctx.fillText(l, m, y + size * 0.8); y += size * 1.55; });
+  }
+
+  // alt: yazar + adres
+  const footY = H - m - (wide ? 34 : 60) * s;
+  ctx.strokeStyle = SHARE.line;
+  ctx.beginPath(); ctx.moveTo(m, footY - (wide ? 46 : 78) * s); ctx.lineTo(W - m, footY - (wide ? 46 : 78) * s); ctx.stroke();
+  let ax = m;
+  if (a && a.foto) {
+    try {
+      const img = await loadImage(a.foto);
+      if (mySeq !== shareSeq) return;
+      const r = (wide ? 30 : 46) * s;
+      drawCircleImage(ctx, img, m + r, footY - r * 0.45, r);
+      ax = m + r * 2 + 22 * s;
+    } catch (e) {}
+  } else if (a || authorName) {
+    const r = (wide ? 30 : 46) * s;
+    ctx.fillStyle = SHARE.surface;
+    ctx.beginPath(); ctx.arc(m + r, footY - r * 0.45, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = SHARE.line; ctx.stroke();
+    ctx.fillStyle = SHARE.accent;
+    ctx.font = (wide ? 26 : 38) * s + 'px "Cormorant Garamond", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(authorName.split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toLocaleUpperCase('tr'), m + r, footY - r * 0.45 + (wide ? 9 : 13) * s);
+    ctx.textAlign = 'left';
+    ax = m + r * 2 + 22 * s;
+  }
+  if (authorName) {
+    ctx.fillStyle = SHARE.ink;
+    ctx.font = (wide ? 26 : 36) * s + 'px Lora, serif';
+    ctx.fillText(authorName, ax, footY);
+    if (a && a.bio) {
+      ctx.fillStyle = SHARE.muted;
+      ctx.font = (wide ? 18 : 24) * s + 'px Lora, serif';
+      ctx.fillText(wrapLines(ctx, a.bio, W - ax - m - (wide ? 200 : 260) * s, 1)[0] || '', ax, footY + (wide ? 26 : 34) * s);
+    }
+  }
+  if (withLogo) {
+    ctx.fillStyle = SHARE.muted;
+    ctx.font = (wide ? 16 : 22) * s + 'px Lora, serif';
+    ctx.textAlign = 'right';
+    const t = 'bergec.github.io';
+    let x = W - m;
+    [...t].reverse().forEach(ch => { ctx.fillText(ch, x, footY); x -= ctx.measureText(ch).width + 2.2 * s; });
+    ctx.textAlign = 'left';
+  }
+}
+
+function shareFileName() {
+  const base = slugify($('sh-heading').value || (shareTarget && shareTarget.title) || 'bergec') || 'bergec';
+  return base + '-' + $('sh-format').value + '.png';
+}
+$('btn-share-download').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('sh-canvas').toBlob(b => {
+    const url = URL.createObjectURL(b);
+    const a = document.createElement('a');
+    a.href = url; a.download = shareFileName();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    msg('share-msg', 'İndirildi: ' + shareFileName(), 'ok');
+  }, 'image/png');
+});
+$('btn-share-copy').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('sh-canvas').toBlob(async b => {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': b })]);
+      msg('share-msg', 'Panoya kopyalandı; doğrudan yapıştırabilirsiniz.', 'ok');
+    } catch (err) {
+      msg('share-msg', 'Panoya kopyalanamadı (tarayıcı izin vermedi); “PNG indir” ile kaydedin.', 'err');
+    }
+  }, 'image/png');
 });
 
 /* ana sayfa */
