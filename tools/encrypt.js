@@ -29,6 +29,8 @@ const lockPage = `<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bergeç — Giriş</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -120,6 +122,11 @@ const lockPage = `<!DOCTYPE html>
 
   function reveal(html, password) {
     try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
+    if (!/rel=["']?icon/i.test(html)) {
+      html = html.replace(/<head[^>]*>/i, function (m) {
+        return m + '<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png">';
+      });
+    }
     document.open();
     document.write(html);
     document.close();

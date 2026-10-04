@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bergeç · Yönetim</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="assets/bergec.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
@@ -658,6 +660,8 @@ function lockPage(saltB64, ivB64, ctB64) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bergeç — Giriş</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -749,6 +753,11 @@ function lockPage(saltB64, ivB64, ctB64) {
 
   function reveal(html, password) {
     try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
+    if (!/rel=["']?icon/i.test(html)) {
+      html = html.replace(/<head[^>]*>/i, function (m) {
+        return m + '<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png">';
+      });
+    }
     document.open();
     document.write(html);
     document.close();
@@ -1107,6 +1116,8 @@ function buildArticle(meta, bodyHtml, usedImages) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(meta.title)} · Bergeç</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="assets/bergec.css">${katex ? `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"><\/script>
