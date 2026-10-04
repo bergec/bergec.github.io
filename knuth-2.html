@@ -97,14 +97,29 @@
 
   function reveal(html, password) {
     try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
-    if (!/rel=["']?icon/i.test(html)) {
-      html = html.replace(/<head[^>]*>/i, function (m) {
-        return m + '<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png">';
-      });
-    }
     document.open();
     document.write(html);
     document.close();
+    // document.write ile yazilan sayfada tarayici favicon'u her zaman yeniden
+    // islemiyor (ozellikle geri donuste); simgeyi DOM'a elle ekliyoruz.
+    setIcons();
+    window.addEventListener('pageshow', setIcons);
+  }
+
+  function setIcons() {
+    var head = document.head;
+    if (!head) return;
+    var old = head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
+    for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
+    var icon = document.createElement('link');
+    icon.rel = 'icon';
+    icon.type = 'image/svg+xml';
+    icon.href = 'favicon.svg';
+    head.appendChild(icon);
+    var touch = document.createElement('link');
+    touch.rel = 'apple-touch-icon';
+    touch.href = 'apple-touch-icon.png';
+    head.appendChild(touch);
   }
 
   form.addEventListener('submit', async function (e) {
