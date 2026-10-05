@@ -468,3 +468,8 @@ ul.authors li { display: flex; gap: 10px; align-items: center; }
 ul.authors .a-foto { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid var(--color-divider); }
 ul.authors .a-text { display: grid; gap: 1px; min-width: 0; }
 ul.authors .a-bio { font-style: normal; font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-600); }
+
+/* Yorumlar (giscus): yazının altında, kaynakçadan sonra */
+.comments { margin-top: 48px; border-top: 1px solid var(--color-text); padding-top: 20px; }
+.comments h2 { font-family: var(--font-heading); font-weight: 400; font-size: 26px; margin: 0 0 4px; color: var(--color-accent-700); }
+.comments .hint { margin: 0 0 18px; font-size: 13px; color: var(--color-neutral-600); }

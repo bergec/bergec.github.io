@@ -869,9 +869,32 @@ function withSeoHead(html, entry) {
   return html.slice(0, at) + (m[0].endsWith('\n') ? '' : '\n') + block + html.slice(at);
 }
 
+/* ─────────────────────────── yorumlar (giscus) ─────────────────────────── */
+
+// Yorumlar ve beğeniler GitHub Discussions'ta ("Yorumlar" kategorisi) tutulur; her yazı adresiyle eşleşir.
+const GISCUS_ATTRS = 'data-repo="bergec/bergec.github.io" data-repo-id="R_kgDOUY9z9w" data-category="Yorumlar" ' +
+  'data-category-id="DIC_kwDOUY9z984DHHR5" data-mapping="pathname" data-strict="1" data-reactions-enabled="1" ' +
+  'data-emit-metadata="0" data-input-position="top" data-theme="https://bergec.github.io/assets/giscus.css" ' +
+  'data-lang="tr" data-loading="lazy"';
+
+/** Yazının altındaki <!-- yorumlar --> bloğunu yeniden yazar; yoksa alt bilginin (footer.bottom) üstüne ekler. */
+function withComments(html) {
+  const block = '  <!-- yorumlar -->\n' +
+    '  <section class="comments" id="yorumlar">\n' +
+    '    <h2>Yorumlar</h2>\n' +
+    '    <p class="hint">Beğenmek ya da yorum yazmak için GitHub hesabıyla giriş yapmanız gerekir.</p>\n' +
+    '    <script src="https://giscus.app/client.js" ' + GISCUS_ATTRS + ' crossorigin="anonymous" async><\/script>\n' +
+    '  </section>\n' +
+    '  <!-- /yorumlar -->\n\n';
+  html = html.replace(/  <!-- yorumlar -->[\s\S]*?<!-- \/yorumlar -->\n\n/, '');
+  const i = html.indexOf('  <footer class="bottom">');
+  return i < 0 ? html : html.slice(0, i) + block + html.slice(i);
+}
+
 /**
  * Ana sayfa listesini değiştirip (istenirse yanında başka dosyalarla) tek commit'te kaydeder.
- * Site haritası (sitemap.xml) da aynı commit'te güncellenir; kaydedilen yazıların seo bloğu arşiv kaydından yazılır.
+ * Site haritası (sitemap.xml) da aynı commit'te güncellenir; kaydedilen yazıların seo bloğu arşiv kaydından yazılır,
+ * altlarına yorum bölümü eklenir.
  * mutate(liste) değişikliği yazıları adresleriyle (href) bulup uygular. Liste siz açtıktan
  * sonra başkası tarafından değiştirildiyse güncel hâli indirilir ve aynı işlem onun üzerine
  * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
@@ -890,7 +913,7 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       const entries = {};
       flattenOf(data).forEach(p => { if (p && p.href) entries[p.href] = p; });
       const files = (extraFiles || []).map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
-        ? { path: f.path, text: withSeoHead(f.text, entries[f.path]) } : f);
+        ? { path: f.path, text: withComments(withSeoHead(f.text, entries[f.path])) } : f);
       const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap]), message,
         Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
       state.repoIndex = data;
