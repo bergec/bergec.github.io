@@ -3,156 +3,224 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bergeç — Giriş</title>
+<title>Berelim Y ile · Bergeç</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: #f3f2f2; color: #201f1d;
-    font-family: "Lora", Georgia, serif; padding: 20px;
-  }
-  .box { width: 100%; max-width: 360px; text-align: center; }
-  .mark {
-    font-family: "Cormorant Garamond", Georgia, serif; font-size: 32px; letter-spacing: 0.04em;
-    margin: 0 0 6px;
-  }
-  .sub {
-    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #7d7979; margin: 0 0 36px;
-  }
-  form { display: flex; flex-direction: column; gap: 12px; }
-  input[type="password"] {
-    font: inherit; font-size: 15px; padding: 12px 14px; border: 1px solid #201f1d; border-radius: 2px;
-    background: #fff; color: #201f1d; text-align: center; letter-spacing: 0.04em;
-  }
-  input[type="password"]:focus { outline: 2px solid #b68235; outline-offset: 1px; }
-  button {
-    font: inherit; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
-    padding: 12px 14px; border: 1px solid #201f1d; background: #201f1d; color: #f3f2f2;
-    border-radius: 2px; cursor: pointer;
-  }
-  button:hover { background: #3a3836; }
-  button:disabled { opacity: 0.6; cursor: wait; }
-  #err { color: #a03a2c; font-size: 13px; margin-top: 14px; min-height: 1.2em; }
-  noscript { display: block; margin-top: 20px; font-size: 13px; color: #a03a2c; }
-</style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'></script><!-- End Cloudflare Web Analytics -->
+<link rel="stylesheet" href="assets/bergec.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="box">
-    <p class="mark">bergeç</p>
-    <p class="sub">Bu içerik parola ile korunuyor</p>
-    <form id="pwform" autocomplete="off">
-      <input type="password" id="pw" placeholder="Parola" autocomplete="current-password" autofocus>
-      <button type="submit" id="go">Gir</button>
-    </form>
-    <p id="err"></p>
-    <noscript>Bu sayfayı görüntülemek için JavaScript gereklidir.</noscript>
+<div class="wrap">
+
+  <header class="top">
+    <a class="home" href="index.html">← Bergeç</a>
+    <span>Arşiv</span>
+  </header>
+
+  <div class="kicker">
+    <span style="color: var(--color-neutral-600); text-transform: none; letter-spacing: 0;">11.12.2025</span>
   </div>
 
+  <h1 class="title">Berelim Y ile</h1>
+  <div class="byline">Cem Bozşahin</div>
+
+  <article class="body">
+
+    <p class="lede">Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir. İlk önümüze çıkan örnekleri kolaydır, meselâ faktoriyel hesabı:<sup class="fn">1</sup></p>
+
+    <div class="eq eq-block">$$n \in \mathbb{N} \ge 1 \text{ için } n! = n \times (n-1)! \qquad (0! = 1)$$</div>
+
+    <p>Bu örnek kolaydır çünkü döngü kavramı ile daha önce tanışılmış olunur genellikle. Bu kavram daha doğaldır. Faktoriyel metodunun döngülü çözümü çok kolay anlaşıldığı için özyinelemeli çözümünü de ondan esinlenmeyle anlayabiliriz. Bir önceki sayıyla çarp diyor ikisi de sonuç olarak:</p>
+
+    <div class="eq eq-block">$$n! = 1 \times \cdots n$$</div>
+
+    <p>Bu tanımda içeride ‘!’ sembolü yok. (Aslında fonksiyon ismi o.) Ardarda sayıları çarpıp duruyoruz. Bu bir döngü, özyineleme yok.</p>
+
+    <p>İş bir hiyerarşik yapının her noktasına uğrayıp birşeyler yapmaya geldiğinde zorlanırız. Bir sıralama problemini özyinelemeyle çözmeye çalıştığımızda da zorlanırız. Aslında burada da fikir çok basittir: Aynı probleme dön, ama boyut küçülterek. Hiyerarşinin altta kalan kısımları da hiyerarşidir, sıralanmamış bir dizinin alt dizinleri de dizindir. Aynı problemle karşı karşıyasınızdır ama boyut küçülmüştür. En küçük boyuta vardığınızda özyinelemesiz çözer, özyinelemeyi durdurursunuz.</p>
+
+    <p>Bu tip problemleri özyinelemeyle çözmekte zorlanmamızın nedeni, bence, döngülü çözümü o kadar rahat göremememiz. Bu problemler için de özyinelemeli çözüm verildiğinde a ne kolaymış diyoruz ama kendimiz hemen yazmakta zorlanıyoruz. Bunun nedeni de buradaki özyinelemenin faktoriyel gibi sadece en sonda kendine tekrar dönmemesi, içeride de kendine referans vermesidir. Dolayısıyla döngüye çevirip, özyineleme için uydurulmuş gibi gözüken içerideki isimden kurtulamıyoruz. Programlama diliyle konuşursak, kodun ortasında bir yerde onu tekrar çalıştıracaksak bir isim vermemiz gerekiyor.</p>
+
+    <p>Özyinelemedeki kolay yönteme kuyruk özyinelemesi, zor olana da gömülü özyineleme diyoruz, ya da isimli özyineleme.</p>
+
+    <p>Buradaki temel kavramsal soru şu: Bu iki yöntem gerçekten farklı mıdır?</p>
+
+    <p>Felsefî sorular da var yöntemi anlamak dışında: Özyineleme hangi problemi çözmektedir? Bu problem biçimsel midir anlamsal mı?</p>
+
+    <p>Bu tartışma meseleyi anlamak için yapılacaksa, elimizde matematikten daha iyi bir çilingir yok. Matematik sayesinde buradaki kavramı ve problemi açabiliriz ve anlayabiliriz belki.</p>
+
+    <p>Matematikte soyutlama zevk için yapılmaz, bir değişmeze varmak için yapılır. Burada işe yarayıp yaramadığına bir bakalım. (Aslında tabii işe yaradığını biliyoruz da o yüzden bu kadar rahat konuşuyorum. Size anlatacağım çözüm yüz yıldır biliniyor. İlginç olan bunun farkında olmayıp özyineleme üzerine serbest atış yöntemiyle teori kurgulayanlar var dilbilimde ve zihinbilimde. İsim verdirtmeyin bana daha yeni emekli oldum. Tarih diye muhteşem bir özgözlemci var.)</p>
+
+    <p>Ama önce bir antrparantez açmamız lazım. Başlıktaki ‘berelim’ ne demek? Bu yazının yayınlandığı blog’un isminde de geçiyor kökü: bergeç. Bu bilgisayar demek sanki. Can sıkıntısından birileri uydurmuş da olabilir, ‘bilgisayar’ yetmezmiş gibi. Uyduruldu ama can sıkıntısından değil iç sıkıntısından. Hikayenin bizzat şahidi olarak size anlatmam lazım.</p>
+
+    <p>Bilişim dünyasındaysanız eğer ve/veya dile duyarlıysanız sizin içinize de fenalık gelmiş olabilir ‘bil’ kökünün çok fazla kullanılıyor olmasından. Bilmek, bilişim, bilgi, bilgisayar, bilge, bildiri vd. var.</p>
+
+    <p>Var da bilişimci olarak İngilizce’deki ‘computational’ ifadesine ne diyeceğimizi bilemiyoruz hâlâ. (Döndü bizim imlâ; bir yakınıma değil size hitap ediyorum.) ‘Hesaplamalı’ deyince olsa idare ederdik ama olmuyor. Computational fluid mechanics için ‘hesaplamalı akışkanlar mekaniği’ desek bunun hesaplamasızı yok zaten. Computational linguistics için “bilgisayarlı dilbilim’ ya da ‘hesaplamalı dilbilim’ desek—dedik—pek içimize sinmiyor. Önemli olan yöntem veya ekipman değil bakış açısı çünkü. Yani ‘hesaplamalı dilbilim’ de gitti; onu da demiştik. Berimsel dilbilim? Eh işte. Berdilbilim? Yok artık daha neler. Nereden çıktı bu ‘ber’?</p>
+
+    <p>İşte biz böyle problemlerle uğraşırken 1996 yılının bir kış gününde Onur Tolga Şehitoğlu hocamız ODTÜ Bilgisayar Mühendisliğinin çay odasında ‘ber’ kökünü önerdiydi. Niyet ‘bil’i tahtından etmek değil bahsettiğim zorlukları aşmaktı. Baktık pek kullanılmış bir kök değil; Eski Türkçe’de şimdiki ‘ver’in biçimiymiş: (bėr | be:r| bir) &gt; ver (sağolasınız Mehmet Ölmez hocam). Dedik kimse hatırlamaz bu kökü sıfırdan doldurabiliriz belki—hatırlarmış meğer.</p>
+
+    <p>Eksik kalmasın bir örnek verelim Orhun Yazıtları 735’ten:<sup class="fn">2</sup></p>
+
+    <div class="eq eq-block" style="font-style: italic;">İşig küçig birtim ök [hizmet verdim hep]</div>
+
+    <p>Neyse konuyu dağıtmayayım, hemen oracıkta bermek, bereç, bergeç, berim, berişim, berimsel, berimselci, berimselcilik ve diğerleri türetilmişti bile; garibim ‘ver’ duysa ne düşünürdü kimbilir.</p>
+
+    <p>Kullanımına bakıyoruz ara sıra. Ders kitaplarına ve sözlüklere bile girdiği oldu.<sup class="fn">3</sup> Rahmetli Tahsin Yücel’den de 2007’de Mersin’de yapılan Ulusal Dilbilim Kurultayında moral desteği aldıydık. Daha ne isteriz? (‘Ber’e itiraz edenlere arka sıralardan verdiği ‘bulmuş işte çocuklar’ cevabı hâlâ kulaklarımda çınlıyor—gençtik hakikaten.) Halit Oğuztüzün hocamız ve ben havarileri sayılırız, yaymaya çalışıyoruz. Yukarıdaki akışkanlar mekaniği hatırlatması Halit hocamızdan.</p>
+
+    <p>Parantezi kapatıp konumuza dönelim. Özyineleme tam nedir? Özyinelemenin ne yapmaya çalıştığını en sade biçimde gösteren matematik herhalde Alan Turing’in lambdalı tanımıdır:</p>
+
+    <div class="eq eq-block">$$\mathbf{U} = \lambda f.f(f)$$</div>
+
+    <p>Veya parantez yorgunuysanız <span class="im">\mathbf{U} = \lambda f . f\, f</span>. Curry’den kalma bir gelenekle bazı önemli lambda denklemlerini kalın harflerle yazıyoruz. Özetle şunu diyor <span class="im">\mathbf{U}</span>: Bir fonksiyon alalım, <span class="im">f</span> olsun, onu kendisine uygulayalım, yani <span class="im">f(f)</span>. Bu ifade sade ama özyinelemeli programlamada ne yaptığımızı tam anlatmıyor. Bunu görebilmek için önce örneğin faktoriyel fonksiyonunu isimli özyinelemeyle yazalım, hatta tek satırlık program gibi olsun:</p>
+
+    <div class="eq eq-block">$$\mathbf{F} = \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (\mathbf{F}\,(n-1))$$</div>
+
+    <p>Gördüğünüz gibi solda tanımlanan <span class="im">\mathbf{F}</span>, denklemin içinde de, sağda, kullanılıyor; yani tam bir isimli özyineleme. Programlamada büyük kolaylık, ama bunu yapmak zorunda mıyız? Matematik’ten cevap var: Yapsan da sorun yok; başka bir problemi çözerken bu sorun da çözülür. Nedir bu başka problem aşama aşama gidelim.</p>
+
+    <p>Şöyle bir soyutlama yaparsak isimlerden adım adım kurtulmaya başlarız, hem de faktoriyel davranışını değiştirmeden, özyinelemeden de vazgeçmeden:</p>
+
+    <div class="eq eq-block">$$\mathbf{H} = \lambda f.\lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (f\,(n-1))$$</div>
+
+    <p>Davranış değişmedi çünkü <span class="im">\mathbf{H}\,\mathbf{F} = \mathbf{F}</span>:</p>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{H}\,\mathbf{F} = [\lambda f.\lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (f\,(n-1))]\ \mathbf{F} = \\[4pt] \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (\mathbf{F}\,(n-1)) = \mathbf{F} \end{gathered}$$</div>
+
+    <p>Yani <span class="im">\mathbf{F} = \mathbf{H}\,\mathbf{F}</span>. Şimdi özyinelemeye benzemeye başladı. Ama <span class="im">\mathbf{U}</span> bunu vermiyor, çünkü <span class="im">\mathbf{U}(\mathbf{H}\,\mathbf{F}) = (\mathbf{H}\,\mathbf{F})\,(\mathbf{H}\,\mathbf{F}) = \mathbf{F}\,\mathbf{F} \neq \mathbf{F}</span>. Ama çok uzakta da değil. Şimdi şöyle bir tanım daha yapalım:</p>
+
+    <div class="eq eq-block">$$\boldsymbol{\Phi} = \lambda x.\lambda f .\ f (x\,x\,f )$$</div>
+
+    <p>Bu sanki <span class="im">\mathbf{U}</span>’nun bir başka biçimi gibi. Şimdi <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}</span>’a bakalım, yani <span class="im">\mathbf{U}\boldsymbol{\Phi}</span>’a:</p>
+
+    <div class="eq eq-block">$$\boldsymbol{\Phi}\boldsymbol{\Phi} = (\lambda x.\lambda f .\ f (x\,x\,f ))\boldsymbol{\Phi} = \lambda f .\ f (\boldsymbol{\Phi}\boldsymbol{\Phi}\, f )$$</div>
+
+    <p>Şimdi herhangi bir <span class="im">h</span> fonksiyonu koyalım <span class="im">f</span> yerine:</p>
+
+    <div class="eq eq-block">$$\lambda f .\ f (\boldsymbol{\Phi}\boldsymbol{\Phi}\, f )h = h(\boldsymbol{\Phi}\boldsymbol{\Phi}h)$$</div>
+
+    <p>Yani <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}h = h(\boldsymbol{\Phi}\boldsymbol{\Phi}h)</span>. Bir yerden tanıdık gelmiştir bu denklem. <span class="im">\mathbf{Y}</span> denkleminin davranışı bu. <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}</span>’ın bize gösterdiği, <span class="im">h</span>’in bir fonksiyonel olması, fonksiyon alan fonksiyon yani, çünkü <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}h</span> bir fonksiyon. <span class="im">\mathbf{Y}</span> de öyle diyor aşağıdaki <span class="im">f</span> için:</p>
+
+    <div class="eq eq-block">$$\mathbf{Y} = \lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))$$</div>
+
+    <p>Çünkü <span class="im">\mathbf{Y}</span>’yi böyle tanımlarsak, herhangi bir <span class="im">h</span> fonksiyoneli için <span class="im">\mathbf{Y}h = h(\mathbf{Y}h)</span>. <span class="im">h(\mathbf{Y}h) = h(h(\mathbf{Y}h)) = \cdots</span>. Birkaç adım yapalım: ([]’ler de parantez; görsel kolaylık olsun diye farklı ayraç olarak kullandım)</p>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{Y}h = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]h = \\[4pt] (\lambda x.h(xx))\,(\lambda x.h(xx)) \\[4pt] h(\mathbf{Y}h) = h[(\lambda x.h(xx))\,(\lambda x.h(xx))] = \\[4pt] h[h((\lambda x.h(xx))\,(\lambda x.h(xx)))] = h(h(\mathbf{Y}h)) \end{gathered}$$</div>
+
+    <p>Özetlersek <span class="im">\mathbf{Y} = \boldsymbol{\Phi}\boldsymbol{\Phi} = \mathbf{U}\boldsymbol{\Phi}</span>. Nereden nereye. Tek başına <span class="im">\boldsymbol{\Phi}</span> yetmiyormuş demek ki özyineleme için. Tek başına <span class="im">\mathbf{U}</span> da yetmiyormuş. Ama tek başına <span class="im">\mathbf{Y}</span> özyinelemenin klasik denklemini verdi.</p>
+
+    <p>Peki Haskell Curry’nin <span class="im">\mathbf{Y}</span>’sinin bu kadar çok tutulması ve neredeyse özyineleme ile özdeşleşmesi nereden kaynaklanıyor? (<span class="im">\mathbf{Y}</span>’ye ithafen kurulmuş meşhur bir şirket var biliyorsunuz; var mı mesela Monoid Inc. diye bir şirket?)</p>
+
+    <p>Tanımına yakından bakıp ruhunu anlamağa çalışırsak bu etkiyi de anlayabiliriz. Önce <span class="im">\mathbf{Y}</span>’yi tekrar alalım:</p>
+
+    <div class="eq eq-block">$$\mathbf{Y} = \lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))$$</div>
+
+    <p>Tek bir fonksiyon soyutlaması var tanımında, <span class="im">\lambda f</span> ile temsil edilen. Aynen özyinelemeli programların tanımında olduğu gibi. Ama iki tane <span class="im">\lambda x</span> var. İkisinin de aynı sembolle (<span class="im">x</span>’le) olmasının hiçbir önemi yok çünkü yer tutucular olarak lokal kullanılıyorlar.</p>
+
+    <p>Lambdalarda <span class="im">M\,N</span> yazdığımızda <span class="im">M</span> fonksiyon, <span class="im">N</span> de öğesi olduğuna göre, <span class="im">\lambda f .(\cdots)</span>’in içindeki terimde, sağdaki lambdalı terim soldakine öğe oluyor. <span class="im">N</span>’nin <span class="im">x</span>’inin kendi <span class="im">x</span>’i olması özyineleme yaparken geçirilen öğenin değerinin yeni değerler olmasını temsil ediyor, aynen faktoriyel fonksiyonunda içeriden yapılan çağrı’nın <span class="im">(n-1)</span> üzerinden olması gibi; hatırlayalım şu şekildeydi: <span class="im">(n-1)!</span>.</p>
+
+    <p><span class="im">\mathbf{Y}</span>’nin özü, derin düşüncelere dalmış bir programcı için işte bu. Bize, bütün sadeliğine rağmen <span class="im">\mathbf{U}</span>’nun gösteremediği bir özelliği gösteriyor.</p>
+
+    <p>Peki <span class="im">\mathbf{Y}</span> özyineleme için mi var, yoksa esas görevinin bir sonucu mu bu? Dikkat ederseniz 1 rakamı faktoriyel fonksiyonunun sabit nokta olmasının bir sonucudur, çünkü <span class="im">0! = 1</span> demek amiyane tabiriyle ‘duracağım’ demek, git bak sonuca demek, senin fonksiyonun değerleri bitmez ama hepsi şu kümenin içinde olacak demek, biraz önce gördüğümüz gibi. Faktoriyel için bu küme <span class="im">\{(0, 1), (1, 1), (2, 2), (3, 6), \cdots\}</span>. <span class="im">\mathbf{Y}</span> sayesinde bu kümeyi anlamak için <span class="im">\cdots</span>’dan kurtuluyoruz.</p>
+
+    <p>Yani faktoriyel fonksiyonu, fonksiyon dünyasında kendisini üreten fonksiyonun sabit noktası. Fonksiyon uzayında sabit nokta kavramı, kabaca, bir fonksiyonu ardarda çalıştırmanın artık fonksiyonda fark yaratmadığı durumu bulup durmak demek, örneğin herhangi bir <span class="im">f</span> için <span class="im">f(x) = x</span> yapan değeri. Bizim <span class="im">\mathbf{H}</span> de böyle zaten: <span class="im">\mathbf{H}\,\mathbf{F} = \mathbf{F}</span>.</p>
+
+    <p><span class="im">\mathbf{Y}</span>’nin esas işi şu: <span class="im">\mathbf{H}</span> gibi, özel bir fonksiyonun (<span class="im">\mathbf{F}</span>’nin) sabit noktacısı olmak yerine, herhangi bir fonksiyonun sabit noktacısı olmak; onu bulmak, tabii varsa, yoksa da bunu göstermek, en azından kağıt üstünde. İşte bunun için isimlerden kurtulabilmek önemli, yoksa nereden hatırlayacağız bütün fonksiyonları? Özyinelemeyi isimsiz yapabilmek de bunun yan ürünü.</p>
+
+    <p>Mesela bizim faktoriyelin terimini alalım, <span class="im">\mathbf{F} = \mathbf{H}\,\mathbf{F}</span>. <span class="im">\mathbf{Y}</span> uygularsak <span class="im">\mathbf{F} = \mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}(\mathbf{H}))</span>. Yani faktoriyeli elde et isimsiz soyutlama olarak, <span class="im">\mathbf{H}</span>, sonra özyinele, <span class="im">\mathbf{Y}\mathbf{H}</span>. Nereye gideceği belli:</p>
+
+    <div class="eq eq-block">$$\mathbf{F} = \mathbf{H}\,\mathbf{F} = \mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}\mathbf{H}) = \mathbf{H}\,(\mathbf{H}\,(\mathbf{Y}\mathbf{H})) \tag{1}$$</div>
+
+    <p>Peki <span class="im">\mathbf{Y}</span>, <span class="im">\mathbf{H}</span>’nin <span class="im">\mathbf{F}</span>’ye yaptığını mı yapıyor <span class="im">\mathbf{H}</span>’ye? Bakalım:</p>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{F} = \mathbf{H}\,\mathbf{F} = \mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}\mathbf{H}) = [\lambda f.\lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (f (n-1))]\,(\mathbf{Y}\mathbf{H}) = \\[4pt] \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (\mathbf{Y}\mathbf{H})\,(n-1)) = \\[4pt] \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times \mathbf{F}\,(n-1)) = \mathbf{F} \neq \mathbf{H} \end{gathered} \tag{2}$$</div>
+
+    <p>Yapmıyormuş. Daha genel birşey yapıyormuş, çünkü <span class="im">\mathbf{H}\,\mathbf{F} \neq \mathbf{F}(\mathbf{H}\,\mathbf{F})</span>, ama <span class="im">\mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}\mathbf{H})</span>. Yalnız bu son denklem inanması zor bir denklem. Yakından bakalım:</p>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{Y}\mathbf{H} = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]\mathbf{H} = (\lambda x.\mathbf{H}(xx))\,(\lambda x.\mathbf{H}(xx)) = \\[4pt] \mathbf{H}\,[(\lambda x.\mathbf{H}(xx))\,(\lambda x.\mathbf{H}(xx))] = \mathbf{H}\,[[\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]\mathbf{H}] = \mathbf{H}\,(\mathbf{Y}\mathbf{H}) \end{gathered}$$</div>
+
+    <p>Mesela aynı şeyi <span class="im">\mathbf{F}</span> ile yapamadık çünkü o <span class="im">\mathbf{H}</span> gibi fonksiyonel almıyor; <span class="im">n</span> fonksiyon değil, değer. Yani <span class="im">\mathbf{H}</span>’nin sabit noktası <span class="im">\mathbf{F}</span>, <span class="im">\mathbf{Y}</span>’nin sabit noktası ...; neyse uzatmayalım, bunun sonu Frege, Russell ve Curry’ye kadar gider, arada da Quine, Dana Scott ve Schönfinkel’a uğrar, o arada da Barendregt’e; burada durdum.</p>
+
+    <p>Denklem (2)’deki gibi bir açılım ne zaman durur? İçerideki <span class="im">\mathbf{Y}</span> kullanılmadığı zaman. Bu durumda <span class="im">n == 0</span>’ın sonucu dönmüş olmalı. Yani özyineleme duracak. Bunun da <span class="im">\mathbf{Y}</span> ile bir alakası yok, (1)’deki <span class="im">\mathbf{H}</span> ve <span class="im">\mathbf{F}</span> ile alakası var.</p>
+
+    <p>Sabit noktasızlık önemli bir sorun. Bilgisayarınızda yazdığınız özyinelemeli programa özyinelemeyi durdurma koşulları koymazsanız sabit noktacının değerini acı bir şekilde deneyimlersiniz. <span class="im">\mathbf{Y}</span> diyor ki böyle fonksiyonlarda ben değil ama sen zorlanırsın. Ben sana veririm bir fonksiyon, buyur çalıştır. Mesela, haydi bu koşulları programa koydunuz diyelim, ama onları ulaşılmaz hale getirdiyseniz ne oluyorsa, aynı şey <span class="im">\mathbf{Y}</span> ile kağıda yazarken de olacak; inşallah bol bol kağıdınız vardır, olsa da çözüm olmayacak zaten ama umutsuz yaşanmıyor. Efendim? Bilgisayarınız çok mu ısındı? E umut da bir yere kadar.</p>
+
+    <p>Sorun bende değil sende olur diyor <span class="im">\mathbf{Y}</span> kıssadan hisse. Şu hep sağda içeriye kaçan parantezin solunda kalan <span class="im">\mathbf{H}</span> terimi var ya (1) numaralı denklemde, o bir aşamada durmazsa o <span class="im">\mathbf{Y}</span>’ler oraya konmaya devam edecek. Şimdi bu <span class="im">\mathbf{Y}</span>’nin problemi mi yani?</p>
+
+    <p>Peki <span class="im">\mathbf{F}</span>’nin içinde birden fazla özyineleme olsaydı ne olacaktı, mesela Fibonacci serisinde olduğu gibi?</p>
+
+    <div class="eq eq-block">$$\mathbf{F}_b = \lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } (\mathbf{F}_b\,(n-1) + \mathbf{F}_b\,(n-2)) \qquad n \in \mathbb{N}$$</div>
+
+    <p>İçerideki bütün <span class="im">\mathbf{F}_b</span>’lerin ‘durması’ gerekecekti. Bunu daha önce kullandığımız taktikle çözebiliriz çünkü tek bir soyutlama yetecek ikisini de çözmek için:</p>
+
+    <div class="eq eq-block">$$\mathbf{H}_b = \lambda f .\lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ( f (n-1) + f (n-2))$$</div>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{H}_b\,\mathbf{F}_b = [\lambda f .\lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ( f (n-1) + f (n-2))]\mathbf{F}_b = \\[4pt] \lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } (\mathbf{F}_b\,(n-1) + \mathbf{F}_b\,(n-2)) = \mathbf{F}_b \end{gathered}$$</div>
+
+    <p>Yani <span class="im">\mathbf{F}_b = \mathbf{H}_b\,\mathbf{F}_b</span>. Genelde <span class="im">\mathbf{F}_b = \mathbf{Y}\mathbf{H}_b</span>. Sonrası malum; (1) denklemi gibi birşey. Ortaya çıkan <span class="im">\mathbf{H}_b</span>’lerden birisi <span class="im">n = 0</span> için içeride <span class="im">\mathbf{Y}</span> üretmeyecek, bir diğeri de <span class="im">n = 1</span> için. Yani aslında zaten iki tane <span class="im">\mathbf{Y}</span> var bu şartlardan biri oluşuncaya kadar. Bunu şuradan görebiliriz:</p>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{F}_b = \mathbf{Y}\mathbf{H}_b = \mathbf{H}_b\,(\mathbf{Y}\mathbf{H}_b) = \\[4pt] [\lambda f .\lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ( f (n-1) + f (n-2))]\,(\mathbf{Y}\mathbf{H}_b) = \\[4pt] \lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ((\mathbf{Y}\mathbf{H}_b)\,(n-1) + (\mathbf{Y}\mathbf{H}_b)\,(n-2)) \end{gathered}$$</div>
+
+    <p>Dikkat ederseniz sadece en sonda yapılanı değil içeriden yapılan özyinelemeyi de hallettik böylece.</p>
+
+    <p>Peki fonksiyonumuz özyinelemeli değilse <span class="im">\mathbf{Y}</span> ne yapar acaba? Yazmıştık böyle bir fonksiyon en başta; hatta bu sefer isim de verelim de anması kolay olsun:</p>
+
+    <div class="eq eq-block">$$\mathbf{C} = n! = 1 \times \cdots n$$</div>
+
+    <p>Bir de <span class="im">\mathbf{Y}</span>’nin anlayacağı dile çevirelim, yani isimsiz lambdalara:</p>
+
+    <div class="eq eq-block">$$\mathbf{C} = \lambda n.1 \times \cdots n$$</div>
+
+    <p><span class="im">\mathbf{Y}</span>’nin girdisinin bir fonksiyonel olması lazım, fonksiyon alan fonksiyon anlamında. <span class="im">\mathbf{C}</span> ise değer alıp değer veren bir fonksiyon. Fonksiyonel yapalım o zaman <span class="im">\mathbf{C}</span>’yi:</p>
+
+    <div class="eq eq-block">$$c = \lambda g.\mathbf{C}$$</div>
+
+    <p>Niye böyle bir fonksiyonel yaptık? Çünkü ne verirsek verelim <span class="im">\mathbf{C}</span> olmasını istiyoruz sonucu belirleyenin; <span class="im">c</span>’nin sabit noktası <span class="im">\mathbf{C}</span>. Şimdi buyur sayın <span class="im">\mathbf{Y}</span> diyelim:</p>
+
+    <div class="eq eq-block">$$\begin{gathered} \mathbf{Y}c = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]c = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]\,(\lambda g.\mathbf{C}) = \\[4pt] (\lambda x.(\lambda g.\mathbf{C})\,(xx))\,(\lambda x.(\lambda g.\mathbf{C})\,(xx)) = \\[4pt] (\lambda g.\mathbf{C})\,([\lambda x.(\lambda g.\mathbf{C})\,(xx)]\,[\lambda x.(\lambda g.\mathbf{C})\,(xx)]) = \mathbf{C} \end{gathered}$$</div>
+
+    <p>Özyineleme yok, ama <span class="im">\mathbf{Y}</span> gerçek işini yaptı gene; sabit noktayı buldu.</p>
+
+    <p>Toparlarsak, isimsiz özyinelemeyle isimli özyineleme aynı prensiple çalışır çünkü ikisini de tek bir <span class="im">\mathbf{Y}</span> ile anlayabilirsiniz. <span class="im">\mathbf{Y}</span> ile özyinelemesizliği de anlayabilirsiniz. <span class="im">\mathbf{Y}</span>’nin tanımında da isim olmadığını görünce (<span class="im">f</span> ve iki <span class="im">x</span> sadece lokal yer tutucular, hepsinin üzerinde lambda bağlacı var, yani isim değiller), özyinelemenin biçimsel bir problemi çözmediğini anlamış oluruz.</p>
+
+    <p>Geriye özyineleme olgusunun anlamsal bir problem olması ihtimali kalıyor. Bu da olmazsa ben küçük ve şirin bir sahil kasabasında kahve dükkanı açıyorum.</p>
+
+    <div class="refs">
+      <h2>Notlar</h2>
+      <p class="fn">1. İmlâ notu: Ben harflere önce şapkanın konması, sonra konmaması, sonra tekrar konması konusunda imlâ kurallarına yetişemiyorum. Sözcükleri ve sesletimlerini bilmenize güvenip imla fakirliği konusunda affınıza sığınıyorum. Başladım bile gördüğünüz gibi.</p>
+      <p class="fn">2. Nişanyan Sözlük 2018, ver maddesi, s.910</p>
+      <p class="fn">3. Fatoş Yarman-Vural, Yusuf Murat Erten (2000). <em>Bilgisayar Sistemleri</em>. Akademi Kitabevi. Zeynep Altan (2001). <em>Formal Diller ve Soyut Makineler</em>. İstanbul Üniv. Yay. Sevan Nişanyan (2018). <em>Nişanyan Sözlük</em>. Liber Plus Yay.; berim maddesi, s.92.</p>
+    </div>
+
+  </article>
+
+  <footer class="bottom">
+    <span>Bergeç · 2026</span>
+    <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>
+    <span><a href="index.html">Anasayfaya dön</a></span>
+  </footer>
+
+</div>
+
 <script>
-  var SALT_B64 = "GCZ58yfoSUAXxGgvrQzVgA==";
-  var IV_B64 = "CGlSh2oLQqj61eQO";
-  var CIPHERTEXT_B64 = "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";
-  var ITERATIONS = 250000;
-
-  function b64ToBytes(b64) {
-    var bin = atob(b64);
-    var arr = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return arr;
-  }
-
-  async function deriveKey(password, saltBytes) {
-    var enc = new TextEncoder();
-    var keyMaterial = await crypto.subtle.importKey(
-      'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-  }
-
-  var form = document.getElementById('pwform');
-  var pwInput = document.getElementById('pw');
-  var err = document.getElementById('err');
-  var go = document.getElementById('go');
-  var SESSION_KEY = 'bergec-pw';
-
-  async function tryDecrypt(password) {
-    if (!window.crypto || !window.crypto.subtle) throw new Error('no-subtle');
-    var salt = b64ToBytes(SALT_B64);
-    var iv = b64ToBytes(IV_B64);
-    var ct = b64ToBytes(CIPHERTEXT_B64);
-    var key = await deriveKey(password, salt);
-    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
-    return new TextDecoder().decode(plainBuf);
-  }
-
-  function reveal(html, password) {
-    try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
-    document.open();
-    document.write(html);
-    document.close();
-    // document.write ile yazilan sayfada tarayici favicon'u her zaman yeniden
-    // islemiyor (ozellikle geri donuste); simgeyi DOM'a elle ekliyoruz.
-    setIcons();
-    window.addEventListener('pageshow', setIcons);
-  }
-
-  function setIcons() {
-    var head = document.head;
-    if (!head) return;
-    var old = head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
-    for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
-    var icon = document.createElement('link');
-    icon.rel = 'icon';
-    icon.type = 'image/svg+xml';
-    icon.href = 'favicon.svg';
-    head.appendChild(icon);
-    var touch = document.createElement('link');
-    touch.rel = 'apple-touch-icon';
-    touch.href = 'apple-touch-icon.png';
-    head.appendChild(touch);
-  }
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    err.textContent = '';
-    go.disabled = true;
-    go.textContent = 'Kontrol ediliyor…';
-    try {
-      var html = await tryDecrypt(pwInput.value);
-      reveal(html, pwInput.value);
-    } catch (ex) {
-      if (ex && ex.message === 'no-subtle') {
-        err.textContent = 'Tarayıcınız bu şifrelemeyi desteklemiyor (https veya localhost gerekir).';
-      } else {
-        err.textContent = 'Yanlış parola.';
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.renderMathInElement) {
+      renderMathInElement(document.body, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true }
+        ],
+        throwOnError: false
+      });
+    }
+    document.querySelectorAll('.im').forEach(function (el) {
+      if (window.katex) {
+        try {
+          katex.render(el.textContent, el, { throwOnError: false, displayMode: false });
+        } catch (e) {}
       }
-      go.disabled = false;
-      go.textContent = 'Gir';
-      pwInput.select();
-    }
+    });
   });
-
-  (async function autoUnlock() {
-    var cached;
-    try { cached = sessionStorage.getItem(SESSION_KEY); } catch (e) {}
-    if (!cached) return;
-    try {
-      var html = await tryDecrypt(cached);
-      reveal(html, cached);
-    } catch (e) {
-      try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) {}
-    }
-  })();
 </script>
+
 </body>
 </html>

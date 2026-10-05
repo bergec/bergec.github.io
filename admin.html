@@ -158,7 +158,23 @@
 </style>
 </head>
 <body>
-<div class="shell">
+<!-- Parola girilmeden yönetim ekranının hiçbir parçası görünmez. -->
+<div class="shell" id="gate">
+  <header class="admin">
+    <h1>Bergeç</h1>
+    <span class="sub">Yönetim</span>
+  </header>
+  <section class="panel">
+    <form id="gate-form" autocomplete="off">
+      <label class="f" for="gate-pw">Yönetim parolası</label>
+      <input type="password" id="gate-pw" autofocus>
+      <div class="row" style="margin-top: 14px;"><button class="b" id="gate-go">Gir</button></div>
+    </form>
+    <div class="msg" id="gate-msg"></div>
+  </section>
+</div>
+
+<div class="shell hidden" id="app">
 
   <header class="admin">
     <h1>Bergeç</h1>
@@ -194,9 +210,8 @@
       <div><label class="f" for="repo">Depo</label><input type="text" id="repo" value="bergec.github.io" autocomplete="off"></div>
       <div><label class="f" for="branch">Dal</label><input type="text" id="branch" value="main" autocomplete="off"></div>
     </div>
-    <div class="grid g2" style="margin-top: 14px;">
-      <div><label class="f" for="token">GitHub anahtarı</label><input type="password" id="token" placeholder="github_pat_…" autocomplete="off"></div>
-      <div><label class="f" for="sitepw">Site parolası</label><input type="password" id="sitepw" placeholder="sayfaların şifrelendiği parola" autocomplete="off"></div>
+    <div style="margin-top: 14px;">
+      <label class="f" for="token">GitHub anahtarı</label><input type="password" id="token" placeholder="github_pat_…" autocomplete="off">
     </div>
     <div class="row" style="margin-top: 14px;">
       <button class="b" id="btn-connect">Bağlan</button>
@@ -233,7 +248,7 @@
   <!-- ══════════════ 3. DÜZENLEYİCİ ══════════════ -->
   <section class="panel hidden" id="p-edit">
     <h2 id="edit-title">Yeni yazı</h2>
-    <p class="hint" id="edit-hint">Yazıyı yazın, yayımlayın. Sayfa şifrelenip GitHub’a gönderilir, ~30 saniye içinde sitede görünür.</p>
+    <p class="hint" id="edit-hint">Yazıyı yazın, yayımlayın. Sayfa GitHub’a gönderilir, ~30 saniye içinde sitede görünür.</p>
 
     <div class="grid g3">
       <div><label class="f" for="f-title">Başlık</label><input type="text" id="f-title" placeholder="Yazının başlığı"></div>
@@ -258,7 +273,7 @@
     <div style="margin-top: 22px; border-top: 1px solid var(--color-divider); padding-top: 18px;">
       <h2 style="font-size: 18px;">Görseller</h2>
       <p class="hint">
-        Görselleri buraya bırakın ya da seçin; otomatik küçültülüp sayfanın içine gömülür (böylece onlar da parolanın arkasında kalır).
+        Görselleri buraya bırakın ya da seçin; otomatik küçültülüp sayfanın içine gömülür.
         Her görselin altındaki <strong>Metne ekle</strong> düğmesi, imlecin bulunduğu yere <code>[[gorsel:1]]</code> işaretini koyar — görsel yazıda o noktada çıkar.
       </p>
       <div class="row">
@@ -556,23 +571,24 @@
 /* ══════════════════════════════════════════════════════════════════════════
    Bergeç yönetim ekranı.
 
-   Site, istemci tarafında AES-256-GCM ile şifrelenmiş sayfalardan oluşur.
    Bu ekran:
-     1. GitHub Contents API ile şifreli sayfayı indirir,
-     2. site parolasıyla tarayıcıda çözer,
-     3. düzenlenmiş hâlini aynı biçimde yeniden şifreler,
-     4. GitHub'a commit eder.
+     1. GitHub Contents API ile sayfayı indirir,
+     2. düzenlenmiş hâlini GitHub'a commit eder.
+   Önce yönetim parolası sorulur (girilmeden ekranın hiçbir parçası görünmez), sonra GitHub anahtarıyla
+   bağlanılır. Asıl yetki anahtardadır: anahtarsız hiçbir şey yazılamaz; parola tarayıcıda denetlenen bir kapıdır.
    Sunucu yok; her şey bu sayfada, tarayıcıda olur.
    ══════════════════════════════════════════════════════════════════════ */
 
 const ITERATIONS = 250000;
+// Yönetim parolasının PBKDF2-SHA256 özeti (parolanın kendisi burada yok).
+const ADMIN_PW = { salt: 'svoXB4oNoiQ49ge0xHpB3A==', hash: '2m8tEJg+tA31VjiLIksMg5/9R8WW/m2ASwWegb7xmac=' };
 const LS_TOKEN = 'bergec-admin-token';
 const LS_TOKEN_ENC_OLD = 'bergec-admin-token-enc'; // kaldırılan admin şifresi sürümünün kaydı; açılışta silinir
 const LS_REPO  = 'bergec-admin-repo';
-const SS_PW    = 'bergec-pw';
+const SS_GATE  = 'bergec-admin-gate'; // bu sekmede parola girildi
 
 const state = {
-  owner: '', repo: '', branch: 'main', token: '', pw: '',
+  owner: '', repo: '', branch: 'main', token: '',
   index: null,        // ana sayfa verisi (bergec-index JSON)
   indexPlain: '',     // ana sayfanın çözülmüş kaynağı
   indexSha: '',
@@ -591,7 +607,7 @@ function msg(id, text, kind) {
   if (!text) el.className = 'msg';
 }
 
-/* ─────────────────────────── şifreleme ─────────────────────────── */
+/* ─────────────────────────── yardımcılar ─────────────────────────── */
 
 function b64ToBytes(b64) {
   const bin = atob(b64);
@@ -608,39 +624,16 @@ function bytesToB64(bytes) {
 function utf8ToB64(str) { return bytesToB64(new TextEncoder().encode(str)); }
 function b64ToUtf8(b64) { return new TextDecoder().decode(b64ToBytes(b64)); }
 
-async function deriveKey(password, saltBytes, usages) {
-  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
-    km, { name: 'AES-GCM', length: 256 }, false, usages
-  );
+async function checkAdminPw(pw) {
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), { name: 'PBKDF2' }, false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: b64ToBytes(ADMIN_PW.salt), iterations: ITERATIONS, hash: 'SHA-256' }, km, 256);
+  return bytesToB64(bits) === ADMIN_PW.hash;
 }
 
-/** Şifreli bir sayfadan salt/iv/ciphertext çıkarır. */
-function parseLockPage(html) {
-  const g = (name) => {
-    const m = html.match(new RegExp('var\\s+' + name + '\\s*=\\s*"([^"]*)"'));
-    return m ? m[1] : null;
-  };
-  const salt = g('SALT_B64'), iv = g('IV_B64'), ct = g('CIPHERTEXT_B64');
-  if (!salt || !iv || !ct) return null;
-  return { salt, iv, ct };
-}
-
-async function decryptPage(html, password) {
-  const p = parseLockPage(html);
-  if (!p) throw new Error('Bu dosya şifreli bir Bergeç sayfası değil.');
-  const key = await deriveKey(password, b64ToBytes(p.salt), ['decrypt']);
-  const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(p.iv) }, key, b64ToBytes(p.ct));
-  return new TextDecoder().decode(buf);
-}
-
-async function encryptPage(plaintext, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(password, salt, ['encrypt']);
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plaintext));
-  return lockPage(bytesToB64(salt), bytesToB64(iv), bytesToB64(ct));
+/** Sayfanın kaynağı. Site eskiden parolayla şifreliydi; o dönemden kalmış bir sayfa burada açılamaz. */
+function readPage(html) {
+  if (/var\s+CIPHERTEXT_B64\s*=/.test(html)) throw new Error('Bu sayfa eski, şifreli biçimde (site artık herkese açık). Şifresiz hâli depoya yüklenmeli.');
+  return html;
 }
 
 /** Yapıştırırken araya giren boşlukları, satır sonlarını, görünmez karakterleri ve "Bearer " önekini atar. */
@@ -650,169 +643,6 @@ function cleanToken(t) {
 /** Anahtarı ele vermeden tanımak için: ilk 15 karakter ve uzunluk. */
 function tokenHint(t) {
   return 'başı “' + String(t).slice(0, 15) + '…”, ' + String(t).length + ' karakter';
-}
-
-/** tools/encrypt.js ile birebir aynı kilit sayfası. */
-function lockPage(saltB64, ivB64, ctB64) {
-  return `<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bergeç — Giriş</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: #f3f2f2; color: #201f1d;
-    font-family: "Lora", Georgia, serif; padding: 20px;
-  }
-  .box { width: 100%; max-width: 360px; text-align: center; }
-  .mark {
-    font-family: "Cormorant Garamond", Georgia, serif; font-size: 32px; letter-spacing: 0.04em;
-    margin: 0 0 6px;
-  }
-  .sub {
-    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #7d7979; margin: 0 0 36px;
-  }
-  form { display: flex; flex-direction: column; gap: 12px; }
-  input[type="password"] {
-    font: inherit; font-size: 15px; padding: 12px 14px; border: 1px solid #201f1d; border-radius: 2px;
-    background: #fff; color: #201f1d; text-align: center; letter-spacing: 0.04em;
-  }
-  input[type="password"]:focus { outline: 2px solid #b68235; outline-offset: 1px; }
-  button {
-    font: inherit; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
-    padding: 12px 14px; border: 1px solid #201f1d; background: #201f1d; color: #f3f2f2;
-    border-radius: 2px; cursor: pointer;
-  }
-  button:hover { background: #3a3836; }
-  button:disabled { opacity: 0.6; cursor: wait; }
-  #err { color: #a03a2c; font-size: 13px; margin-top: 14px; min-height: 1.2em; }
-  noscript { display: block; margin-top: 20px; font-size: 13px; color: #a03a2c; }
-</style>
-<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'><\/script><!-- End Cloudflare Web Analytics -->
-</head>
-<body>
-  <div class="box">
-    <p class="mark">bergeç</p>
-    <p class="sub">Bu içerik parola ile korunuyor</p>
-    <form id="pwform" autocomplete="off">
-      <input type="password" id="pw" placeholder="Parola" autocomplete="current-password" autofocus>
-      <button type="submit" id="go">Gir</button>
-    </form>
-    <p id="err"></p>
-    <noscript>Bu sayfayı görüntülemek için JavaScript gereklidir.</noscript>
-  </div>
-
-<script>
-  var SALT_B64 = ${JSON.stringify(saltB64)};
-  var IV_B64 = ${JSON.stringify(ivB64)};
-  var CIPHERTEXT_B64 = ${JSON.stringify(ctB64)};
-  var ITERATIONS = ${ITERATIONS};
-
-  function b64ToBytes(b64) {
-    var bin = atob(b64);
-    var arr = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return arr;
-  }
-
-  async function deriveKey(password, saltBytes) {
-    var enc = new TextEncoder();
-    var keyMaterial = await crypto.subtle.importKey(
-      'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-  }
-
-  var form = document.getElementById('pwform');
-  var pwInput = document.getElementById('pw');
-  var err = document.getElementById('err');
-  var go = document.getElementById('go');
-  var SESSION_KEY = 'bergec-pw';
-
-  async function tryDecrypt(password) {
-    if (!window.crypto || !window.crypto.subtle) throw new Error('no-subtle');
-    var salt = b64ToBytes(SALT_B64);
-    var iv = b64ToBytes(IV_B64);
-    var ct = b64ToBytes(CIPHERTEXT_B64);
-    var key = await deriveKey(password, salt);
-    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
-    return new TextDecoder().decode(plainBuf);
-  }
-
-  function reveal(html, password) {
-    try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
-    document.open();
-    document.write(html);
-    document.close();
-    // document.write ile yazilan sayfada tarayici favicon'u her zaman yeniden
-    // islemiyor (ozellikle geri donuste); simgeyi DOM'a elle ekliyoruz.
-    setIcons();
-    window.addEventListener('pageshow', setIcons);
-  }
-
-  function setIcons() {
-    var head = document.head;
-    if (!head) return;
-    var old = head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
-    for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
-    var icon = document.createElement('link');
-    icon.rel = 'icon';
-    icon.type = 'image/svg+xml';
-    icon.href = 'favicon.svg';
-    head.appendChild(icon);
-    var touch = document.createElement('link');
-    touch.rel = 'apple-touch-icon';
-    touch.href = 'apple-touch-icon.png';
-    head.appendChild(touch);
-  }
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    err.textContent = '';
-    go.disabled = true;
-    go.textContent = 'Kontrol ediliyor…';
-    try {
-      var html = await tryDecrypt(pwInput.value);
-      reveal(html, pwInput.value);
-    } catch (ex) {
-      if (ex && ex.message === 'no-subtle') {
-        err.textContent = 'Tarayıcınız bu şifrelemeyi desteklemiyor (https veya localhost gerekir).';
-      } else {
-        err.textContent = 'Yanlış parola.';
-      }
-      go.disabled = false;
-      go.textContent = 'Gir';
-      pwInput.select();
-    }
-  });
-
-  (async function autoUnlock() {
-    var cached;
-    try { cached = sessionStorage.getItem(SESSION_KEY); } catch (e) {}
-    if (!cached) return;
-    try {
-      var html = await tryDecrypt(cached);
-      reveal(html, cached);
-    } catch (e) {
-      try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) {}
-    }
-  })();
-<\/script>
-</body>
-</html>
-`;
 }
 
 /* ─────────────────────────── GitHub API ─────────────────────────── */
@@ -984,9 +814,8 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
     const data = JSON.parse(JSON.stringify(state.repoIndex)); // depodaki hâl (bekleyen değişiklikler mutate ile gelir)
     if (mutate) mutate(data);
     const plain = writeIndexData(basePlain || state.indexPlain, data); // basePlain: ana sayfa düzenleyicisinde düzenlenmiş hâli
-    const enc = await encryptPage(plain, state.pw);
-    try {
-      const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: enc }]), message,
+        try {
+      const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: plain }]), message,
         Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
       state.repoIndex = data;
       state.indexPlain = plain;
@@ -1133,7 +962,8 @@ function buildArticle(meta, bodyHtml, usedImages) {
 <title>${esc(meta.title)} · Bergeç</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="assets/bergec.css">${katex ? `
+<link rel="stylesheet" href="assets/bergec.css">
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'><\/script><!-- End Cloudflare Web Analytics -->${katex ? `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"><\/script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"><\/script>` : ''}
@@ -1393,7 +1223,7 @@ function slugify(s) {
    - Liste değişiklikleri adresle (href) tarif edilen işlemlerdir (ops). Ekranda depodaki listeye
      uygulanmış hâlleri görünür; yayınlarken en güncel listeye yeniden uygulanır (başkasının
      değişiklikleriyle birleşir).
-   - Yazı dosyaları şifresiz hâlleriyle bekler (files); yayınlarken şifrelenir. expect: dosya ilk
+   - Yazı dosyaları kaynak hâlleriyle bekler (files). expect: dosya ilk
      açıldığındaki sürüm (null: yeni dosya) — başkasının değişikliği sessizce ezilmesin.
    - Hepsi bu tarayıcıda (IndexedDB) saklanır: sekme kapansa da kaybolmaz. */
 
@@ -1538,16 +1368,16 @@ async function publishPending() {
   const btn = $('btn-pending-publish');
   btn.disabled = $('btn-pending-discard').disabled = true;
   try {
-    msg('pending-msg', 'Şifreleniyor ve gönderiliyor…', 'info');
+    msg('pending-msg', 'Gönderiliyor…', 'info');
     // Yayın başladığı andaki bekleyenler gönderilir; yayın sürerken yapılan kayıtlar beklemede kalır
-    // (yoksa şifreleme sırasında gelen bir kaydın liste işlemi gider, dosyası gitmez ve kaybolurdu).
+    // (yoksa gönderim sırasında gelen bir kaydın liste işlemi gider, dosyası gitmez ve kaybolurdu).
     const snapOps = pending.ops.slice();
     const snapFiles = Object.assign({}, pending.files);
     const files = [], expect = {};
     let homePlain = null;
     for (const [path, f] of Object.entries(snapFiles)) {
       if (path === 'index.html') { homePlain = f.plain; continue; } // ana sayfa: liste verisiyle birlikte yazılır
-      files.push({ path, text: f.plain === null ? null : await encryptPage(f.plain, state.pw) });
+      files.push({ path, text: f.plain });
       if (f.expect !== undefined) expect[path] = f.expect;
     }
     if (homePlain) {
@@ -1859,12 +1689,12 @@ async function openArticle(p) {
     if (pf) {
       f = { sha: pf.expect, text: null, plain: pf.plain };
       // depodaki hâl de bilinsin: düzenlemeler geri alınırsa bekleyen değişiklik kalksın
-      if (pf.expect) { try { const rf = await ghGetFile(p.href); if (rf) repoPlain = await decryptPage(rf.text, state.pw); } catch (e) {} }
+      if (pf.expect) { try { const rf = await ghGetFile(p.href); if (rf) repoPlain = readPage(rf.text); } catch (e) {} }
     } else {
       f = await ghGetFile(p.href);
       if (!f) throw new Error('Dosya bulunamadı: ' + p.href);
     }
-    const plain = f.plain || await decryptPage(f.text, state.pw);
+    const plain = f.plain || readPage(f.text);
     if (!pf) repoPlain = plain;
     const m = plain.match(/<script type="application\/json" id="bergec-source">([\s\S]*?)<\/script>/);
     if (!m) {
@@ -3712,7 +3542,7 @@ async function loadIndex() {
   const f = await ghGetFile('index.html');
   if (!f) throw new Error('index.html bulunamadı.');
   state.indexSha = f.sha;
-  state.indexPlain = await decryptPage(f.text, state.pw);
+  state.indexPlain = readPage(f.text);
   state.repoIndex = readIndexData(state.indexPlain);
   state.index = applyPending(state.repoIndex); // ekranda: depodaki liste + bekleyen değişiklikler
 }
@@ -3725,7 +3555,6 @@ $('btn-connect').addEventListener('click', async (ev) => {
   state.branch = $('branch').value.trim() || 'main';
   state.token = cleanToken($('token').value);
   $('token').value = state.token;
-  state.pw = $('sitepw').value;
 
   if (!state.owner || !state.repo) { msg('conn-msg', 'Kullanıcı ve depo adı gerekli.', 'err'); return; }
   if (!state.token) { msg('conn-msg', 'GitHub anahtarı gerekli.', 'err'); return; }
@@ -3734,7 +3563,6 @@ $('btn-connect').addEventListener('click', async (ev) => {
       'Tarayıcı bu alana kayıtlı bir şifreyi doldurmuş olabilir: alanı silip anahtarı yeniden yapıştırın.', 'err');
     return;
   }
-  if (!state.pw) { msg('conn-msg', 'Site parolası gerekli.', 'err'); return; }
 
   btn.disabled = true;
   try {
@@ -3743,7 +3571,7 @@ $('btn-connect').addEventListener('click', async (ev) => {
     if (!repo) throw new Error('Depo bulunamadı ya da anahtarın bu depoya erişimi yok.');
     if (repo.permissions && !repo.permissions.push) throw new Error('Anahtarın bu depoya yazma yetkisi yok (Contents: Read and write gerekli).');
 
-    msg('conn-msg', 'Ana sayfa çözülüyor…', 'info');
+    msg('conn-msg', 'Ana sayfa okunuyor…', 'info');
     await loadIndex();
 
     if ($('remember').checked) {
@@ -3752,7 +3580,6 @@ $('btn-connect').addEventListener('click', async (ev) => {
         localStorage.setItem(LS_REPO, JSON.stringify({ owner: state.owner, repo: state.repo, branch: state.branch }));
       } catch (e) {}
     }
-    try { sessionStorage.setItem(SS_PW, state.pw); } catch (e) {}
 
     $('who').textContent = state.owner + '/' + state.repo + ' · ' + state.branch;
     show('btn-forget', true);
@@ -3764,7 +3591,6 @@ $('btn-connect').addEventListener('click', async (ev) => {
       (restored ? ' Bu tarayıcıda yayınlanmamış ' + pendingDescs().length + ' değişiklik bulundu; alttaki çubuktan yayınlayabilir ya da geri alabilirsiniz.' : ''), 'ok');
   } catch (e) {
     let m = e.message;
-    if (/decrypt|operation-specific/i.test(m)) m = 'Site parolası yanlış (ana sayfa çözülemedi).';
     if (/Bad credentials/i.test(m)) {
       m = 'GitHub bu anahtarı tanımadı (' + tokenHint(state.token) + ').\n' +
         '• Anahtarın süresi dolmuş, silinmiş ya da yenilenmiş (Regenerate) olabilir: bergec hesabında Settings → Developer settings → Fine-grained tokens sayfasına bakın; gerekirse yenisini üretin.\n' +
@@ -3779,10 +3605,33 @@ $('btn-connect').addEventListener('click', async (ev) => {
 $('btn-forget').addEventListener('click', (e) => {
   e.preventDefault();
   try { localStorage.removeItem(LS_TOKEN); localStorage.removeItem(LS_REPO); } catch (err) {}
-  try { sessionStorage.removeItem(SS_PW); } catch (err) {}
   $('token').value = '';
   msg('conn-msg', 'Anahtar bu tarayıcıdan silindi.', 'ok');
   show('btn-forget', false);
+});
+
+/* ─────────────────────────── giriş kapısı ─────────────────────────── */
+
+function openApp() {
+  show('gate', false);
+  show('app', true);
+}
+
+$('gate-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  $('gate-go').disabled = true;
+  msg('gate-msg', 'Kontrol ediliyor…', 'info');
+  try {
+    if (!(await checkAdminPw($('gate-pw').value))) { msg('gate-msg', 'Parola yanlış.', 'err'); $('gate-pw').select(); return; }
+    try { sessionStorage.setItem(SS_GATE, '1'); } catch (e) {}
+    $('gate-pw').value = '';
+    msg('gate-msg', '');
+    openApp();
+  } catch (e) {
+    msg('gate-msg', 'Bu sayfa https (veya localhost) gerektirir.', 'err');
+  } finally {
+    $('gate-go').disabled = false;
+  }
 });
 
 /* ─────────────────────────── başlangıç ─────────────────────────── */
@@ -3794,12 +3643,9 @@ $('btn-forget').addEventListener('click', (e) => {
     if (t) { $('token').value = t; show('btn-forget', true); }
     const r = JSON.parse(localStorage.getItem(LS_REPO) || 'null');
     if (r) { $('owner').value = r.owner; $('repo').value = r.repo; $('branch').value = r.branch; }
-    const pw = sessionStorage.getItem(SS_PW);
-    if (pw) $('sitepw').value = pw;
+    sessionStorage.removeItem('bergec-pw'); // şifreli site döneminden kalan kayıt
+    if (sessionStorage.getItem(SS_GATE) === '1') openApp();
   } catch (e) {}
-  if (!window.crypto || !window.crypto.subtle) {
-    msg('conn-msg', 'Bu sayfa şifreleme için https (veya localhost) gerektirir.', 'err');
-  }
 })();
 </script>
 </body>

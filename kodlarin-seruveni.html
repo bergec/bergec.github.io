@@ -3,156 +3,198 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bergeç — Giriş</title>
+<title>Kodların Serüveni · Bergeç</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    background: #f3f2f2; color: #201f1d;
-    font-family: "Lora", Georgia, serif; padding: 20px;
-  }
-  .box { width: 100%; max-width: 360px; text-align: center; }
-  .mark {
-    font-family: "Cormorant Garamond", Georgia, serif; font-size: 32px; letter-spacing: 0.04em;
-    margin: 0 0 6px;
-  }
-  .sub {
-    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #7d7979; margin: 0 0 36px;
-  }
-  form { display: flex; flex-direction: column; gap: 12px; }
-  input[type="password"] {
-    font: inherit; font-size: 15px; padding: 12px 14px; border: 1px solid #201f1d; border-radius: 2px;
-    background: #fff; color: #201f1d; text-align: center; letter-spacing: 0.04em;
-  }
-  input[type="password"]:focus { outline: 2px solid #b68235; outline-offset: 1px; }
-  button {
-    font: inherit; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
-    padding: 12px 14px; border: 1px solid #201f1d; background: #201f1d; color: #f3f2f2;
-    border-radius: 2px; cursor: pointer;
-  }
-  button:hover { background: #3a3836; }
-  button:disabled { opacity: 0.6; cursor: wait; }
-  #err { color: #a03a2c; font-size: 13px; margin-top: 14px; min-height: 1.2em; }
-  noscript { display: block; margin-top: 20px; font-size: 13px; color: #a03a2c; }
-</style>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'></script><!-- End Cloudflare Web Analytics -->
+<link rel="stylesheet" href="assets/bergec.css">
 </head>
 <body>
-  <div class="box">
-    <p class="mark">bergeç</p>
-    <p class="sub">Bu içerik parola ile korunuyor</p>
-    <form id="pwform" autocomplete="off">
-      <input type="password" id="pw" placeholder="Parola" autocomplete="current-password" autofocus>
-      <button type="submit" id="go">Gir</button>
-    </form>
-    <p id="err"></p>
-    <noscript>Bu sayfayı görüntülemek için JavaScript gereklidir.</noscript>
+<div class="wrap">
+
+  <header class="top">
+    <a class="home" href="index.html">← Bergeç</a>
+    <span>Arşiv</span>
+  </header>
+
+  <div class="kicker">
+    <span style="color: var(--color-neutral-600); text-transform: none; letter-spacing: 0;">05.12.2025</span>
   </div>
 
-<script>
-  var SALT_B64 = "G8Vux1j3Mnzqby184QRgWg==";
-  var IV_B64 = "uvteiXDd++jinNf2";
-  var CIPHERTEXT_B64 = "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";
-  var ITERATIONS = 250000;
+  <h1 class="title">Kodların Serüveni</h1>
+  <div class="subtitle">Programlama Dilleri Nasıl Çalışır?</div>
+  <div class="byline">Kaan Emir Eröz</div>
 
-  function b64ToBytes(b64) {
-    var bin = atob(b64);
-    var arr = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return arr;
-  }
+  <article class="body">
 
-  async function deriveKey(password, saltBytes) {
-    var enc = new TextEncoder();
-    var keyMaterial = await crypto.subtle.importKey(
-      'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: saltBytes, iterations: ITERATIONS, hash: 'SHA-256' },
-      keyMaterial,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['decrypt']
-    );
-  }
+    <p class="lede">Günümüzde kullandığımız telefonlar, bilgisayarlar, bunların içindeki uygulamalar, arabalar ve hatta beyaz eşyalar bile birinin yazdığı ve bir şekilde çalışan kodlar sayesinde çalışıyor. Bizim bir dosyaya yazdığımız kodları bir çıktıya dönüştüren programlar bile var ki bunlara “programlama dili” diyoruz. Ama bu nasıl oluyor diye hiç düşündünüz mü? “Programlama dilleri nasıl çalışıyor?” diye ilk düşündüğümde bu iş sanki imkansız gibi hissetmiştim. Sanki bu dilleri sihirli birer araçtı. Benim yazdığım bir koddan programın çıktısına kadar nasıl varıldığını anlamak için bir yolculuğa çıktım ve size bu yolculuğun bir özetini sunmak istiyorum. Bu yazıda yazdığımız bir programın bize sonuç üretilene kadar geçtiği aşamaları anlatarak sizleri aydınlatmayı amaçlıyorum. Fakat bu fikirlerin nasıl uygulandığı konusuna girmeyeceğim çünkü her bir aşama için birçok farklı yöntem bulunmaktadır ve bunların anlatılması yazıyı gereksiz uzatarak dikkat dağınıklığına neden olacaktır. Yine de eğer konular ilginizi çekerse araştırmanızı öneririm.</p>
 
-  var form = document.getElementById('pwform');
-  var pwInput = document.getElementById('pw');
-  var err = document.getElementById('err');
-  var go = document.getElementById('go');
-  var SESSION_KEY = 'bergec-pw';
+    <h2>Programlama Dillerinin Türleri</h2>
 
-  async function tryDecrypt(password) {
-    if (!window.crypto || !window.crypto.subtle) throw new Error('no-subtle');
-    var salt = b64ToBytes(SALT_B64);
-    var iv = b64ToBytes(IV_B64);
-    var ct = b64ToBytes(CIPHERTEXT_B64);
-    var key = await deriveKey(password, salt);
-    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
-    return new TextDecoder().decode(plainBuf);
-  }
+    <p>Programlama dilleri pek çok kritere göre sınıflandırılır. Bu yazıda dikkatinizi dillerin çalıştırılma yöntemine göre sınıflandırılmasına çekmek istiyorum. Programlama dilleri bu açıdan iki kategoriye ayrılır: yorumlanan (interpreted) ve derlenen (compiled). Yorumlanan diller, <code class="inl">interpreter</code> denen yazılımlar ile, dosyaların çalışma zamanında işlenmesi ile çalıştırılır; derlenen diller ise <code class="inl">compiler</code> denen yazılımlar aracılığı ile çalıştırılabilir bir forma (C gibi diller için bu form makine kodu iken Java gibi diller için bu <code class="inl">bytecode</code>’dur) dönüştürüldükten sonra çalıştırılır. Bizim bu yazıdaki sorumuzu cevaplamak için incelememiz gereken ise <code class="inl">interpreter</code> ve <code class="inl">compiler</code>’ların yaptıkları. Yazı boyunca <code class="inl">compiler</code> kelimesini aynı anda hem derleyici hem de yorumlayıcı anlamına gelecek şekilde kullanacağım çünkü çalıştırma bölümünde de bahsedeceğim gibi her ikisi de günümüzde neredeyse aynı hale gelmiştir.</p>
 
-  function reveal(html, password) {
-    try { sessionStorage.setItem(SESSION_KEY, password); } catch (e) {}
-    document.open();
-    document.write(html);
-    document.close();
-    // document.write ile yazilan sayfada tarayici favicon'u her zaman yeniden
-    // islemiyor (ozellikle geri donuste); simgeyi DOM'a elle ekliyoruz.
-    setIcons();
-    window.addEventListener('pageshow', setIcons);
-  }
+    <h2>Lexer: Ön İşlem</h2>
 
-  function setIcons() {
-    var head = document.head;
-    if (!head) return;
-    var old = head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
-    for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
-    var icon = document.createElement('link');
-    icon.rel = 'icon';
-    icon.type = 'image/svg+xml';
-    icon.href = 'favicon.svg';
-    head.appendChild(icon);
-    var touch = document.createElement('link');
-    touch.rel = 'apple-touch-icon';
-    touch.href = 'apple-touch-icon.png';
-    head.appendChild(touch);
-  }
+    <p>İnanın bana, dosyadaki yazıları doğrudan çalıştırmayı denemek oldukça zor olacaktır. Onun yerine daha derli toplu bir bilgi alsaydık koddan anlam çıkarmak çok daha kolay olurdu. İşte bir <code class="inl">compiler</code>’ın metin halindeki kodu daha bilgisayar dostu bir formata çeviren ilk aşamasına <code class="inl">lexer</code> diyoruz. Sindirim sisteminde ağız ne ise <code class="inl">compiler</code> için <code class="inl">lexer</code> odur diyebiliriz. Ağızın büyük bir besini küçük parçalara bölüp bazı kimyasallarla birleştirdiği gibi, bir <code class="inl">lexer</code> da metini <code class="inl">token</code>’lara çevirip bu <code class="inl">token</code>’lara birkaç kullanışlı bilgi ekler. Peki bir <code class="inl">token</code>, içinde genellikle hangi bilgileri barındırır? <code class="inl">Token</code> türü (<code class="inl">number</code>, <code class="inl">identifier</code>, <code class="inl">operator</code>, . . . ) ve içeriği (mesela <code class="inl">number</code> ise 1618 mi 3.14 mü) bir <code class="inl">compiler</code> için vazgeçilmez bilgilerdir. Bunun yanında satır ve sütun bilgisini de alırsak bir hata oluşursa yerini kullanıcıya iletirken işimiz çok daha kolay olacaktır.</p>
 
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    err.textContent = '';
-    go.disabled = true;
-    go.textContent = 'Kontrol ediliyor…';
-    try {
-      var html = await tryDecrypt(pwInput.value);
-      reveal(html, pwInput.value);
-    } catch (ex) {
-      if (ex && ex.message === 'no-subtle') {
-        err.textContent = 'Tarayıcınız bu şifrelemeyi desteklemiyor (https veya localhost gerekir).';
-      } else {
-        err.textContent = 'Yanlış parola.';
-      }
-      go.disabled = false;
-      go.textContent = 'Gir';
-      pwInput.select();
-    }
-  });
+    <p>Bir örnek ile <code class="inl">lexer</code>’dan alacağımız <code class="inl">token</code> listesinin neye benzeyeceğine bakalım.</p>
 
-  (async function autoUnlock() {
-    var cached;
-    try { cached = sessionStorage.getItem(SESSION_KEY); } catch (e) {}
-    if (!cached) return;
-    try {
-      var html = await tryDecrypt(cached);
-      reveal(html, cached);
-    } catch (e) {
-      try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) {}
-    }
-  })();
-</script>
+<pre class="code">// hesaplama
+var a = 1 + 2 * 3 - 4;</pre>
+
+    <p>Bu koddan oluşacak <code class="inl">lexer</code> çıktısının şu şekilde olması beklenir:</p>
+
+<pre class="code">Token(keyword_var, "",  line=2, col=1)
+Token(identifier,  "a", line=2, col=5)
+Token(op_equal,    "=", line=2, col=7)
+Token(number,      "1", line=2, col=9)
+Token(op_plus,     "+", line=2, col=11)
+Token(number,      "2", line=2, col=13)
+Token(op_mult,     "*", line=2, col=15)
+Token(number,      "3", line=2, col=17)
+Token(op_minus,    "-", line=2, col=19)
+Token(number,      "4", line=2, col=21)
+Token(semicolon,   ";", line=2, col=22)</pre>
+
+    <p>Burada dikkatinizi çekmek istediğim bir nokta da yorumların ve boşlukların elenmesi. <code class="inl">Python</code> gibi boşluk karakterlerine dikkat eden bir dilin <code class="inl">lexer</code>’ı bu bilgiyi de <code class="inl">token</code> olarak vermeli.</p>
+
+    <h2>Parser: Anlamlandırma</h2>
+
+    <p>Yazılmış kodun ne anlama geldiğini bulmadan kodu çalıştıramayız. Artık daha uygun formattaki bilgileri kullanarak kodun anlamını bulabiliriz.</p>
+
+    <p>Anlam derken ne demek istediğimi şöyle açıklayayım. Anlam, bir matematiksel ifadedeki işlem önceliğini de içinde barındırır, bir fonksiyonun uygulayacağı adımları da. Bir değişken gördüğünde o değişkene atama mı yapılıyor, yoksa onun değeri mi kullanılacak olduğunu söyler. Bir kontrol yapısının neresinin koşul, neresinin gövde olduğunu belirtir.</p>
+
+    <p><code class="inl">Compiler</code>’ın bize bu bilgiyi verecek olan parçasına <code class="inl">parser</code> denir. <code class="inl">Parser</code> belirli kurallar ile kendisine gelen <code class="inl">token</code> listesini analiz eder. Örneğin bu şekilde tanımlanmış kurallar, işlem önceliğine göre matematiksel ifadeleri anlamlandırır.</p>
+
+<pre class="code">&lt;expression&gt;
+    : &lt;term&gt;
+    | &lt;expression&gt; token_plus &lt;term&gt;
+    | &lt;expression&gt; token_minus &lt;term&gt;
+    ;
+
+&lt;term&gt;
+    : &lt;unary&gt;
+    | &lt;term&gt; token_mult &lt;unary&gt;
+    | &lt;term&gt; token_div &lt;unary&gt;
+    ;
+
+&lt;unary&gt;
+    : &lt;primary&gt;
+    | token_minus &lt;unary&gt;
+    ;
+
+&lt;primary&gt;
+    : "(" &lt;expression&gt; ")"
+    | token_number
+    | token_identifier
+    ;</pre>
+
+    <p>Fakat kodu anlamlandırdığımız gibi çalıştıramayız. Önce bütün programın tamamı <code class="inl">parser</code>’dan geçmeli. Çünkü fonksiyon tanımı gibi program parçaları yazıldığı yerden başka yerlerde çalıştırılır, koşul ifadelerinin çalışmaması gerekebilir ve döngüler birden fazla kez çalışabilir. Peki programın anlamını nasıl hafızada tutuyoruz? <code class="inl">Abstract Tree</code> (<code class="inl">AST</code>) adı verilen bir ağaç yapısı bize yardımcı oluyor. Bu ağacın her <code class="inl">node</code>’u programlama dilinin yapacağı bir eylemi temsil eder ve bu eylem için gerekli parçaları bir arada tutar. Örneğin değişken atama işlemini temsil eden bir <code class="inl">node</code> hangi değişkene atanacağı ve hangi ifadenin atanacağını içerir. Matematiksel ifadeler de bu ağaçta işlem önceliğine göre organize edilir. Önce yapılacak işlem ağaçta daha derinde bulunur, böylece bu işlemin sonucu daha sonra yapılacak işleme aktarılabilir. Mesela daha önceki örneğimizde <code class="inl">token</code>’larına ayırdığımız kodun <code class="inl">AST</code>’si şu şekilde olacaktır.</p>
+
+    <figure class="plain">
+      <svg class="ast" viewBox="0 0 560 312" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="var a = 1 + 2 * 3 - 4 kodunun soyut sözdizim ağacı">
+        <g class="edge">
+          <path d="M 240 40 L 120 71"/>
+          <path d="M 320 40 L 430 71"/>
+          <path d="M 419 107 L 361 137"/>
+          <path d="M 445 107 L 489 137"/>
+          <path d="M 338 173 L 306 200"/>
+          <path d="M 366 173 L 400 200"/>
+          <path d="M 404 236 L 381 260"/>
+          <path d="M 429 236 L 453 260"/>
+        </g>
+        <rect class="node" x="195" y="12" width="170" height="28" rx="2"/>
+        <text x="280" y="27" class="sm">variable declaration</text>
+        <circle class="node" cx="120" cy="90" r="19"/><text x="120" y="91">a</text>
+        <circle class="node" cx="430" cy="90" r="19"/><text x="430" y="91">-</text>
+        <circle class="node" cx="350" cy="155" r="19"/><text x="350" y="156">+</text>
+        <circle class="node" cx="500" cy="155" r="19"/><text x="500" y="156">4</text>
+        <circle class="node" cx="295" cy="218" r="19"/><text x="295" y="219">1</text>
+        <circle class="node" cx="415" cy="218" r="19"/><text x="415" y="219">*</text>
+        <circle class="node" cx="370" cy="278" r="19"/><text x="370" y="279">2</text>
+        <circle class="node" cx="465" cy="278" r="19"/><text x="465" y="279">3</text>
+      </svg>
+    </figure>
+
+    <p>Ya da bir döngüyü ifade eden <code class="inl">AST</code>’de döngünün koşulu ve döngünün yapacağı işler (döngünün gövdesi) tutulur.</p>
+
+<pre class="code">while (i &lt; 10) {
+    print(i);
+    i = i + 1;
+}</pre>
+
+    <figure class="plain">
+      <svg class="ast" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="while döngüsünün soyut sözdizim ağacı">
+        <g class="edge">
+          <path d="M 215 38 L 140 70"/>
+          <path d="M 285 38 L 372 70"/>
+          <path d="M 110 98 L 110 128"/>
+          <path d="M 97 161 L 78 190"/>
+          <path d="M 123 161 L 145 190"/>
+          <path d="M 370 98 L 330 132"/>
+          <path d="M 410 98 L 445 132"/>
+          <path d="M 305 160 L 285 194"/>
+          <path d="M 335 160 L 350 190"/>
+          <path d="M 425 160 L 412 190"/>
+          <path d="M 470 160 L 488 190"/>
+          <path d="M 478 224 L 466 250"/>
+          <path d="M 502 224 L 516 250"/>
+        </g>
+        <rect class="node" x="195" y="10" width="110" height="28" rx="2"/>
+        <text x="250" y="25" class="sm">while loop</text>
+        <rect class="node" x="60" y="70" width="100" height="28" rx="2"/>
+        <text x="110" y="85" class="sm">condition</text>
+        <rect class="node" x="355" y="70" width="70" height="28" rx="2"/>
+        <text x="390" y="85" class="sm">body</text>
+        <circle class="node" cx="110" cy="146" r="18"/><text x="110" y="147">&lt;</text>
+        <circle class="node" cx="65" cy="208" r="18"/><text x="65" y="209">i</text>
+        <circle class="node" cx="155" cy="208" r="18"/><text x="155" y="209" class="sm">10</text>
+        <rect class="node" x="275" y="132" width="90" height="28" rx="2"/>
+        <text x="320" y="147" class="sm">func call</text>
+        <rect class="node" x="400" y="132" width="100" height="28" rx="2"/>
+        <text x="450" y="147" class="sm">assignment</text>
+        <rect class="node" x="249" y="194" width="62" height="28" rx="2"/>
+        <text x="280" y="209" class="sm">print</text>
+        <circle class="node" cx="352" cy="208" r="18"/><text x="352" y="209">i</text>
+        <circle class="node" cx="412" cy="208" r="18"/><text x="412" y="209">i</text>
+        <circle class="node" cx="490" cy="208" r="18"/><text x="490" y="209">+</text>
+        <circle class="node" cx="462" cy="268" r="18"/><text x="462" y="269">i</text>
+        <circle class="node" cx="520" cy="268" r="18"/><text x="520" y="269">1</text>
+      </svg>
+    </figure>
+
+    <p><code class="inl">Parser</code>’ın ürettiği <code class="inl">AST</code> ile birlikte artık kodun anlamını biliyoruz. Artık kodu çalıştırabiliriz.</p>
+
+    <h2>Çalıştırma</h2>
+
+    <p><code class="inl">Lexer</code> ve <code class="inl">parser</code>’ların çalışması, <code class="inl">compiler</code>’lar ve <code class="inl">interpreter</code>’ler için neredeyse aynıdır. İkisinin arasındaki fark bu aşamada ortaya çıkmaya başlar. Bu yolda izleyebileceğimiz en ilkel çözüm, ürettiğimiz <code class="inl">AST</code>’yi direk olarak yorumlamak olur. Buna <code class="inl">tree-walk interpreter</code> denir.</p>
+
+    <h3>Tree-walk Interpreter</h3>
+
+    <p>Bu yöntemde <code class="inl">parser</code>’dan aldığımız <code class="inl">tree</code> yapısını <code class="inl">depth first traversal</code>’a benzer bir şekilde dolaşırız. Matematiksel ifadeler bu şekilde kolayca değerlendirilir. Bir değişkene atama yapacağımız zaman bir <code class="inl">hashmap</code> ile kaydını tutup gerektiği zaman değişkenin değerini buradan alabiliriz. Bir koşul yapısına geldiğimizde ilk önce koşulu kontrol ederek sadece doğru <code class="inl">subtree</code>’yi ziyaret ederiz. Bir döngü yapısında da koşul yanlışa dönene kadar döngü içindeki kodu çalıştırabiliriz.</p>
+
+    <p>Kodlaması çok basit olmasına rağmen bu yöntem dilin çalışma zamanını ve hafıza kullanımını diğer yöntemlere göre çok artırır. Eskiden daha yaygın kullanılan bu yöntem (<code class="inl">Lisp</code>, <code class="inl">Basic</code>, <code class="inl">Ruby</code> gibi dillerin eski versiyonları örnek verilebilir), şimdilerde neredeyse sadece eğitim amaçlı kullanılıyor.</p>
+
+    <h3>Ahead of Time Compilation</h3>
+
+    <p>Bu yöntem ise <code class="inl">AST</code>’nin dolaşılarak direk makine koduna dönüştürülmesine ve üretilen çıktı dosyasının çalıştırılmasına dayanır. Bu yöntem <code class="inl">tree-walk interpreter</code>’a göre çok daha karmaşıktır ama karşılığında ulaşabileceğimiz en hızlı çalışma zamanını elde ederiz (örneğin C/C++, Go, Rust).</p>
+
+    <h3>Bytecode Interpreter</h3>
+
+    <p>Bu yöntemde ise programlama dili <code class="inl">AST</code>’yi <code class="inl">bytecode</code> adı verilen dile özgü bir formata çevirir ve ardından yine dile özgü bir sanal makine ile bu kod çalıştırılır. <code class="inl">Tree-walk interpreter</code>’e göre performans açısından çok daha iyidir ve <code class="inl">ahead of time</code>’a göre (CPU’yu düşünmeye gerek kalmadığı için) kodlaması çok daha kolaydır. Günümüzde pek çok dil bu yöntemi kullanarak çalışır. Bu yöntem <code class="inl">interpreter</code> ve <code class="inl">compiler</code> yazımı arasındaki farkı oldukça azaltmıştır.</p>
+
+    <h2>Kapanış</h2>
+
+    <p>Bu yazıda yazdığımız bir kodun hangi aşamalardan geçerek çalıştırıldığını elimden geldiğince anlatmaya çalıştım. Umarım sizler de bir kodun geçirdiği yolculuktan keyif almışsınızdır. Ve umarım sizin için programlama dilleri ile ilgili sır perdesini aralayabilmişimdir.</p>
+
+  </article>
+
+  <footer class="bottom">
+    <span>Bergeç · 2026</span>
+    <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>
+    <span><a href="index.html">Anasayfaya dön</a></span>
+  </footer>
+
+</div>
 </body>
 </html>
