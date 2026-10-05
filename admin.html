@@ -802,20 +802,56 @@ function writeIndexData(plain, data) {
   return plain.replace(INDEX_RE, (all, a, body, c) => a + '\n' + jsonForScript(data, 2) + '\n' + c);
 }
 
+/* ─────────────────────────── site haritası ─────────────────────────── */
+
+const SITE_URL = 'https://bergec.github.io/';
+
+/** "05.10.2026" → "2026-10-05" */
+function isoOfTrDate(s) {
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(String(s || '').trim());
+  return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : null;
+}
+
+/**
+ * sitemap.xml: ana sayfa + taslak olmayan bütün yazılar. lastmod: bu commit'te yazılan dosyalar için bugün,
+ * diğerleri için önceki haritadaki tarih (yoksa yazının tarihi).
+ */
+function buildSitemap(data, writtenPaths, oldXml) {
+  const old = {};
+  String(oldXml || '').replace(/<loc>([^<]*)<\/loc>\s*<lastmod>([^<]*)<\/lastmod>/g, (all, loc, mod) => { old[loc] = mod; return all; });
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [{ loc: SITE_URL, lastmod: today }];
+  const seen = new Set();
+  flattenOf(data).forEach(p => {
+    if (!p || p.taslak || !p.href || /^[a-z]+:/i.test(p.href) || seen.has(p.href)) return;
+    seen.add(p.href);
+    const loc = SITE_URL + encodeURI(p.href);
+    urls.push({ loc, lastmod: writtenPaths.includes(p.href) ? today : (old[loc] || isoOfTrDate(p.date) || today) });
+  });
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    urls.map(u => '  <url>\n    <loc>' + esc(u.loc) + '</loc>\n    <lastmod>' + u.lastmod + '</lastmod>\n  </url>\n').join('') +
+    '</urlset>\n';
+}
+
 /**
  * Ana sayfa listesini değiştirip (istenirse yanında başka dosyalarla) tek commit'te kaydeder.
+ * Site haritası (sitemap.xml) da aynı commit'te güncellenir.
  * mutate(liste) değişikliği yazıları adresleriyle (href) bulup uygular. Liste siz açtıktan
  * sonra başkası tarafından değiştirildiyse güncel hâli indirilir ve aynı işlem onun üzerine
  * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
  * extraExpect: yanındaki dosyalar için ghCommit'in expect'i.
  */
 async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
+  let oldSitemap = '';
+  try { const sm = await ghGetFile('sitemap.xml'); if (sm) oldSitemap = sm.text; } catch (e) {}
+  const written = (extraFiles || []).filter(f => f.text !== null).map(f => f.path);
   for (let attempt = 0; ; attempt++) {
     const data = JSON.parse(JSON.stringify(state.repoIndex)); // depodaki hâl (bekleyen değişiklikler mutate ile gelir)
     if (mutate) mutate(data);
     const plain = writeIndexData(basePlain || state.indexPlain, data); // basePlain: ana sayfa düzenleyicisinde düzenlenmiş hâli
         try {
-      const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: plain }]), message,
+      const sitemap = { path: 'sitemap.xml', text: buildSitemap(data, written, oldSitemap) };
+      const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: plain }, sitemap]), message,
         Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
       state.repoIndex = data;
       state.indexPlain = plain;
