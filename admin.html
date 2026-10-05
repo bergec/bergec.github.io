@@ -833,9 +833,45 @@ function buildSitemap(data, writtenPaths, oldXml) {
     '</urlset>\n';
 }
 
+/* ─────────────────── arama motoru / paylaşım etiketleri ─────────────────── */
+
+/** Formül işaretlerini atar: "$p_j$ ile" → "p_j ile". */
+function plainOfTex(s) {
+  return String(s || '').replace(/\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g, (all, a, b) => a || b).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Yazı sayfasının <head>'indeki <!-- seo --> bloğunu (açıklama, canonical, Open Graph) arşiv kaydından
+ * yeniden yazar; blok yoksa <title>'ın altına ekler.
+ */
+function withSeoHead(html, entry) {
+  const a = (s) => esc(s);
+  const url = SITE_URL + encodeURI(entry.href);
+  const desc = plainOfTex(entry.excerpt).slice(0, 300);
+  const date = isoOfTrDate(entry.date);
+  const L = ['<!-- seo -->'];
+  if (desc) L.push('<meta name="description" content="' + a(desc) + '">');
+  L.push('<link rel="canonical" href="' + url + '">',
+    '<meta property="og:type" content="article">', '<meta property="og:site_name" content="Bergeç">', '<meta property="og:locale" content="tr_TR">',
+    '<meta property="og:title" content="' + a(entry.title || '') + '">');
+  if (desc) L.push('<meta property="og:description" content="' + a(desc) + '">');
+  L.push('<meta property="og:url" content="' + url + '">', '<meta property="og:image" content="' + SITE_URL + 'og-image.png">',
+    '<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',
+    '<meta name="twitter:card" content="summary_large_image">');
+  if (entry.author) L.push('<meta name="author" content="' + a(entry.author) + '">');
+  if (date) L.push('<meta property="article:published_time" content="' + date + '">');
+  L.push('<!-- /seo -->');
+  const block = L.join('\n') + '\n';
+  html = html.replace(/<!-- seo -->[\s\S]*?<!-- \/seo -->\n?/, '');
+  const m = /<title>[\s\S]*?<\/title>\n?/.exec(html);
+  if (!m) return html;
+  const at = m.index + m[0].length;
+  return html.slice(0, at) + (m[0].endsWith('\n') ? '' : '\n') + block + html.slice(at);
+}
+
 /**
  * Ana sayfa listesini değiştirip (istenirse yanında başka dosyalarla) tek commit'te kaydeder.
- * Site haritası (sitemap.xml) da aynı commit'te güncellenir.
+ * Site haritası (sitemap.xml) da aynı commit'te güncellenir; kaydedilen yazıların seo bloğu arşiv kaydından yazılır.
  * mutate(liste) değişikliği yazıları adresleriyle (href) bulup uygular. Liste siz açtıktan
  * sonra başkası tarafından değiştirildiyse güncel hâli indirilir ve aynı işlem onun üzerine
  * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
@@ -851,7 +887,11 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
     const plain = writeIndexData(basePlain || state.indexPlain, data); // basePlain: ana sayfa düzenleyicisinde düzenlenmiş hâli
         try {
       const sitemap = { path: 'sitemap.xml', text: buildSitemap(data, written, oldSitemap) };
-      const { shas } = await ghCommit((extraFiles || []).concat([{ path: 'index.html', text: plain }, sitemap]), message,
+      const entries = {};
+      flattenOf(data).forEach(p => { if (p && p.href) entries[p.href] = p; });
+      const files = (extraFiles || []).map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
+        ? { path: f.path, text: withSeoHead(f.text, entries[f.path]) } : f);
+      const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap]), message,
         Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
       state.repoIndex = data;
       state.indexPlain = plain;
