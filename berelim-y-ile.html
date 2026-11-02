@@ -42,18 +42,18 @@
     <span style="color: var(--color-neutral-600); text-transform: none; letter-spacing: 0;">11.12.2025</span>
   </div>
 
-  <h1 class="title">Berelim Y ile</h1>
+  <h1 class="title">Berelim <span class="im">\mathbf{Y}</span> ile</h1>
   <div class="byline">Cem Bozşahin</div>
 
   <article class="body">
 
-    <p class="lede">Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir. İlk önümüze çıkan örnekleri kolaydır, meselâ faktoriyel hesabı:<sup class="fn">1</sup></p>
+    <p class="lede"> Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir. İlk önümüze çıkan örnekleri kolaydır, meselâ faktoriyel hesabı:<sup class="fn">1</sup></p>
 
-    <div class="eq eq-block">$$n \in \mathbb{N} \ge 1 \text{ için } n! = n \times (n-1)! \qquad (0! = 1)$$</div>
+    <div class="eq eq-block">$$n\in\mathbb{N} \geq 1 \text{ için } n!=n\times(n-1)!~~~~~~~~~~~(0!=1)$$</div>
 
     <p>Bu örnek kolaydır çünkü döngü kavramı ile daha önce tanışılmış olunur genellikle. Bu kavram daha doğaldır. Faktoriyel metodunun döngülü çözümü çok kolay anlaşıldığı için özyinelemeli çözümünü de ondan esinlenmeyle anlayabiliriz. Bir önceki sayıyla çarp diyor ikisi de sonuç olarak:</p>
 
-    <div class="eq eq-block">$$n! = 1 \times \cdots n$$</div>
+    <div class="eq eq-block">$$n!=1\times\cdots n$$</div>
 
     <p>Bu tanımda içeride ‘!’ sembolü yok. (Aslında fonksiyon ismi o.) Ardarda sayıları çarpıp duruyoruz. Bu bir döngü, özyineleme yok.</p>
 
@@ -61,7 +61,7 @@
 
     <p>Bu tip problemleri özyinelemeyle çözmekte zorlanmamızın nedeni, bence, döngülü çözümü o kadar rahat göremememiz. Bu problemler için de özyinelemeli çözüm verildiğinde a ne kolaymış diyoruz ama kendimiz hemen yazmakta zorlanıyoruz. Bunun nedeni de buradaki özyinelemenin faktoriyel gibi sadece en sonda kendine tekrar dönmemesi, içeride de kendine referans vermesidir. Dolayısıyla döngüye çevirip, özyineleme için uydurulmuş gibi gözüken içerideki isimden kurtulamıyoruz. Programlama diliyle konuşursak, kodun ortasında bir yerde onu tekrar çalıştıracaksak bir isim vermemiz gerekiyor.</p>
 
-    <p>Özyinelemedeki kolay yönteme kuyruk özyinelemesi, zor olana da gömülü özyineleme diyoruz, ya da isimli özyineleme.</p>
+    <p>Özyinelemedeki kolay yönteme <em>kuyruk özyinelemesi</em>, zor olana da <em>gömülü özyineleme</em> diyoruz, ya da <em>isimli özyineleme</em>.</p>
 
     <p>Buradaki temel kavramsal soru şu: Bu iki yöntem gerçekten farklı mıdır?</p>
 
@@ -71,133 +71,157 @@
 
     <p>Matematikte soyutlama zevk için yapılmaz, bir değişmeze varmak için yapılır. Burada işe yarayıp yaramadığına bir bakalım. (Aslında tabii işe yaradığını biliyoruz da o yüzden bu kadar rahat konuşuyorum. Size anlatacağım çözüm yüz yıldır biliniyor. İlginç olan bunun farkında olmayıp özyineleme üzerine serbest atış yöntemiyle teori kurgulayanlar var dilbilimde ve zihinbilimde. İsim verdirtmeyin bana daha yeni emekli oldum. Tarih diye muhteşem bir özgözlemci var.)</p>
 
-    <p>Ama önce bir antrparantez açmamız lazım. Başlıktaki ‘berelim’ ne demek? Bu yazının yayınlandığı blog’un isminde de geçiyor kökü: bergeç. Bu bilgisayar demek sanki. Can sıkıntısından birileri uydurmuş da olabilir, ‘bilgisayar’ yetmezmiş gibi. Uyduruldu ama can sıkıntısından değil iç sıkıntısından. Hikayenin bizzat şahidi olarak size anlatmam lazım.</p>
+    <p>Ama önce bir antrparantez açmamız lazım. Başlıktaki ‘berelim’ ne demek? Bu yazının yayınlandığı blog’un isminde de geçiyor kökü: <em>bergeç</em>. Bu bilgisayar demek sanki. Can sıkıntısından birileri uydurmuş da olabilir, ‘bilgisayar’ yetmezmiş gibi. Uyduruldu ama can sıkıntısından değil iç sıkıntısından. Hikayenin bizzat şahidi olarak size anlatmam lazım.</p>
 
-    <p>Bilişim dünyasındaysanız eğer ve/veya dile duyarlıysanız sizin içinize de fenalık gelmiş olabilir ‘bil’ kökünün çok fazla kullanılıyor olmasından. Bilmek, bilişim, bilgi, bilgisayar, bilge, bildiri vd. var.</p>
+    <p>Bilişim dünyasındaysanız eğer ve/veya dile duyarlıysanız sizin içinize de fenalık gelmiş olabilir ‘bil’ kökünün çok fazla kullanılıyor olmasından. <em>Bilmek, bilişim, bilgi, bilgisayar, bilge, bildiri</em> vd. var.</p>
 
-    <p>Var da bilişimci olarak İngilizce’deki ‘computational’ ifadesine ne diyeceğimizi bilemiyoruz hâlâ. (Döndü bizim imlâ; bir yakınıma değil size hitap ediyorum.) ‘Hesaplamalı’ deyince olsa idare ederdik ama olmuyor. Computational fluid mechanics için ‘hesaplamalı akışkanlar mekaniği’ desek bunun hesaplamasızı yok zaten. Computational linguistics için “bilgisayarlı dilbilim’ ya da ‘hesaplamalı dilbilim’ desek—dedik—pek içimize sinmiyor. Önemli olan yöntem veya ekipman değil bakış açısı çünkü. Yani ‘hesaplamalı dilbilim’ de gitti; onu da demiştik. Berimsel dilbilim? Eh işte. Berdilbilim? Yok artık daha neler. Nereden çıktı bu ‘ber’?</p>
+    <p>Var da bilişimci olarak İngilizce’deki ‘computational’ ifadesine ne diyeceğimizi bilemiyoruz hâlâ. (Döndü bizim imlâ; bir yakınıma değil size hitap ediyorum.) ‘Hesaplamalı’ deyince olsa idare ederdik ama olmuyor. <em>Computational fluid mechanics</em> için ‘hesaplamalı akışkanlar mekaniği’ desek bunun hesaplamasızı yok zaten. <em>Computational linguistics</em> için “bilgisayarlı dilbilim’ ya da ‘hesaplamalı dilbilim’ desek—dedik—pek içimize sinmiyor. Önemli olan yöntem veya ekipman değil bakış açısı çünkü. Yani ‘hesaplamalı dilbilim’ de gitti; onu da demiştik. <em>Berimsel dilbilim?</em> Eh işte. <em>Berdilbilim?</em> Yok artık daha neler. Nereden çıktı bu ‘ber’?</p>
 
-    <p>İşte biz böyle problemlerle uğraşırken 1996 yılının bir kış gününde Onur Tolga Şehitoğlu hocamız ODTÜ Bilgisayar Mühendisliğinin çay odasında ‘ber’ kökünü önerdiydi. Niyet ‘bil’i tahtından etmek değil bahsettiğim zorlukları aşmaktı. Baktık pek kullanılmış bir kök değil; Eski Türkçe’de şimdiki ‘ver’in biçimiymiş: (bėr | be:r| bir) &gt; ver (sağolasınız Mehmet Ölmez hocam). Dedik kimse hatırlamaz bu kökü sıfırdan doldurabiliriz belki—hatırlarmış meğer.</p>
+    <p>İşte biz böyle problemlerle uğraşırken 1996 yılının bir kış gününde Onur Tolga Şehitoğlu hocamız ODTÜ Bilgisayar Mühendisliğinin çay odasında ‘ber’ kökünü önerdiydi. Niyet ‘bil’i tahtından etmek değil bahsettiğim zorlukları aşmaktı. Baktık pek kullanılmış bir kök değil; Eski Türkçe’de şimdiki ‘ver’in biçimiymiş: <em>(bėr <span class="im">\mid</span> be:r<span class="im">\mid</span> bir) <span class="im">&gt;</span> ver</em> (sağolasınız Mehmet Ölmez hocam). Dedik kimse hatırlamaz bu kökü sıfırdan doldurabiliriz belki—hatırlarmış meğer.</p>
 
     <p>Eksik kalmasın bir örnek verelim Orhun Yazıtları 735’ten:<sup class="fn">2</sup></p>
 
-    <div class="eq eq-block" style="font-style: italic;">İşig küçig birtim ök [hizmet verdim hep]</div>
+    <p style="text-align: center; text-indent: 0;"><em>İşig küçig birtim ök</em> [hizmet verdim hep]</p>
 
-    <p>Neyse konuyu dağıtmayayım, hemen oracıkta bermek, bereç, bergeç, berim, berişim, berimsel, berimselci, berimselcilik ve diğerleri türetilmişti bile; garibim ‘ver’ duysa ne düşünürdü kimbilir.</p>
+    <p>Neyse konuyu dağıtmayayım, hemen oracıkta <em>bermek, bereç, bergeç, berim, berişim, berimsel, berimselci, berimselcilik</em> ve diğerleri türetilmişti bile; garibim ‘ver’ duysa ne düşünürdü kimbilir.</p>
 
     <p>Kullanımına bakıyoruz ara sıra. Ders kitaplarına ve sözlüklere bile girdiği oldu.<sup class="fn">3</sup> Rahmetli Tahsin Yücel’den de 2007’de Mersin’de yapılan Ulusal Dilbilim Kurultayında moral desteği aldıydık. Daha ne isteriz? (‘Ber’e itiraz edenlere arka sıralardan verdiği ‘bulmuş işte çocuklar’ cevabı hâlâ kulaklarımda çınlıyor—gençtik hakikaten.) Halit Oğuztüzün hocamız ve ben havarileri sayılırız, yaymaya çalışıyoruz. Yukarıdaki akışkanlar mekaniği hatırlatması Halit hocamızdan.</p>
 
     <p>Parantezi kapatıp konumuza dönelim. Özyineleme tam nedir? Özyinelemenin ne yapmaya çalıştığını en sade biçimde gösteren matematik herhalde Alan Turing’in lambdalı tanımıdır:</p>
 
-    <div class="eq eq-block">$$\mathbf{U} = \lambda f.f(f)$$</div>
+    <div class="eq eq-block">$$\mathbf{U}=\lambda f.f(f)$$</div>
 
-    <p>Veya parantez yorgunuysanız <span class="im">\mathbf{U} = \lambda f . f\, f</span>. Curry’den kalma bir gelenekle bazı önemli lambda denklemlerini kalın harflerle yazıyoruz. Özetle şunu diyor <span class="im">\mathbf{U}</span>: Bir fonksiyon alalım, <span class="im">f</span> olsun, onu kendisine uygulayalım, yani <span class="im">f(f)</span>. Bu ifade sade ama özyinelemeli programlamada ne yaptığımızı tam anlatmıyor. Bunu görebilmek için önce örneğin faktoriyel fonksiyonunu isimli özyinelemeyle yazalım, hatta tek satırlık program gibi olsun:</p>
+    <p>Veya parantez yorgunuysanız <span class="im">\mathbf{U}=\lambda f.f\!f</span>. Curry’den kalma bir gelenekle bazı önemli lambda denklemlerini kalın harflerle yazıyoruz. Özetle şunu diyor <span class="im">\mathbf{U}</span>: Bir fonksiyon alalım, <span class="im">f</span> olsun, onu kendisine uygulayalım, yani <span class="im">f(f)</span>. Bu ifade sade ama özyinelemeli programlamada ne yaptığımızı tam anlatmıyor. Bunu görebilmek için önce örneğin faktoriyel fonksiyonunu isimli özyinelemeyle yazalım, hatta tek satırlık program gibi olsun:</p>
 
-    <div class="eq eq-block">$$\mathbf{F} = \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (\mathbf{F}\,(n-1))$$</div>
+    <div class="eq eq-block">$$\mathcal F=\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times (\mathcal F (n-1))$$</div>
 
-    <p>Gördüğünüz gibi solda tanımlanan <span class="im">\mathbf{F}</span>, denklemin içinde de, sağda, kullanılıyor; yani tam bir isimli özyineleme. Programlamada büyük kolaylık, ama bunu yapmak zorunda mıyız? Matematik’ten cevap var: Yapsan da sorun yok; başka bir problemi çözerken bu sorun da çözülür. Nedir bu başka problem aşama aşama gidelim.</p>
+    <p>Gördüğünüz gibi solda tanımlanan <span class="im">\mathcal F</span>, denklemin içinde de, sağda, kullanılıyor; yani tam bir isimli özyineleme. Programlamada büyük kolaylık, ama bunu yapmak zorunda mıyız? Matematik’ten cevap var: Yapsan da sorun yok; başka bir problemi çözerken bu sorun da çözülür. Nedir bu başka problem aşama aşama gidelim.</p>
 
     <p>Şöyle bir soyutlama yaparsak isimlerden adım adım kurtulmaya başlarız, hem de faktoriyel davranışını değiştirmeden, özyinelemeden de vazgeçmeden:</p>
 
-    <div class="eq eq-block">$$\mathbf{H} = \lambda f.\lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (f\,(n-1))$$</div>
+    <div class="eq eq-block">$$\mathcal H=\lambda f\!.\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times (f (n-1))$$</div>
 
-    <p>Davranış değişmedi çünkü <span class="im">\mathbf{H}\,\mathbf{F} = \mathbf{F}</span>:</p>
+    <p>Davranış değişmedi çünkü <span class="im">\mathcal H\,\mathcal F=\mathcal F</span>:</p>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{H}\,\mathbf{F} = [\lambda f.\lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (f\,(n-1))]\ \mathbf{F} = \\[4pt] \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (\mathbf{F}\,(n-1)) = \mathbf{F} \end{gathered}$$</div>
+    <div class="eq eq-block">$$\mathcal H\,\mathcal F=[\lambda f\!.\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times (f (n-1))]\,\mathcal F=$$</div>
 
-    <p>Yani <span class="im">\mathbf{F} = \mathbf{H}\,\mathbf{F}</span>. Şimdi özyinelemeye benzemeye başladı. Ama <span class="im">\mathbf{U}</span> bunu vermiyor, çünkü <span class="im">\mathbf{U}(\mathbf{H}\,\mathbf{F}) = (\mathbf{H}\,\mathbf{F})\,(\mathbf{H}\,\mathbf{F}) = \mathbf{F}\,\mathbf{F} \neq \mathbf{F}</span>. Ama çok uzakta da değil. Şimdi şöyle bir tanım daha yapalım:</p>
+    <div class="eq eq-block">$$\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times (\mathcal F (n-1))=\mathcal F$$</div>
 
-    <div class="eq eq-block">$$\boldsymbol{\Phi} = \lambda x.\lambda f .\ f (x\,x\,f )$$</div>
+    <p>Yani <span class="im">\mathcal F\!\!=\!\!\mathcal H\,\mathcal F\!</span>. Şimdi özyinelemeye benzemeye başladı. Ama <span class="im">\mathbf{U}</span> bunu vermiyor, çünkü <span class="im">\mathbf{U}(\mathcal H\mathcal F)\!=(\mathcal H\mathcal F)(\mathcal H\mathcal F)=\mathcal F\mathcal F\not=\!\mathcal F</span>. Ama çok uzakta da değil. Şimdi şöyle bir tanım daha yapalım:</p>
 
-    <p>Bu sanki <span class="im">\mathbf{U}</span>’nun bir başka biçimi gibi. Şimdi <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}</span>’a bakalım, yani <span class="im">\mathbf{U}\boldsymbol{\Phi}</span>’a:</p>
+    <div class="eq eq-block">$$\mathbf{\Phi}=\lambda x.\lambda f.f(x\,x\,f)$$</div>
 
-    <div class="eq eq-block">$$\boldsymbol{\Phi}\boldsymbol{\Phi} = (\lambda x.\lambda f .\ f (x\,x\,f ))\boldsymbol{\Phi} = \lambda f .\ f (\boldsymbol{\Phi}\boldsymbol{\Phi}\, f )$$</div>
+    <p>Bu sanki <span class="im">\mathbf{U}</span>’nun bir başka biçimi gibi. Şimdi <span class="im">\mathbf{\Phi}</span><span class="im">\mathbf{\Phi}</span>’a bakalım, yani <span class="im">\mathbf{U}</span><span class="im">\mathbf{\Phi}</span>’a:</p>
+
+    <div class="eq eq-block">$$\mathbf{\Phi}\mathbf{\Phi}=(\lambda x.\lambda f.f(x\,x\,f))\mathbf{\Phi}=\lambda f.f(\mathbf{\Phi}\mathbf{\Phi}f)$$</div>
 
     <p>Şimdi herhangi bir <span class="im">h</span> fonksiyonu koyalım <span class="im">f</span> yerine:</p>
 
-    <div class="eq eq-block">$$\lambda f .\ f (\boldsymbol{\Phi}\boldsymbol{\Phi}\, f )h = h(\boldsymbol{\Phi}\boldsymbol{\Phi}h)$$</div>
+    <div class="eq eq-block">$$\lambda f.f(\mathbf{\Phi}\mathbf{\Phi}f)h=h(\mathbf{\Phi}\mathbf{\Phi}h)$$</div>
 
-    <p>Yani <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}h = h(\boldsymbol{\Phi}\boldsymbol{\Phi}h)</span>. Bir yerden tanıdık gelmiştir bu denklem. <span class="im">\mathbf{Y}</span> denkleminin davranışı bu. <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}</span>’ın bize gösterdiği, <span class="im">h</span>’in bir fonksiyonel olması, fonksiyon alan fonksiyon yani, çünkü <span class="im">\boldsymbol{\Phi}\boldsymbol{\Phi}h</span> bir fonksiyon. <span class="im">\mathbf{Y}</span> de öyle diyor aşağıdaki <span class="im">f</span> için:</p>
+    <p>Yani <span class="im">\mathbf{\Phi}\mathbf{\Phi}h=h(\mathbf{\Phi}\mathbf{\Phi}h)</span>. Bir yerden tanıdık gelmiştir bu denklem. <span class="im">\mathbf{Y}</span> denkleminin davranışı bu. <span class="im">\mathbf{\Phi}</span><span class="im">\mathbf{\Phi}</span>’ın bize gösterdiği, <span class="im">h</span>’in bir fonksiyonel olması, fonksiyon alan fonksiyon yani, çünkü <span class="im">\mathbf{\Phi}\mathbf{\Phi}h</span> bir fonksiyon. <span class="im">\mathbf{Y}</span> de öyle diyor aşağıdaki <span class="im">f</span> için:</p>
 
-    <div class="eq eq-block">$$\mathbf{Y} = \lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))$$</div>
+    <div class="eq eq-block">$$\mathbf{Y}=\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))$$</div>
 
-    <p>Çünkü <span class="im">\mathbf{Y}</span>’yi böyle tanımlarsak, herhangi bir <span class="im">h</span> fonksiyoneli için <span class="im">\mathbf{Y}h = h(\mathbf{Y}h)</span>. <span class="im">h(\mathbf{Y}h) = h(h(\mathbf{Y}h)) = \cdots</span>. Birkaç adım yapalım: ([]’ler de parantez; görsel kolaylık olsun diye farklı ayraç olarak kullandım)</p>
+    <p>Çünkü <span class="im">\mathbf{Y}</span>’yi böyle tanımlarsak, herhangi bir <span class="im">h</span> fonksiyoneli için <span class="im">\mathbf{Y}h=h(\mathbf{Y}h)</span>. <span class="im">h(\mathbf{Y}h)=h(h(\mathbf{Y}h))=\cdots</span>. Birkaç adım yapalım: ([]’ler de parantez; görsel kolaylık olsun diye farklı ayraç olarak kullandım)</p>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{Y}h = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]h = \\[4pt] (\lambda x.h(xx))\,(\lambda x.h(xx)) \\[4pt] h(\mathbf{Y}h) = h[(\lambda x.h(xx))\,(\lambda x.h(xx))] = \\[4pt] h[h((\lambda x.h(xx))\,(\lambda x.h(xx)))] = h(h(\mathbf{Y}h)) \end{gathered}$$</div>
+    <div class="eq eq-block">$$\mathbf{Y}h=[\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))]h=$$</div>
 
-    <p>Özetlersek <span class="im">\mathbf{Y} = \boldsymbol{\Phi}\boldsymbol{\Phi} = \mathbf{U}\boldsymbol{\Phi}</span>. Nereden nereye. Tek başına <span class="im">\boldsymbol{\Phi}</span> yetmiyormuş demek ki özyineleme için. Tek başına <span class="im">\mathbf{U}</span> da yetmiyormuş. Ama tek başına <span class="im">\mathbf{Y}</span> özyinelemenin klasik denklemini verdi.</p>
+    <div class="eq eq-block">$$(\lambda x.h(x x))(\lambda x.h(x x))$$</div>
+
+    <div class="eq eq-block">$$h(\mathbf{Y}h)=h[(\lambda x.h(x x))(\lambda x.h(x x))]=$$</div>
+
+    <div class="eq eq-block">$$h[h((\lambda x.h(xx))(\lambda x.h(xx)))]=h(h(\mathbf{Y}h))$$</div>
+
+    <p>Özetlersek <span class="im">\mathbf{Y}=\mathbf{\Phi}\mathbf{\Phi}=\mathbf{U}\mathbf{\Phi}</span>. Nereden nereye. Tek başına <span class="im">\mathbf{\Phi}</span> yetmiyormuş demek ki özyineleme için. Tek başına <span class="im">\mathbf{U}</span> da yetmiyormuş. Ama tek başına <span class="im">\mathbf{Y}</span> özyinelemenin klasik denklemini verdi.</p>
 
     <p>Peki Haskell Curry’nin <span class="im">\mathbf{Y}</span>’sinin bu kadar çok tutulması ve neredeyse özyineleme ile özdeşleşmesi nereden kaynaklanıyor? (<span class="im">\mathbf{Y}</span>’ye ithafen kurulmuş meşhur bir şirket var biliyorsunuz; var mı mesela Monoid Inc. diye bir şirket?)</p>
 
     <p>Tanımına yakından bakıp ruhunu anlamağa çalışırsak bu etkiyi de anlayabiliriz. Önce <span class="im">\mathbf{Y}</span>’yi tekrar alalım:</p>
 
-    <div class="eq eq-block">$$\mathbf{Y} = \lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))$$</div>
+    <div class="eq eq-block">$$\mathbf{Y}=\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))$$</div>
 
     <p>Tek bir fonksiyon soyutlaması var tanımında, <span class="im">\lambda f</span> ile temsil edilen. Aynen özyinelemeli programların tanımında olduğu gibi. Ama iki tane <span class="im">\lambda x</span> var. İkisinin de aynı sembolle (<span class="im">x</span>’le) olmasının hiçbir önemi yok çünkü yer tutucular olarak lokal kullanılıyorlar.</p>
 
-    <p>Lambdalarda <span class="im">M\,N</span> yazdığımızda <span class="im">M</span> fonksiyon, <span class="im">N</span> de öğesi olduğuna göre, <span class="im">\lambda f .(\cdots)</span>’in içindeki terimde, sağdaki lambdalı terim soldakine öğe oluyor. <span class="im">N</span>’nin <span class="im">x</span>’inin kendi <span class="im">x</span>’i olması özyineleme yaparken geçirilen öğenin değerinin yeni değerler olmasını temsil ediyor, aynen faktoriyel fonksiyonunda içeriden yapılan çağrı’nın <span class="im">(n-1)</span> üzerinden olması gibi; hatırlayalım şu şekildeydi: <span class="im">(n-1)!</span>.</p>
+    <p>Lambdalarda <span class="im">MN</span> yazdığımızda <span class="im">M</span> fonksiyon, <span class="im">N</span> de öğesi olduğuna göre, <span class="im">\lambda f.(\cdots)</span>’in içindeki terimde, sağdaki lambdalı terim soldakine öğe oluyor. <span class="im">N</span>’nin <span class="im">x</span>’inin kendi <span class="im">x</span>’i olması özyineleme yaparken geçirilen öğenin değerinin yeni değerler olmasını temsil ediyor, aynen faktoriyel fonksiyonunda içeriden yapılan çağrı’nın <span class="im">(n-1)</span> üzerinden olması gibi; hatırlayalım şu şekildeydi: <span class="im">(n-1)!</span>.</p>
 
     <p><span class="im">\mathbf{Y}</span>’nin özü, derin düşüncelere dalmış bir programcı için işte bu. Bize, bütün sadeliğine rağmen <span class="im">\mathbf{U}</span>’nun gösteremediği bir özelliği gösteriyor.</p>
 
-    <p>Peki <span class="im">\mathbf{Y}</span> özyineleme için mi var, yoksa esas görevinin bir sonucu mu bu? Dikkat ederseniz 1 rakamı faktoriyel fonksiyonunun sabit nokta olmasının bir sonucudur, çünkü <span class="im">0! = 1</span> demek amiyane tabiriyle ‘duracağım’ demek, git bak sonuca demek, senin fonksiyonun değerleri bitmez ama hepsi şu kümenin içinde olacak demek, biraz önce gördüğümüz gibi. Faktoriyel için bu küme <span class="im">\{(0, 1), (1, 1), (2, 2), (3, 6), \cdots\}</span>. <span class="im">\mathbf{Y}</span> sayesinde bu kümeyi anlamak için <span class="im">\cdots</span>’dan kurtuluyoruz.</p>
+    <p>Peki <span class="im">\mathbf{Y}</span> özyineleme için mi var, yoksa esas görevinin bir sonucu mu bu? Dikkat ederseniz 1 rakamı faktoriyel fonksiyonunun sabit nokta olmasının bir sonucudur, çünkü <span class="im">0!=1</span> demek amiyane tabiriyle ‘duracağım’ demek, git bak sonuca demek, senin fonksiyonun değerleri bitmez ama hepsi şu kümenin içinde olacak demek, biraz önce gördüğümüz gibi. Faktoriyel için bu küme <span class="im">\{(0,1), (1,1), (2,2), (3,6),\cdots\}</span>. <span class="im">\mathbf{Y}</span> sayesinde bu kümeyi <em>anlamak</em> için <span class="im">\cdots</span>’dan kurtuluyoruz.</p>
 
-    <p>Yani faktoriyel fonksiyonu, fonksiyon dünyasında kendisini üreten fonksiyonun sabit noktası. Fonksiyon uzayında sabit nokta kavramı, kabaca, bir fonksiyonu ardarda çalıştırmanın artık fonksiyonda fark yaratmadığı durumu bulup durmak demek, örneğin herhangi bir <span class="im">f</span> için <span class="im">f(x) = x</span> yapan değeri. Bizim <span class="im">\mathbf{H}</span> de böyle zaten: <span class="im">\mathbf{H}\,\mathbf{F} = \mathbf{F}</span>.</p>
+    <p>Yani faktoriyel fonksiyonu, fonksiyon dünyasında <em>kendisini</em> üreten fonksiyonun sabit noktası. Fonksiyon uzayında sabit nokta kavramı, kabaca, bir fonksiyonu ardarda çalıştırmanın artık fonksiyonda fark yaratmadığı durumu bulup durmak demek, örneğin herhangi bir <span class="im">f</span> için <span class="im">f(x)=x</span> yapan değeri. Bizim <span class="im">\mathcal H</span> de böyle zaten: <span class="im">\mathcal H\mathcal F=\mathcal F</span>.</p>
 
-    <p><span class="im">\mathbf{Y}</span>’nin esas işi şu: <span class="im">\mathbf{H}</span> gibi, özel bir fonksiyonun (<span class="im">\mathbf{F}</span>’nin) sabit noktacısı olmak yerine, herhangi bir fonksiyonun sabit noktacısı olmak; onu bulmak, tabii varsa, yoksa da bunu göstermek, en azından kağıt üstünde. İşte bunun için isimlerden kurtulabilmek önemli, yoksa nereden hatırlayacağız bütün fonksiyonları? Özyinelemeyi isimsiz yapabilmek de bunun yan ürünü.</p>
+    <p><span class="im">\mathbf{Y}</span>’nin esas işi şu: <span class="im">\mathcal H</span> gibi, özel bir fonksiyonun (<span class="im">\mathcal F</span>’nin) sabit noktacısı olmak yerine, <em>herhangi</em> bir fonksiyonun sabit noktacısı olmak; onu bulmak, tabii varsa, yoksa da bunu göstermek, en azından kağıt üstünde. İşte bunun için isimlerden kurtulabilmek önemli, yoksa nereden hatırlayacağız bütün fonksiyonları? Özyinelemeyi isimsiz yapabilmek de bunun yan ürünü.</p>
 
-    <p>Mesela bizim faktoriyelin terimini alalım, <span class="im">\mathbf{F} = \mathbf{H}\,\mathbf{F}</span>. <span class="im">\mathbf{Y}</span> uygularsak <span class="im">\mathbf{F} = \mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}(\mathbf{H}))</span>. Yani faktoriyeli elde et isimsiz soyutlama olarak, <span class="im">\mathbf{H}</span>, sonra özyinele, <span class="im">\mathbf{Y}\mathbf{H}</span>. Nereye gideceği belli:</p>
+    <p>Mesela bizim faktoriyelin terimini alalım, <span class="im">\mathcal F=\mathcal H\mathcal F</span>. <span class="im">\mathbf{Y}</span> uygularsak <span class="im">\mathcal F=\mathbf{Y}\mathcal H=\mathcal H(\mathbf{Y}(\mathcal H))</span>. Yani faktoriyeli elde et isimsiz soyutlama olarak, <span class="im">\mathcal H</span>, sonra özyinele, <span class="im">\mathbf{Y}\mathcal H</span>. Nereye gideceği belli:</p>
 
-    <div class="eq eq-block">$$\mathbf{F} = \mathbf{H}\,\mathbf{F} = \mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}\mathbf{H}) = \mathbf{H}\,(\mathbf{H}\,(\mathbf{Y}\mathbf{H})) \tag{1}$$</div>
+    <div class="eq eq-block">$$\mathcal F=\mathcal H\mathcal F=\mathbf{Y}\mathcal H=\mathcal H(\mathbf{Y}\mathcal H)=\mathcal H(\mathcal H(\mathbf{Y}\mathcal H)) \tag{1}$$</div>
 
-    <p>Peki <span class="im">\mathbf{Y}</span>, <span class="im">\mathbf{H}</span>’nin <span class="im">\mathbf{F}</span>’ye yaptığını mı yapıyor <span class="im">\mathbf{H}</span>’ye? Bakalım:</p>
+    <p>Peki <span class="im">\mathbf{Y}</span>, <span class="im">\mathcal H</span>’nin <span class="im">\mathcal F</span>’ye yaptığını mı yapıyor <span class="im">\mathcal H</span>’ye? Bakalım:</p>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{F} = \mathbf{H}\,\mathbf{F} = \mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}\mathbf{H}) = [\lambda f.\lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (f (n-1))]\,(\mathbf{Y}\mathbf{H}) = \\[4pt] \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times (\mathbf{Y}\mathbf{H})\,(n-1)) = \\[4pt] \lambda n.\ \text{if } n == 0 \text{ then } 1 \text{ else } (n \times \mathbf{F}\,(n-1)) = \mathbf{F} \neq \mathbf{H} \end{gathered} \tag{2}$$</div>
+    <div class="eq eq-block">$$\mathcal F\!=\!\mathcal H\mathcal F\!=\!\mathbf{Y}\mathcal H\!=\!\mathcal H(\mathbf{Y}\mathcal H)\!=\![\lambda f\!.\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times (f (n-1))](\mathbf{Y}\mathcal H)\!=$$</div>
 
-    <p>Yapmıyormuş. Daha genel birşey yapıyormuş, çünkü <span class="im">\mathbf{H}\,\mathbf{F} \neq \mathbf{F}(\mathbf{H}\,\mathbf{F})</span>, ama <span class="im">\mathbf{Y}\mathbf{H} = \mathbf{H}\,(\mathbf{Y}\mathbf{H})</span>. Yalnız bu son denklem inanması zor bir denklem. Yakından bakalım:</p>
+    <div class="eq eq-block">$$\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times (\mathbf{Y}\mathcal H) (n-1))= \tag{2}$$</div>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{Y}\mathbf{H} = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]\mathbf{H} = (\lambda x.\mathbf{H}(xx))\,(\lambda x.\mathbf{H}(xx)) = \\[4pt] \mathbf{H}\,[(\lambda x.\mathbf{H}(xx))\,(\lambda x.\mathbf{H}(xx))] = \mathbf{H}\,[[\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]\mathbf{H}] = \mathbf{H}\,(\mathbf{Y}\mathbf{H}) \end{gathered}$$</div>
+    <div class="eq eq-block">$$\lambda n. \mathtt{\,if\,} n==0 \mathtt{\,then\,} 1 \mathtt{\,else\,} (n \times \mathcal F (n-1))=\mathcal F\not=\mathcal H$$</div>
 
-    <p>Mesela aynı şeyi <span class="im">\mathbf{F}</span> ile yapamadık çünkü o <span class="im">\mathbf{H}</span> gibi fonksiyonel almıyor; <span class="im">n</span> fonksiyon değil, değer. Yani <span class="im">\mathbf{H}</span>’nin sabit noktası <span class="im">\mathbf{F}</span>, <span class="im">\mathbf{Y}</span>’nin sabit noktası ...; neyse uzatmayalım, bunun sonu Frege, Russell ve Curry’ye kadar gider, arada da Quine, Dana Scott ve Schönfinkel’a uğrar, o arada da Barendregt’e; burada durdum.</p>
+    <p>Yapmıyormuş. Daha genel birşey yapıyormuş, çünkü <span class="im">\mathcal H\mathcal F\not=\mathcal F(\mathcal H\mathcal F)</span>, ama <span class="im">\mathbf{Y}\mathcal H=\mathcal H(\mathbf{Y}\mathcal H)</span>. Yalnız bu son denklem inanması zor bir denklem. Yakından bakalım:</p>
 
-    <p>Denklem (2)’deki gibi bir açılım ne zaman durur? İçerideki <span class="im">\mathbf{Y}</span> kullanılmadığı zaman. Bu durumda <span class="im">n == 0</span>’ın sonucu dönmüş olmalı. Yani özyineleme duracak. Bunun da <span class="im">\mathbf{Y}</span> ile bir alakası yok, (1)’deki <span class="im">\mathbf{H}</span> ve <span class="im">\mathbf{F}</span> ile alakası var.</p>
+    <div class="eq eq-block">$$\mathbf{Y}\mathcal H=[\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))]\mathcal H=(\lambda x.\mathcal H(x x))(\lambda x.\mathcal H(x x))=$$</div>
 
-    <p>Sabit noktasızlık önemli bir sorun. Bilgisayarınızda yazdığınız özyinelemeli programa özyinelemeyi durdurma koşulları koymazsanız sabit noktacının değerini acı bir şekilde deneyimlersiniz. <span class="im">\mathbf{Y}</span> diyor ki böyle fonksiyonlarda ben değil ama sen zorlanırsın. Ben sana veririm bir fonksiyon, buyur çalıştır. Mesela, haydi bu koşulları programa koydunuz diyelim, ama onları ulaşılmaz hale getirdiyseniz ne oluyorsa, aynı şey <span class="im">\mathbf{Y}</span> ile kağıda yazarken de olacak; inşallah bol bol kağıdınız vardır, olsa da çözüm olmayacak zaten ama umutsuz yaşanmıyor. Efendim? Bilgisayarınız çok mu ısındı? E umut da bir yere kadar.</p>
+    <div class="eq eq-block">$$\mathcal H[(\lambda x.\mathcal H(xx))(\lambda x.\mathcal H(xx))]=\mathcal H[[\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))]\mathcal H]=\mathcal H(\mathbf{Y}\mathcal H)$$</div>
 
-    <p>Sorun bende değil sende olur diyor <span class="im">\mathbf{Y}</span> kıssadan hisse. Şu hep sağda içeriye kaçan parantezin solunda kalan <span class="im">\mathbf{H}</span> terimi var ya (1) numaralı denklemde, o bir aşamada durmazsa o <span class="im">\mathbf{Y}</span>’ler oraya konmaya devam edecek. Şimdi bu <span class="im">\mathbf{Y}</span>’nin problemi mi yani?</p>
+    <p>Mesela aynı şeyi <span class="im">\mathcal F</span> ile yapamadık çünkü o <span class="im">\mathcal H</span> gibi fonksiyonel almıyor; <span class="im">n</span> fonksiyon değil, değer. Yani <span class="im">\mathcal H</span>’nin sabit noktası <span class="im">\mathcal F</span>, <span class="im">\mathbf{Y}</span>’nin sabit noktası ...; neyse uzatmayalım, bunun sonu Frege, Russell ve Curry’ye kadar gider, arada da Quine, Dana Scott ve Schönfinkel’a uğrar, o arada da Barendregt’e; burada durdum.</p>
 
-    <p>Peki <span class="im">\mathbf{F}</span>’nin içinde birden fazla özyineleme olsaydı ne olacaktı, mesela Fibonacci serisinde olduğu gibi?</p>
+    <p>Denklem (2)’deki gibi bir açılım ne zaman durur? İçerideki <span class="im">\mathbf{Y}</span> kullanılmadığı zaman. Bu durumda <span class="im">n==0</span>’ın sonucu dönmüş olmalı. Yani özyineleme duracak. Bunun da <span class="im">\mathbf{Y}</span> ile bir alakası yok, (1)’deki <span class="im">\mathcal H</span> ve <span class="im">\mathcal F</span> ile alakası var.</p>
 
-    <div class="eq eq-block">$$\mathbf{F}_b = \lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } (\mathbf{F}_b\,(n-1) + \mathbf{F}_b\,(n-2)) \qquad n \in \mathbb{N}$$</div>
+    <p>Sabit noktasızlık önemli bir sorun. Bilgisayarınızda yazdığınız özyinelemeli programa özyinelemeyi durdurma koşulları koymazsanız sabit noktacının değerini acı bir şekilde deneyimlersiniz.<span class="im">\mathbf{Y}</span> diyor ki böyle fonksiyonlarda ben değil ama sen zorlanırsın. Ben sana veririm bir fonksiyon, buyur çalıştır. Mesela, haydi bu koşulları programa koydunuz diyelim, ama onları ulaşılmaz hale getirdiyseniz ne oluyorsa, aynı şey <span class="im">\mathbf{Y}</span> ile kağıda yazarken de olacak; inşallah bol bol kağıdınız vardır, olsa da çözüm olmayacak zaten ama umutsuz yaşanmıyor. Efendim? Bilgisayarınız çok mu ısındı? E umut da bir yere kadar.</p>
 
-    <p>İçerideki bütün <span class="im">\mathbf{F}_b</span>’lerin ‘durması’ gerekecekti. Bunu daha önce kullandığımız taktikle çözebiliriz çünkü tek bir soyutlama yetecek ikisini de çözmek için:</p>
+    <p>Sorun bende değil sende olur diyor <span class="im">\mathbf{Y}</span> kıssadan hisse. Şu hep sağda içeriye kaçan parantezin solunda kalan <span class="im">\mathcal H</span> terimi var ya (1) numaralı denklemde, o bir aşamada durmazsa o <span class="im">\mathbf{Y}</span>’ler oraya konmaya devam edecek. Şimdi bu <span class="im">\mathbf{Y}</span>’nin problemi mi yani?</p>
 
-    <div class="eq eq-block">$$\mathbf{H}_b = \lambda f .\lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ( f (n-1) + f (n-2))$$</div>
+    <p>Peki <span class="im">\mathcal F</span>’nin içinde birden fazla özyineleme olsaydı ne olacaktı, mesela Fibonacci serisinde olduğu gibi?</p>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{H}_b\,\mathbf{F}_b = [\lambda f .\lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ( f (n-1) + f (n-2))]\mathbf{F}_b = \\[4pt] \lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } (\mathbf{F}_b\,(n-1) + \mathbf{F}_b\,(n-2)) = \mathbf{F}_b \end{gathered}$$</div>
+    <div class="eq eq-block">$$\mathcal F_b=\lambda n. \mathtt{\,if\,} n &lt; 2 \mathtt{\,then\,} 1 \mathtt{\,else\,} ( \mathcal F_b (n-1) + \mathcal F_b(n-2))~~~~~~n \in \mathbb{N}$$</div>
 
-    <p>Yani <span class="im">\mathbf{F}_b = \mathbf{H}_b\,\mathbf{F}_b</span>. Genelde <span class="im">\mathbf{F}_b = \mathbf{Y}\mathbf{H}_b</span>. Sonrası malum; (1) denklemi gibi birşey. Ortaya çıkan <span class="im">\mathbf{H}_b</span>’lerden birisi <span class="im">n = 0</span> için içeride <span class="im">\mathbf{Y}</span> üretmeyecek, bir diğeri de <span class="im">n = 1</span> için. Yani aslında zaten iki tane <span class="im">\mathbf{Y}</span> var bu şartlardan biri oluşuncaya kadar. Bunu şuradan görebiliriz:</p>
+    <p>İçerideki bütün <span class="im">\mathcal F_b</span>’lerin ‘durması’ gerekecekti. Bunu daha önce kullandığımız taktikle çözebiliriz çünkü tek bir soyutlama yetecek ikisini de çözmek için:</p>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{F}_b = \mathbf{Y}\mathbf{H}_b = \mathbf{H}_b\,(\mathbf{Y}\mathbf{H}_b) = \\[4pt] [\lambda f .\lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ( f (n-1) + f (n-2))]\,(\mathbf{Y}\mathbf{H}_b) = \\[4pt] \lambda n.\ \text{if } n &lt; 2 \text{ then } 1 \text{ else } ((\mathbf{Y}\mathbf{H}_b)\,(n-1) + (\mathbf{Y}\mathbf{H}_b)\,(n-2)) \end{gathered}$$</div>
+    <div class="eq eq-block">$$\mathcal H_b=\lambda f.\lambda n. \mathtt{\,if\,} n &lt; 2 \mathtt{\,then\,} 1 \mathtt{\,else\,} (f (n-1) + f(n-2))$$</div>
+
+    <div class="eq eq-block">$$\mathcal H_b\mathcal F_b=[\lambda f.\lambda n. \mathtt{\,if\,} n &lt; 2 \mathtt{\,then\,} 1 \mathtt{\,else\,} (f (n-1) + f(n-2))]\mathcal F_b=$$</div>
+
+    <div class="eq eq-block">$$\lambda n. \mathtt{\,if\,} n &lt; 2 \mathtt{\,then\,} 1 \mathtt{\,else\,} ( \mathcal F_b (n-1) + \mathcal F_b(n-2))=\mathcal F_b$$</div>
+
+    <p>Yani <span class="im">\mathcal F_b=\mathcal H_b\mathcal F_b</span>. Genelde <span class="im">\mathcal F_b=\mathbf{Y}\mathcal H_b</span>. Sonrası malum; (1) denklemi gibi birşey. Ortaya çıkan <span class="im">\mathcal H_b</span>’lerden birisi <span class="im">n=0</span> için içeride <span class="im">\mathbf{Y}</span> üretmeyecek, bir diğeri de <span class="im">n=1</span> için. Yani aslında zaten iki tane <span class="im">\mathbf{Y}</span> var bu şartlardan biri oluşuncaya kadar. Bunu şuradan görebiliriz:</p>
+
+    <div class="eq eq-block">$$\mathcal F_b=\mathbf{Y}\mathcal H_b= \mathcal H_b(\mathbf{Y}\mathcal H_b)=$$</div>
+
+    <div class="eq eq-block">$$[\lambda f.\lambda n. \mathtt{\,if\,} n &lt; 2 \mathtt{\,then\,} 1 \mathtt{\,else\,} (f (n-1) + f(n-2)) ](\mathbf{Y}\mathcal H_b)=$$</div>
+
+    <div class="eq eq-block">$$\lambda n. \mathtt{\,if\,} n &lt; 2 \mathtt{\,then\,} 1 \mathtt{\,else\,} ((\mathbf{Y}\mathcal H_b) (n-1) + (\mathbf{Y}\mathcal H_b)(n-2))$$</div>
 
     <p>Dikkat ederseniz sadece en sonda yapılanı değil içeriden yapılan özyinelemeyi de hallettik böylece.</p>
 
     <p>Peki fonksiyonumuz özyinelemeli değilse <span class="im">\mathbf{Y}</span> ne yapar acaba? Yazmıştık böyle bir fonksiyon en başta; hatta bu sefer isim de verelim de anması kolay olsun:</p>
 
-    <div class="eq eq-block">$$\mathbf{C} = n! = 1 \times \cdots n$$</div>
+    <div class="eq eq-block">$$\mathcal C=n!=1\times\cdots n$$</div>
 
     <p>Bir de <span class="im">\mathbf{Y}</span>’nin anlayacağı dile çevirelim, yani isimsiz lambdalara:</p>
 
-    <div class="eq eq-block">$$\mathbf{C} = \lambda n.1 \times \cdots n$$</div>
+    <div class="eq eq-block">$$\mathcal C=\lambda n.1\times\cdots n$$</div>
 
-    <p><span class="im">\mathbf{Y}</span>’nin girdisinin bir fonksiyonel olması lazım, fonksiyon alan fonksiyon anlamında. <span class="im">\mathbf{C}</span> ise değer alıp değer veren bir fonksiyon. Fonksiyonel yapalım o zaman <span class="im">\mathbf{C}</span>’yi:</p>
+    <p><span class="im">\mathbf{Y}</span>’nin girdisinin bir fonksiyonel olması lazım, fonksiyon alan fonksiyon anlamında. <span class="im">\mathcal C</span> ise değer alıp değer veren bir fonksiyon. Fonksiyonel yapalım o zaman <span class="im">\mathcal C</span>’yi:</p>
 
-    <div class="eq eq-block">$$c = \lambda g.\mathbf{C}$$</div>
+    <div class="eq eq-block">$$c=\lambda g.\mathcal C$$</div>
 
-    <p>Niye böyle bir fonksiyonel yaptık? Çünkü ne verirsek verelim <span class="im">\mathbf{C}</span> olmasını istiyoruz sonucu belirleyenin; <span class="im">c</span>’nin sabit noktası <span class="im">\mathbf{C}</span>. Şimdi buyur sayın <span class="im">\mathbf{Y}</span> diyelim:</p>
+    <p>Niye böyle bir fonksiyonel yaptık? Çünkü ne verirsek verelim <span class="im">\mathcal C</span> olmasını istiyoruz sonucu belirleyenin; <span class="im">c</span>’nin sabit noktası <span class="im">\mathcal C</span>. Şimdi buyur sayın <span class="im">\mathbf{Y}</span> diyelim:</p>
 
-    <div class="eq eq-block">$$\begin{gathered} \mathbf{Y}c = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]c = [\lambda f .(\lambda x. f (xx))\,(\lambda x. f (xx))]\,(\lambda g.\mathbf{C}) = \\[4pt] (\lambda x.(\lambda g.\mathbf{C})\,(xx))\,(\lambda x.(\lambda g.\mathbf{C})\,(xx)) = \\[4pt] (\lambda g.\mathbf{C})\,([\lambda x.(\lambda g.\mathbf{C})\,(xx)]\,[\lambda x.(\lambda g.\mathbf{C})\,(xx)]) = \mathbf{C} \end{gathered}$$</div>
+    <div class="eq eq-block">$$\mathbf{Y}c=[\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))]c=[\lambda f.(\lambda x.f(x x))(\lambda x.f(x x))](\lambda g.\mathcal C)=$$</div>
 
-    <p>Özyineleme yok, ama <span class="im">\mathbf{Y}</span> gerçek işini yaptı gene; sabit noktayı buldu.</p>
+    <div class="eq eq-block">$$(\lambda x.(\lambda g.\mathcal C)(x x))(\lambda x.(\lambda g.\mathcal C)(x x))=$$</div>
+
+    <div class="eq eq-block">$$(\lambda g.\mathcal C)([\lambda x.(\lambda g.\mathcal C)(x x)][\lambda x.(\lambda g.\mathcal C)(x x)])=\mathcal C$$</div>
+
+    <p>Özyineleme yok, ama <span class="im">\mathbf{Y}</span> <em>gerçek</em> işini yaptı gene; sabit noktayı buldu.</p>
 
     <p>Toparlarsak, isimsiz özyinelemeyle isimli özyineleme aynı prensiple çalışır çünkü ikisini de tek bir <span class="im">\mathbf{Y}</span> ile anlayabilirsiniz. <span class="im">\mathbf{Y}</span> ile özyinelemesizliği de anlayabilirsiniz. <span class="im">\mathbf{Y}</span>’nin tanımında da isim olmadığını görünce (<span class="im">f</span> ve iki <span class="im">x</span> sadece lokal yer tutucular, hepsinin üzerinde lambda bağlacı var, yani isim değiller), özyinelemenin biçimsel bir problemi çözmediğini anlamış oluruz.</p>
 
@@ -206,8 +230,8 @@
     <div class="refs">
       <h2>Notlar</h2>
       <p class="fn">1. İmlâ notu: Ben harflere önce şapkanın konması, sonra konmaması, sonra tekrar konması konusunda imlâ kurallarına yetişemiyorum. Sözcükleri ve sesletimlerini bilmenize güvenip imla fakirliği konusunda affınıza sığınıyorum. Başladım bile gördüğünüz gibi.</p>
-      <p class="fn">2. Nişanyan Sözlük 2018, ver maddesi, s.910</p>
-      <p class="fn">3. Fatoş Yarman-Vural, Yusuf Murat Erten (2000). <em>Bilgisayar Sistemleri</em>. Akademi Kitabevi. Zeynep Altan (2001). <em>Formal Diller ve Soyut Makineler</em>. İstanbul Üniv. Yay. Sevan Nişanyan (2018). <em>Nişanyan Sözlük</em>. Liber Plus Yay.; berim maddesi, s.92.</p>
+      <p class="fn">2. Nişanyan Sözlük 2018, <em>ver</em> maddesi, s.910</p>
+      <p class="fn">3. Fatoş Yarman-Vural, Yusuf Murat Erten (2000). Bilgisayar Sistemleri. Akademi Kitabevi. Zeynep Altan (2001). Formal Diller ve Soyut Makineler. İstanbul Üniv. Yay. Sevan Nişanyan (2018). Nişanyan Sözlük. Liber Plus Yay.; <em>berim</em> maddesi, s.92.</p>
     </div>
 
   </article>
