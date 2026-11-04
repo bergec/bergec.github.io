@@ -23,7 +23,7 @@
     <category term="The Art of Computer Programming"/>
     <category term="kombinatorik"/>
     <category term="algoritmalar"/>
-    <summary type="text">Bu yazıda bir sıralamanın yığın kullanılarak elde edilebilmesi için gerek ve yeter koşulu vereceğiz.</summary>
+    <summary type="text">Bir vagon sıralaması yığın (stack) ile ne zaman elde edilebilir? Yığınla elde edilebilen permütasyonlar için gerek ve yeter koşul: 312 örüntüsü ve kanıtı.</summary>
   </entry>
   <entry>
     <title>Enigma Bölüm 3: Enigmanın Çözülmesi</title>
@@ -40,7 +40,7 @@
     <category term="kriptanaliz"/>
     <category term="kriptografi"/>
     <category term="İkinci Dünya Savaşı"/>
-    <summary type="text">Bu yazıda enigmanın şifresini kıran çözümleri inceleyeceğiz.</summary>
+    <summary type="text">Enigma şifresinin kırılışı: Marian Rejewski ve Polonyalı matematikçilerin permütasyon döngülerine dayanan çözümü ve Alan Turing’in Bombe makinesi.</summary>
   </entry>
   <entry>
     <title>Enigma Bölüm 2: Enigmanın Çalışma Prensibi</title>
@@ -58,7 +58,7 @@
     <category term="kriptografi"/>
     <category term="İkinci Dünya Savaşı"/>
     <category term="şifreleme"/>
-    <summary type="text">Yazının bu kısmında Enigma’nın bileşenlerini ve bu bileşenlerin çalışma prensiplerini inceleyeceğiz.</summary>
+    <summary type="text">Enigma M3’ün rotorları, halka ayarı, yansıtıcısı ve fiş panosu; şifreleme ile deşifrelemenin matematiği ve Enigma’nın kaç farklı ayarı olduğu.</summary>
   </entry>
   <entry>
     <title>Enigma Bölüm 1: Matematiksel Ön Hazırlık</title>
@@ -76,7 +76,7 @@
     <category term="involüsyon"/>
     <category term="kriptografi"/>
     <category term="şifreleme"/>
-    <summary type="text">Bu yazıda Enigma'nın nasıl çalıştığını anlamak için gereken matematiği inceleyeceğiz.</summary>
+    <summary type="text">Enigma makinesini anlamak için gereken matematik: permütasyonlar, döngü gösterimi, eşlenik permütasyonlar, transpozisyonlar ve involüsyonlar.</summary>
   </entry>
   <entry>
     <title>Berelim Y ile</title>
@@ -91,7 +91,7 @@
     <category term="lambda hesabı"/>
     <category term="fonksiyonel programlama"/>
     <category term="sabit nokta birleştiricisi"/>
-    <summary type="text">Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir.</summary>
+    <summary type="text">Özyinelemenin özü: lambda hesabında Y birleştiricisi (Y combinator) ve bir fonksiyonun kendi adını kullanmadan kendini nasıl çağırabildiği.</summary>
   </entry>
   <entry>
     <title>Kodların Serüveni</title>
@@ -109,7 +109,7 @@
     <category term="parser"/>
     <category term="bytecode"/>
     <category term="AOT derleme"/>
-    <summary type="text">Bir dosyaya yazdığımız kodları çıktıya dönüştüren programlar var; onlara programlama dili diyoruz. Bu yazıda programlama dillerinin nasıl çalıştığını inceleyeceğiz.</summary>
+    <summary type="text">Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı.</summary>
   </entry>
   <entry>
     <title>Knuth’un Kitabından Bir Soru (II)</title>
@@ -126,7 +126,7 @@
     <category term="The Art of Computer Programming"/>
     <category term="kombinatorik"/>
     <category term="algoritmalar"/>
-    <summary type="text">Bu yazıda Knuth'un Kitabından Bir Soru (I) yazısında tanıttığımız sorunun gelişmiş bir versiyonunu çözeceğiz.</summary>
+    <summary type="text">Knuth’un yığın (stack) sorusunun gelişmiş hâli: yığında m vagon kalırsa kaç farklı sıralama olur? Yineleme bağıntısı ve çifte üreteç fonksiyonuyla çözüm.</summary>
   </entry>
   <entry>
     <title>Knuth’un Kitabından Bir Soru (I)</title>
@@ -143,7 +143,7 @@
     <category term="kombinatorik"/>
     <category term="algoritmalar"/>
     <category term="veri yapıları"/>
-    <summary type="text">Bu yazıda bilgisayar bilimi ile matematiğin buluştuğu ilginç bir soruyu inceleyeceğiz.</summary>
+    <summary type="text">Knuth’un The Art of Computer Programming kitabından bir soru: n vagon bir yığın (stack) ile kaç farklı sırada çıkarılabilir? Cevap: Catalan sayıları.</summary>
   </entry>
   <entry>
     <title>Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü</title>
@@ -162,6 +162,6 @@
     <category term="NP-tam"/>
     <category term="Cook–Levin teoremi"/>
     <category term="milenyum problemleri"/>
-    <summary type="text">Kurt Gödel’in 20 Mart 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi ve bu mektuptan P ile NP problemine uzanan öykü.</summary>
+    <summary type="text">Kurt Gödel’in 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi: P vs NP (P ile NP) probleminin ilk izi, Cook–Levin teoremi ve milyon dolarlık soru.</summary>
   </entry>
 </feed>
