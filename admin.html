@@ -552,6 +552,10 @@
       <label class="f" for="m-excerpt">Arşiv özeti <span style="text-transform: none; letter-spacing: 0;">(formül: $...$)</span></label>
       <textarea id="m-excerpt" rows="2" style="font-family: var(--font-body); font-size: 14px;"></textarea>
     </div>
+    <div class="grid g2" style="margin-top: 14px;">
+      <div><label class="f" for="m-seotitle">Google başlığı <span style="text-transform: none; letter-spacing: 0;">(boşsa sayfanın başlığı; ~60 karakter, aranacak sözcükler başta)</span></label><input type="text" id="m-seotitle" placeholder="örn. Gödel’in Mektubu ve P vs NP Problemi"></div>
+      <div><label class="f" for="m-keywords">Anahtar kelimeler <span style="text-transform: none; letter-spacing: 0;">(virgülle ayırın)</span></label><input type="text" id="m-keywords" placeholder="örn. P vs NP, Kurt Gödel, hesaplama karmaşıklığı"></div>
+    </div>
     <div id="m-lede-wrap" style="margin-top: 14px;">
       <label class="f" for="m-lede">Manşet giriş paragrafları <span style="text-transform: none; letter-spacing: 0;">(boş satırla ayırın, ana sayfada iki sütunda görünür; formül: $...$ satır içi, $$...$$ ortalı)</span></label>
       <textarea id="m-lede" rows="5" style="font-family: var(--font-body); font-size: 14px;"></textarea>
@@ -863,6 +867,16 @@ function clipDesc(s, n) {
 const SITE_PUBLISHER = { '@type': 'Organization', name: 'Bergeç', url: SITE_URL,
   logo: { '@type': 'ImageObject', url: SITE_URL + 'apple-touch-icon.png' } };
 
+/** Sitenin genel anahtar kelimeleri (ana sayfanın Blog yapısal verisine yazılır). */
+const SITE_KEYWORDS = ['bilgisayar bilimi blogu', 'Türkçe bilgisayar blogu', 'bilgisayar bilimi', 'matematik blogu', 'mantık',
+  'algoritmalar', 'hesaplama kuramı', 'kriptografi', 'programlama dilleri', 'kombinatorik'];
+
+/** Kayıttaki anahtar kelimeler: dizi ya da virgülle ayrılmış metin → temiz dizi. */
+function keywordsOf(entry) {
+  const k = entry && entry.keywords;
+  return (Array.isArray(k) ? k : String(k || '').split(',')).map(s => String(s).trim()).filter(Boolean);
+}
+
 /** Yazının yapısal verisi (schema.org BlogPosting): Google'da yazar, tarih ve başlık doğru görünsün diye. */
 function articleLd(entry, desc) {
   const url = SITE_URL + encodeURI(entry.href);
@@ -872,6 +886,12 @@ function articleLd(entry, desc) {
   if (desc) ld.description = desc;
   if (date) ld.datePublished = date;
   if (entry.author) ld.author = { '@type': 'Person', name: entry.author };
+  const kw = keywordsOf(entry);
+  if (kw.length) ld.keywords = kw.join(', ');
+  // konular: Google yazının neyle ilgili olduğunu Wikipedia sayfası üzerinden tanısın ({ name, sameAs })
+  if (Array.isArray(entry.about) && entry.about.length) {
+    ld.about = entry.about.map(t => Object.assign({ '@type': 'Thing', name: t.name }, t.sameAs ? { sameAs: t.sameAs } : {}));
+  }
   ld.publisher = SITE_PUBLISHER;
   ld.isPartOf = { '@type': 'Blog', name: 'Bergeç', url: SITE_URL };
   return '<script type="application/ld+json">' + jsonForScript(ld) + '<\/script>';
@@ -887,6 +907,7 @@ function articleLd(entry, desc) {
 function withHomeSeo(plain, data) {
   const posts = flattenOf(data).filter(p => p && !p.taslak && p.href);
   const ld = { '@context': 'https://schema.org', '@type': 'Blog', name: 'Bergeç', url: SITE_URL, inLanguage: 'tr',
+    description: 'Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar.', keywords: SITE_KEYWORDS.join(', '),
     publisher: SITE_PUBLISHER,
     blogPost: posts.map(p => {
       const o = { '@type': 'BlogPosting', headline: plainOfTex(p.title || '').slice(0, 110), url: SITE_URL + encodeURI(p.href) };
@@ -917,6 +938,11 @@ function withHomeSeo(plain, data) {
   return plain;
 }
 
+/** Kaydın, yazı sayfasının <title>'ına ve seo bloğuna giden alanları: değişti mi diye karşılaştırmak için. */
+function seoKeyOf(p) {
+  return JSON.stringify([p.title, p.excerpt, p.seoTitle || '', keywordsOf(p), p.about || null, p.author, p.date]);
+}
+
 function withSeoHead(html, entry) {
   const a = (s) => esc(s);
   const url = SITE_URL + encodeURI(entry.href);
@@ -937,6 +963,9 @@ function withSeoHead(html, entry) {
   L.push('<!-- /seo -->');
   const block = L.join('\n') + '\n';
   html = html.replace(/<!-- seo -->[\s\S]*?<!-- \/seo -->\n?/, '');
+  // arama başlığı: Google'da görünen başlık (sayfadaki büyük başlık değişmez)
+  const seoTitle = String(entry.seoTitle || '').trim();
+  if (seoTitle) html = html.replace(/<title>[\s\S]*?<\/title>/, () => '<title>' + a(seoTitle) + ' · Bergeç</title>');
   const m = /<title>[\s\S]*?<\/title>\n?/.exec(html);
   if (!m) return html;
   const at = m.index + m[0].length;
@@ -977,19 +1006,30 @@ function withComments(html) {
 async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
   let oldSitemap = '';
   try { const sm = await ghGetFile('sitemap.xml'); if (sm) oldSitemap = sm.text; } catch (e) {}
-  const written = (extraFiles || []).filter(f => f.text !== null).map(f => f.path);
   for (let attempt = 0; ; attempt++) {
     const data = JSON.parse(JSON.stringify(state.repoIndex)); // depodaki hâl (bekleyen değişiklikler mutate ile gelir)
     if (mutate) mutate(data);
     const plain = writeIndexData(basePlain || state.indexPlain, data); // basePlain: ana sayfa düzenleyicisinde düzenlenmiş hâli
         try {
+      const extra = (extraFiles || []).slice(), expect = Object.assign({ 'index.html': state.indexSha }, extraExpect || {});
+      // yalnızca arşiv kaydı değişen yazıların sayfaları da yeniden yazılır: <title> ve seo bloğu kayıtla aynı kalsın
+      const extraPaths = new Set(extra.map(f => f.path));
+      const before = {};
+      flattenOf(state.repoIndex).forEach(p => { if (p && p.href) before[p.href] = seoKeyOf(p); });
+      for (const p of flattenOf(data)) {
+        if (!p || !p.href || !/\.html$/i.test(p.href) || extraPaths.has(p.href) || before[p.href] === undefined || before[p.href] === seoKeyOf(p)) continue;
+        try {
+          const f = await ghGetFile(p.href);
+          if (f) { extra.push({ path: p.href, text: readPage(f.text) }); expect[p.href] = f.sha; extraPaths.add(p.href); }
+        } catch (e) { /* eski, şifreli sayfa: dokunma */ }
+      }
+      const written = extra.filter(f => f.text !== null).map(f => f.path);
       const sitemap = { path: 'sitemap.xml', text: buildSitemap(data, written, oldSitemap) };
       const entries = {};
       flattenOf(data).forEach(p => { if (p && p.href) entries[p.href] = p; });
-      const files = (extraFiles || []).map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
+      const files = extra.map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
         ? { path: f.path, text: withComments(withSeoHead(f.text, entries[f.path])) } : f);
-      const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap]), message,
-        Object.assign({ 'index.html': state.indexSha }, extraExpect || {}));
+      const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap]), message, expect);
       state.repoIndex = data;
       state.indexPlain = plain;
       state.indexSha = shas['index.html'];
@@ -1435,6 +1475,9 @@ function applyOp(data, op) {
       if (!q) return;
       q.title = f.title; q.author = f.author; q.date = f.date; q.href = f.href; q.excerpt = f.excerpt;
       if (f.kicker) q.kicker = f.kicker; else delete q.kicker;
+      // eski (bu alanlar eklenmeden kaydedilmiş) bekleyen işlemler mevcut değerleri silmesin
+      if ('seoTitle' in f) { if (f.seoTitle) q.seoTitle = f.seoTitle; else delete q.seoTitle; }
+      if ('keywords' in f) { if (f.keywords.length) q.keywords = f.keywords; else delete q.keywords; }
       if (f.featured) {
         const i = arr.indexOf(q);
         if (i > 0) { arr.splice(i, 1); arr.unshift(q); }
@@ -3678,6 +3721,8 @@ function openMeta(p, featured) {
   $('m-href').value = p.href || '';
   $('m-kicker').value = p.kicker || '';
   $('m-excerpt').value = p.excerpt || '';
+  $('m-seotitle').value = p.seoTitle || '';
+  $('m-keywords').value = keywordsOf(p).join(', ');
   $('m-lede').value = (p.lede || []).join('\n\n');
   $('m-featured').checked = !!featured;
   msg('meta-msg', '');
@@ -3696,12 +3741,15 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
     date: $('m-date').value.trim(),
     href: $('m-href').value.trim(),
     excerpt: $('m-excerpt').value.trim(),
+    seoTitle: $('m-seotitle').value.trim(),
+    keywords: keywordsOf({ keywords: $('m-keywords').value }),
     kicker: $('m-kicker').value.trim(),
     lede: $('m-lede').value.split(/\n{2,}/).map(s => s.trim()).filter(Boolean),
     featured: $('m-featured').checked
   };
   const same = f.title === (p.title || '') && f.author === (p.author || '') && f.date === (p.date || '') && f.href === (p.href || '') &&
-    f.excerpt === (p.excerpt || '') && f.kicker === (p.kicker || '') && f.lede.join('\n\n') === (p.lede || []).join('\n\n') && f.featured === state.metaFeatured;
+    f.excerpt === (p.excerpt || '') && f.seoTitle === (p.seoTitle || '') && f.keywords.join(',') === keywordsOf(p).join(',') &&
+    f.kicker === (p.kicker || '') && f.lede.join('\n\n') === (p.lede || []).join('\n\n') && f.featured === state.metaFeatured;
   if (same) { ev.target.disabled = false; noChange(); return; }
   try {
     stage('Arşiv kaydı: ' + f.title, { kind: 'meta', origHref, f });
