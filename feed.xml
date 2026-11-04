@@ -11,11 +11,11 @@
   <logo>https://bergec.github.io/og-image.png</logo>
   <entry>
     <title>Knuth’un Kitabından Bir Soru (III)</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-3.html"/>
-    <id>https://bergec.github.io/knuth-3.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-3"/>
+    <id>https://bergec.github.io/knuth-3</id>
     <published>2026-10-05T00:00:00+03:00</published>
     <updated>2026-10-05T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="yığınla sıralanabilir permütasyon"/>
     <category term="permütasyon örüntüsü"/>
     <category term="yığın (stack)"/>
@@ -27,11 +27,11 @@
   </entry>
   <entry>
     <title>Enigma Bölüm 3: Enigmanın Çözülmesi</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-3.html"/>
-    <id>https://bergec.github.io/enigma-3.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-3"/>
+    <id>https://bergec.github.io/enigma-3</id>
     <published>2026-02-07T00:00:00+03:00</published>
     <updated>2026-02-07T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="Enigma şifresi nasıl kırıldı"/>
     <category term="Enigma"/>
     <category term="Alan Turing"/>
@@ -44,11 +44,11 @@
   </entry>
   <entry>
     <title>Enigma Bölüm 2: Enigmanın Çalışma Prensibi</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-2.html"/>
-    <id>https://bergec.github.io/enigma-2.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-2"/>
+    <id>https://bergec.github.io/enigma-2</id>
     <published>2026-02-07T00:00:00+03:00</published>
     <updated>2026-02-07T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="Enigma makinesi"/>
     <category term="Enigma nasıl çalışır"/>
     <category term="Enigma M3"/>
@@ -62,11 +62,11 @@
   </entry>
   <entry>
     <title>Enigma Bölüm 1: Matematiksel Ön Hazırlık</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-1.html"/>
-    <id>https://bergec.github.io/enigma-1.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-1"/>
+    <id>https://bergec.github.io/enigma-1</id>
     <published>2026-02-05T00:00:00+03:00</published>
     <updated>2026-02-05T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="Enigma"/>
     <category term="Enigma makinesi"/>
     <category term="Enigma şifresi"/>
@@ -80,11 +80,11 @@
   </entry>
   <entry>
     <title>Berelim Y ile</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/berelim-y-ile.html"/>
-    <id>https://bergec.github.io/berelim-y-ile.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/berelim-y-ile"/>
+    <id>https://bergec.github.io/berelim-y-ile</id>
     <published>2025-12-11T00:00:00+03:00</published>
     <updated>2025-12-11T00:00:00+03:00</updated>
-    <author><name>Cem Bozşahin</name><uri>https://bergec.github.io/yazar-cem-bozsahin.html</uri></author>
+    <author><name>Cem Bozşahin</name><uri>https://bergec.github.io/yazar-cem-bozsahin</uri></author>
     <category term="Y birleştiricisi"/>
     <category term="Y combinator"/>
     <category term="özyineleme"/>
@@ -95,11 +95,11 @@
   </entry>
   <entry>
     <title>Kodların Serüveni</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/kodlarin-seruveni.html"/>
-    <id>https://bergec.github.io/kodlarin-seruveni.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/kodlarin-seruveni"/>
+    <id>https://bergec.github.io/kodlarin-seruveni</id>
     <published>2025-12-05T00:00:00+03:00</published>
     <updated>2025-12-05T00:00:00+03:00</updated>
-    <author><name>Kaan Emir Eröz</name><uri>https://bergec.github.io/yazar-kaan-emir-eroz.html</uri></author>
+    <author><name>Kaan Emir Eröz</name><uri>https://bergec.github.io/yazar-kaan-emir-eroz</uri></author>
     <category term="programlama dilleri"/>
     <category term="derleyici"/>
     <category term="yorumlayıcı"/>
@@ -113,11 +113,11 @@
   </entry>
   <entry>
     <title>Knuth’un Kitabından Bir Soru (II)</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-2.html"/>
-    <id>https://bergec.github.io/knuth-2.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-2"/>
+    <id>https://bergec.github.io/knuth-2</id>
     <published>2025-12-02T00:00:00+03:00</published>
     <updated>2025-12-02T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="üreteç fonksiyonlar"/>
     <category term="yineleme bağıntısı"/>
     <category term="yığın (stack)"/>
@@ -130,11 +130,11 @@
   </entry>
   <entry>
     <title>Knuth’un Kitabından Bir Soru (I)</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-1.html"/>
-    <id>https://bergec.github.io/knuth-1.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-1"/>
+    <id>https://bergec.github.io/knuth-1</id>
     <published>2025-11-09T00:00:00+03:00</published>
     <updated>2025-11-09T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="Catalan sayıları"/>
     <category term="yığın (stack)"/>
     <category term="vagon sıralama"/>
@@ -147,11 +147,11 @@
   </entry>
   <entry>
     <title>Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü</title>
-    <link rel="alternate" type="text/html" href="https://bergec.github.io/godel-mektubu.html"/>
-    <id>https://bergec.github.io/godel-mektubu.html</id>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/godel-mektubu"/>
+    <id>https://bergec.github.io/godel-mektubu</id>
     <published>2025-11-06T00:00:00+03:00</published>
     <updated>2025-11-06T00:00:00+03:00</updated>
-    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin</uri></author>
     <category term="P vs NP"/>
     <category term="P ile NP problemi"/>
     <category term="P NP"/>

@@ -6,21 +6,21 @@
 <title>Programlama Dilleri Nasıl Çalışır? Lexer, Parser ve Derleyici · Bergeç</title>
 <!-- seo -->
 <meta name="description" content="Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı.">
-<link rel="canonical" href="https://bergec.github.io/kodlarin-seruveni.html">
+<link rel="canonical" href="https://bergec.github.io/kodlarin-seruveni">
 <link rel="alternate" type="application/atom+xml" title="Bergeç" href="https://bergec.github.io/feed.xml">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Bergeç">
 <meta property="og:locale" content="tr_TR">
 <meta property="og:title" content="Kodların Serüveni">
 <meta property="og:description" content="Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı.">
-<meta property="og:url" content="https://bergec.github.io/kodlarin-seruveni.html">
+<meta property="og:url" content="https://bergec.github.io/kodlarin-seruveni">
 <meta property="og:image" content="https://bergec.github.io/assets/paylasim/kodlarin-seruveni.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="author" content="Kaan Emir Eröz">
 <meta property="article:published_time" content="2025-12-05">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Kodların Serüveni","url":"https://bergec.github.io/kodlarin-seruveni.html","mainEntityOfPage":"https://bergec.github.io/kodlarin-seruveni.html","inLanguage":"tr","image":"https://bergec.github.io/assets/paylasim/kodlarin-seruveni.png","description":"Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı.","datePublished":"2025-12-05","author":{"@type":"Person","name":"Kaan Emir Eröz","url":"https://bergec.github.io/yazar-kaan-emir-eroz.html"},"keywords":"programlama dilleri, derleyici, yorumlayıcı, compiler, interpreter, lexer, parser, bytecode, AOT derleme, Kaan Emir Eröz","about":[{"@type":"Thing","name":"Derleyici","sameAs":"https://en.wikipedia.org/wiki/Compiler"},{"@type":"Thing","name":"Yorumlayıcı","sameAs":"https://en.wikipedia.org/wiki/Interpreter_(computing)"},{"@type":"Thing","name":"Sözcüksel analiz","sameAs":"https://en.wikipedia.org/wiki/Lexical_analysis"},{"@type":"Thing","name":"Ayrıştırma","sameAs":"https://en.wikipedia.org/wiki/Parsing"}],"publisher":{"@type":"Organization","name":"Bergeç","url":"https://bergec.github.io/","logo":{"@type":"ImageObject","url":"https://bergec.github.io/apple-touch-icon.png"}},"isPartOf":{"@type":"Blog","name":"Bergeç","url":"https://bergec.github.io/"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Kodların Serüveni","url":"https://bergec.github.io/kodlarin-seruveni","mainEntityOfPage":"https://bergec.github.io/kodlarin-seruveni","inLanguage":"tr","image":"https://bergec.github.io/assets/paylasim/kodlarin-seruveni.png","description":"Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı.","datePublished":"2025-12-05","author":{"@type":"Person","name":"Kaan Emir Eröz","url":"https://bergec.github.io/yazar-kaan-emir-eroz"},"keywords":"programlama dilleri, derleyici, yorumlayıcı, compiler, interpreter, lexer, parser, bytecode, AOT derleme, Kaan Emir Eröz","about":[{"@type":"Thing","name":"Derleyici","sameAs":"https://en.wikipedia.org/wiki/Compiler"},{"@type":"Thing","name":"Yorumlayıcı","sameAs":"https://en.wikipedia.org/wiki/Interpreter_(computing)"},{"@type":"Thing","name":"Sözcüksel analiz","sameAs":"https://en.wikipedia.org/wiki/Lexical_analysis"},{"@type":"Thing","name":"Ayrıştırma","sameAs":"https://en.wikipedia.org/wiki/Parsing"}],"publisher":{"@type":"Organization","name":"Bergeç","url":"https://bergec.github.io/","logo":{"@type":"ImageObject","url":"https://bergec.github.io/apple-touch-icon.png"}},"isPartOf":{"@type":"Blog","name":"Bergeç","url":"https://bergec.github.io/"}}</script>
 <!-- /seo -->
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-96x96.png" type="image/png" sizes="96x96">
@@ -33,7 +33,7 @@
 <div class="wrap">
 
   <header class="top">
-    <a class="home" href="index.html">← Bergeç</a>
+    <a class="home" href="./">← Bergeç</a>
     <span>Arşiv</span>
   </header>
 
@@ -213,12 +213,12 @@ Token(semicolon,   ";", line=2, col=22)</pre>
   <!-- devam -->
   <section class="refs devam" id="devam">
     <h2>Okumaya devam</h2>
-    <p style="margin: 14px 0 0; font-size: 14px;">Konular: <a href="konu-programlama-dilleri.html">Programlama Dilleri</a></p>
+    <p style="margin: 14px 0 0; font-size: 14px;">Konular: <a href="konu-programlama-dilleri">Programlama Dilleri</a></p>
     <h3 style="font-family: var(--font-heading); font-weight: 400; font-style: italic; font-size: 19px; color: var(--color-accent-700); margin: 22px 0 10px;">Bunları da okuyun</h3>
     <ol>
-      <li><a href="berelim-y-ile.html">Berelim Y ile</a> <span style="color: var(--color-neutral-600);">· 11.12.2025</span></li>
-      <li><a href="knuth-3.html">Knuth’un Kitabından Bir Soru (III)</a> <span style="color: var(--color-neutral-600);">· 05.10.2026</span></li>
-      <li><a href="enigma-3.html">Enigma Bölüm 3: Enigmanın Çözülmesi</a> <span style="color: var(--color-neutral-600);">· 07.02.2026</span></li>
+      <li><a href="berelim-y-ile">Berelim Y ile</a> <span style="color: var(--color-neutral-600);">· 11.12.2025</span></li>
+      <li><a href="knuth-3">Knuth’un Kitabından Bir Soru (III)</a> <span style="color: var(--color-neutral-600);">· 05.10.2026</span></li>
+      <li><a href="enigma-3">Enigma Bölüm 3: Enigmanın Çözülmesi</a> <span style="color: var(--color-neutral-600);">· 07.02.2026</span></li>
     </ol>
   </section>
   <!-- /devam -->
@@ -234,7 +234,7 @@ Token(semicolon,   ";", line=2, col=22)</pre>
   <footer class="bottom">
     <span>Bergeç · 2026</span>
     <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>
-    <span><a href="index.html">Anasayfaya dön</a></span>
+    <span><a href="./">Anasayfaya dön</a></span>
   </footer>
 
 </div>
