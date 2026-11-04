@@ -709,7 +709,7 @@ class ConflictError extends Error {
 }
 
 /**
- * Dosyaları tek commit'te yazar.
+ * Dosyaları tek commit'te yazar. files: [{ path, text }] ya da görsel için [{ path, b64 }].
  * expect: { yol: açıldığı andaki blob sha'sı, ya da null = dosya henüz yok olmalı }.
  * Depodaki hâl beklenenden farklıysa hiçbir şey yazmadan ConflictError fırlatır;
  * böylece başkasının (ya da başka bir sekmenin) değişikliği sessizce ezilmez.
@@ -754,7 +754,7 @@ async function ghCommitOnce(files, message, expect) {
     }
     const blob = await gh(repoPath('/git/blobs'), {
       method: 'POST',
-      body: JSON.stringify({ content: utf8ToB64(f.text), encoding: 'base64' })
+      body: JSON.stringify({ content: f.b64 !== undefined ? f.b64 : utf8ToB64(f.text), encoding: 'base64' }) // b64: görsel dosyası
     });
     tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
     shas[f.path] = blob.sha;
@@ -1144,6 +1144,16 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       flattenOf(data).forEach(p => { if (p && p.href) entries[p.href] = p; });
       const files = extra.map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
         ? { path: f.path, text: withComments(withSeoHead(f.text, entries[f.path])) } : f);
+      // yazılara gömülü görseller assets/img/<yazı>/ dosyalarına çıkar; aynı commit'te gönderilir
+      const imgFiles = {};
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if (f.text === null || !/\.html$/i.test(f.path) || f.path === 'index.html') continue;
+        const r = await externalizeImages(f.path, f.text);
+        files[i] = { path: f.path, text: r.text };
+        r.files.forEach(im => { imgFiles[im.path] = im; });
+      }
+      files.push(...Object.values(imgFiles));
       const generated = authorPagesOf(data).map(ap => ({ path: ap.href, text: authorPageHtml(ap) }))
         .concat([{ path: 'llms.txt', text: buildLlmsTxt(data) }]);
       const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap], generated), message, expect);
@@ -1397,16 +1407,131 @@ async function shrinkImage(file, maxW) {
   return c.toDataURL('image/jpeg', 0.82);
 }
 
+/* Yayınlarken: yazıya gömülü görseller dosyaya.
+   Düzenleyiciler görselleri sayfanın içinde (data: adresi) tutar; önizleme ve bekleyen değişiklikler böyle
+   çalışır. Yayınlanırken yazı sayfasındaki her gömülü görsel assets/img/<yazı>/<ad>-<özet>.<uzantı> dosyasına
+   çıkarılır ve sayfada yalnızca adresi kalır; width/height (gerçek boyut) ve — sayfanın ilk görseli dışında —
+   loading="lazy" eklenir. <ad> alt yazıdan, <özet> içeriğin SHA-256'sından: aynı görsel yeniden yayınlanınca
+   aynı dosyaya düşer, kopya oluşmaz. Markdown sayfalarında bergec-images verisindeki görseller de dosyaya çevrilir
+   ve <img>'lere src yazılır (betik çalışmadan da görünsünler). Eski yazılar tools/extract-images.js ile çevrildi. */
+
+const IMG_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg' };
+const IMG_TAG_RE = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi; // tırnak içindeki ">" da doğru okunsun
+const DATA_IMG_RE = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/i;
+const IMAGES_RE = /(<script type="application\/json" id="bergec-images">)([\s\S]*?)(<\/script>)/;
+const CAPTION_PLACEHOLDER = /^Görsel(in| \d+) altyazısı$/; // düzenleyicinin koyduğu, değiştirilmemiş altyazı
+
+async function sha256Hex(bytes) {
+  const h = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  return Array.from(h, b => b.toString(16).padStart(2, '0')).join('');
+}
+/** Görselin gerçek boyutu: { w, h } (açılamazsa null). */
+function imageSize(src) {
+  return new Promise(res => {
+    const i = new Image();
+    i.onload = () => res(i.naturalWidth && i.naturalHeight ? { w: i.naturalWidth, h: i.naturalHeight } : null);
+    i.onerror = () => res(null);
+    i.src = src;
+  });
+}
+function tagAttr(tag, name) {
+  const m = new RegExp('\\s' + name + '\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s"\'>]+))', 'i').exec(tag);
+  return m ? [m[1], m[2], m[3]].find(v => v !== undefined) : null;
+}
+function setTagAttr(tag, name, value) {
+  const re = new RegExp('(\\s' + name + '\\s*=\\s*)(?:"[^"]*"|\'[^\']*\'|[^\\s"\'>]+)', 'i');
+  const v = '"' + esc(value) + '"';
+  return re.test(tag) ? tag.replace(re, (all, a) => a + v) : tag.replace(/\s*\/?>$/, () => ' ' + name + '=' + v + '>');
+}
+
+/** Sayfadaki gömülü görselleri dosyaya çıkarır. Dönüş: { text: yeni sayfa, files: [{ path, b64 }] }. */
+async function externalizeImages(pagePath, html) {
+  const files = {};
+  const dir = 'assets/img/' + pagePath.replace(/\.html?$/i, '') + '/';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  // ad için: data: adresi (ya da Markdown görselinin "#id"si) → { alt, caption }
+  const info = {};
+  doc.querySelectorAll('img').forEach(img => {
+    const id = img.getAttribute('data-bergec-img');
+    const key = id !== null ? '#' + id : img.getAttribute('src');
+    const cap = img.closest('figure') && img.closest('figure').querySelector('figcaption');
+    const caption = cap ? cap.textContent.replace(/\s+/g, ' ').trim() : '';
+    if (key && !info[key]) info[key] = { alt: (img.getAttribute('alt') || '').trim(), caption: CAPTION_PLACEHOLDER.test(caption) ? '' : caption };
+  });
+  const srcNames = {}; // Markdown görsellerinin yüklenen dosya adları
+  try { JSON.parse(doc.getElementById('bergec-source').textContent).images.forEach(im => { srcNames[im.id] = im.name; }); } catch (e) {}
+
+  /** data: adresini dosyaya çevirir: { path, w, h }; çevrilemezse null (görsel sayfada gömülü kalır). */
+  async function toFile(dataUrl, label) {
+    const m = DATA_IMG_RE.exec(dataUrl);
+    const ext = m && IMG_EXT[m[1].toLowerCase()];
+    if (!ext) return null;
+    try {
+      const b64 = m[2].replace(/\s/g, '');
+      const hash = (await sha256Hex(b64ToBytes(b64))).slice(0, 10);
+      const base = (label && slugify(label).slice(0, 50).replace(/-+$/, '')) || 'gorsel';
+      const path = dir + base + '-' + hash + '.' + ext;
+      files[path] = { path, b64 };
+      return Object.assign({ path }, await imageSize(dataUrl));
+    } catch (e) { return null; }
+  }
+
+  // Markdown sayfası: veri bloğundaki görseller
+  const mapped = {}; // id → { path, w, h }
+  const mm = IMAGES_RE.exec(html);
+  let map = null;
+  try { map = mm && JSON.parse(mm[2]); } catch (e) {}
+  if (map) {
+    let changed = false;
+    for (const id of Object.keys(map)) {
+      const v = map[id], inf = info['#' + id] || {};
+      if (typeof v !== 'string' || !v) continue;
+      if (!DATA_IMG_RE.test(v)) { mapped[id] = { path: v }; continue; }
+      const r = await toFile(v, inf.alt || inf.caption || String(srcNames[id] || '').replace(/\.[a-z0-9]+$/i, ''));
+      if (r) { map[id] = r.path; mapped[id] = r; changed = true; }
+    }
+    if (changed) html = html.replace(IMAGES_RE, (all, a, b, c) => a + jsonForScript(map) + c);
+  }
+
+  // <img> etiketleri (betiklerin içindekiler hariç)
+  const scripts = [];
+  html.replace(/<script\b[\s\S]*?<\/script>/gi, (s, at) => { scripts.push([at, at + s.length]); return s; });
+  const tags = [];
+  html.replace(IMG_TAG_RE, (tag, at) => { if (!scripts.some(([a, b]) => at >= a && at < b)) tags.push({ tag, at }); return tag; });
+  const first = tags.length ? tags[0].at : -1;
+  const out = new Map();
+  for (const { tag, at } of tags) {
+    const src = tagAttr(tag, 'src'), id = tagAttr(tag, 'data-bergec-img');
+    let r = null, inf = {};
+    if (src && DATA_IMG_RE.test(src)) {
+      inf = info[src] || {};
+      r = await toFile(src, inf.alt || inf.caption);
+    } else if (!src && id !== null && mapped[id]) {
+      inf = info['#' + id] || {};
+      r = mapped[id];
+      if (!r.w) Object.assign(r, await imageSize(r.path)); // önceden yayınlanmış görsel: boyutu dosyasından
+    }
+    if (!r) continue;
+    let t = setTagAttr(tag, 'src', r.path);
+    if (r.w && r.h && tagAttr(t, 'width') === null && tagAttr(t, 'height') === null) t = setTagAttr(setTagAttr(t, 'width', r.w), 'height', r.h);
+    if (!tagAttr(t, 'alt') && inf.caption) t = setTagAttr(t, 'alt', inf.caption);
+    if (at !== first && tagAttr(t, 'loading') === null) t = setTagAttr(t, 'loading', 'lazy');
+    out.set(at, t);
+  }
+  if (out.size) html = html.replace(IMG_TAG_RE, (tag, at) => out.has(at) ? out.get(at) : tag);
+  return { text: html, files: Object.values(files) };
+}
+
 function renderImageList() {
   const wrap = $('img-list');
   wrap.innerHTML = '';
   state.images.forEach(im => {
     const card = document.createElement('div');
     card.className = 'imgcard';
-    const kb = Math.round(im.dataUrl.length * 0.75 / 1024);
+    const kb = /^data:/.test(im.dataUrl) ? '~' + Math.round(im.dataUrl.length * 0.75 / 1024) + ' KB' : 'dosya'; // yayınlanmış görsel: assets/img/…
     card.innerHTML =
       '<img src="' + im.dataUrl + '" alt="">' +
-      '<div class="id">[[gorsel:' + im.id + ']] <span class="sz">· ~' + kb + ' KB</span></div>' +
+      '<div class="id">[[gorsel:' + im.id + ']] <span class="sz">· ' + kb + '</span></div>' +
       '<input type="text" class="cap" placeholder="alt yazı" value="' + esc(im.caption || '') + '">' +
       '<div class="row" style="gap: 5px;">' +
         '<select class="align" style="flex: 1;">' +
@@ -2273,7 +2398,8 @@ function cleanRegion(r) {
   const d = r.ownerDocument;
   r.querySelectorAll('[data-ed-tex]').forEach(el => { el.textContent = el.getAttribute('data-ed-tex'); });
   r.querySelectorAll('[data-ed-disp]').forEach(el => el.replaceWith(d.createTextNode('$$' + el.getAttribute('data-ed-disp') + '$$')));
-  r.querySelectorAll('img[data-bergec-img]').forEach(im => im.removeAttribute('src'));
+  // veriden doldurulan gömülü görsel kaydedilmez (veri bloğunda zaten var); yayınlanmış görselin dosya adresi kalır
+  r.querySelectorAll('img[data-bergec-img]').forEach(im => { if (/^data:/.test(im.getAttribute('src') || '')) im.removeAttribute('src'); });
   r.querySelectorAll('[data-ed-dyn]').forEach(el => { el.innerHTML = ''; el.removeAttribute('data-ed-dyn'); }); // veriden çizilir
   // Paragrafın içine düşmüş bloklar (tarayıcının biçim komutları bazen <p><blockquote>… üretir): HTML'de geçersizdir,
   // sayfa yeniden açılınca bozulur. Paragrafı böl: satır içi parçalar paragraf olarak kalır, bloklar dışarı çıkar.
