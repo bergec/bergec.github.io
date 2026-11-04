@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="tr">
+  <title>Bergeç</title>
+  <subtitle>Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar.</subtitle>
+  <link rel="self" type="application/atom+xml" href="https://bergec.github.io/feed.xml"/>
+  <link rel="alternate" type="text/html" href="https://bergec.github.io/"/>
+  <id>https://bergec.github.io/</id>
+  <updated>2026-10-05T00:00:00+03:00</updated>
+  <author><name>Bergeç</name><uri>https://bergec.github.io/</uri><email>bergecblog@gmail.com</email></author>
+  <icon>https://bergec.github.io/favicon-96x96.png</icon>
+  <logo>https://bergec.github.io/og-image.png</logo>
+  <entry>
+    <title>Knuth’un Kitabından Bir Soru (III)</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-3.html"/>
+    <id>https://bergec.github.io/knuth-3.html</id>
+    <published>2026-10-05T00:00:00+03:00</published>
+    <updated>2026-10-05T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="yığınla sıralanabilir permütasyon"/>
+    <category term="permütasyon örüntüsü"/>
+    <category term="yığın (stack)"/>
+    <category term="Donald Knuth"/>
+    <category term="The Art of Computer Programming"/>
+    <category term="kombinatorik"/>
+    <category term="algoritmalar"/>
+    <summary type="text">Bir vagon sıralaması yığın (stack) ile ne zaman elde edilebilir? Yığınla elde edilebilen permütasyonlar için gerek ve yeter koşul: 312 örüntüsü ve kanıtı.</summary>
+  </entry>
+  <entry>
+    <title>Enigma Bölüm 3: Enigmanın Çözülmesi</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-3.html"/>
+    <id>https://bergec.github.io/enigma-3.html</id>
+    <published>2026-02-07T00:00:00+03:00</published>
+    <updated>2026-02-07T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="Enigma şifresi nasıl kırıldı"/>
+    <category term="Enigma"/>
+    <category term="Alan Turing"/>
+    <category term="Bombe"/>
+    <category term="Marian Rejewski"/>
+    <category term="kriptanaliz"/>
+    <category term="kriptografi"/>
+    <category term="İkinci Dünya Savaşı"/>
+    <summary type="text">Enigma şifresinin kırılışı: Marian Rejewski ve Polonyalı matematikçilerin permütasyon döngülerine dayanan çözümü ve Alan Turing’in Bombe makinesi.</summary>
+  </entry>
+  <entry>
+    <title>Enigma Bölüm 2: Enigmanın Çalışma Prensibi</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-2.html"/>
+    <id>https://bergec.github.io/enigma-2.html</id>
+    <published>2026-02-07T00:00:00+03:00</published>
+    <updated>2026-02-07T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="Enigma makinesi"/>
+    <category term="Enigma nasıl çalışır"/>
+    <category term="Enigma M3"/>
+    <category term="rotor"/>
+    <category term="fiş panosu"/>
+    <category term="yansıtıcı"/>
+    <category term="kriptografi"/>
+    <category term="İkinci Dünya Savaşı"/>
+    <category term="şifreleme"/>
+    <summary type="text">Enigma M3’ün rotorları, halka ayarı, yansıtıcısı ve fiş panosu; şifreleme ile deşifrelemenin matematiği ve Enigma’nın kaç farklı ayarı olduğu.</summary>
+  </entry>
+  <entry>
+    <title>Enigma Bölüm 1: Matematiksel Ön Hazırlık</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/enigma-1.html"/>
+    <id>https://bergec.github.io/enigma-1.html</id>
+    <published>2026-02-05T00:00:00+03:00</published>
+    <updated>2026-02-05T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="Enigma"/>
+    <category term="Enigma makinesi"/>
+    <category term="Enigma şifresi"/>
+    <category term="permütasyon"/>
+    <category term="döngü gösterimi"/>
+    <category term="eşlenik permütasyon"/>
+    <category term="involüsyon"/>
+    <category term="kriptografi"/>
+    <category term="şifreleme"/>
+    <summary type="text">Enigma makinesini anlamak için gereken matematik: permütasyonlar, döngü gösterimi, eşlenik permütasyonlar, transpozisyonlar ve involüsyonlar.</summary>
+  </entry>
+  <entry>
+    <title>Berelim Y ile</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/berelim-y-ile.html"/>
+    <id>https://bergec.github.io/berelim-y-ile.html</id>
+    <published>2025-12-11T00:00:00+03:00</published>
+    <updated>2025-12-11T00:00:00+03:00</updated>
+    <author><name>Cem Bozşahin</name><uri>https://bergec.github.io/yazar-cem-bozsahin.html</uri></author>
+    <category term="Y birleştiricisi"/>
+    <category term="Y combinator"/>
+    <category term="özyineleme"/>
+    <category term="lambda hesabı"/>
+    <category term="fonksiyonel programlama"/>
+    <category term="sabit nokta birleştiricisi"/>
+    <summary type="text">Özyinelemenin özü: lambda hesabında Y birleştiricisi (Y combinator) ve bir fonksiyonun kendi adını kullanmadan kendini nasıl çağırabildiği.</summary>
+  </entry>
+  <entry>
+    <title>Kodların Serüveni</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/kodlarin-seruveni.html"/>
+    <id>https://bergec.github.io/kodlarin-seruveni.html</id>
+    <published>2025-12-05T00:00:00+03:00</published>
+    <updated>2025-12-05T00:00:00+03:00</updated>
+    <author><name>Kaan Emir Eröz</name><uri>https://bergec.github.io/yazar-kaan-emir-eroz.html</uri></author>
+    <category term="programlama dilleri"/>
+    <category term="derleyici"/>
+    <category term="yorumlayıcı"/>
+    <category term="compiler"/>
+    <category term="interpreter"/>
+    <category term="lexer"/>
+    <category term="parser"/>
+    <category term="bytecode"/>
+    <category term="AOT derleme"/>
+    <summary type="text">Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı.</summary>
+  </entry>
+  <entry>
+    <title>Knuth’un Kitabından Bir Soru (II)</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-2.html"/>
+    <id>https://bergec.github.io/knuth-2.html</id>
+    <published>2025-12-02T00:00:00+03:00</published>
+    <updated>2025-12-02T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="üreteç fonksiyonlar"/>
+    <category term="yineleme bağıntısı"/>
+    <category term="yığın (stack)"/>
+    <category term="Catalan sayıları"/>
+    <category term="Donald Knuth"/>
+    <category term="The Art of Computer Programming"/>
+    <category term="kombinatorik"/>
+    <category term="algoritmalar"/>
+    <summary type="text">Knuth’un yığın (stack) sorusunun gelişmiş hâli: yığında m vagon kalırsa kaç farklı sıralama olur? Yineleme bağıntısı ve çifte üreteç fonksiyonuyla çözüm.</summary>
+  </entry>
+  <entry>
+    <title>Knuth’un Kitabından Bir Soru (I)</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/knuth-1.html"/>
+    <id>https://bergec.github.io/knuth-1.html</id>
+    <published>2025-11-09T00:00:00+03:00</published>
+    <updated>2025-11-09T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="Catalan sayıları"/>
+    <category term="yığın (stack)"/>
+    <category term="vagon sıralama"/>
+    <category term="Donald Knuth"/>
+    <category term="The Art of Computer Programming"/>
+    <category term="kombinatorik"/>
+    <category term="algoritmalar"/>
+    <category term="veri yapıları"/>
+    <summary type="text">Knuth’un The Art of Computer Programming kitabından bir soru: n vagon bir yığın (stack) ile kaç farklı sırada çıkarılabilir? Cevap: Catalan sayıları.</summary>
+  </entry>
+  <entry>
+    <title>Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü</title>
+    <link rel="alternate" type="text/html" href="https://bergec.github.io/godel-mektubu.html"/>
+    <id>https://bergec.github.io/godel-mektubu.html</id>
+    <published>2025-11-06T00:00:00+03:00</published>
+    <updated>2025-11-06T00:00:00+03:00</updated>
+    <author><name>Yasin Aydın</name><uri>https://bergec.github.io/yazar-yasin-aydin.html</uri></author>
+    <category term="P vs NP"/>
+    <category term="P ile NP problemi"/>
+    <category term="P NP"/>
+    <category term="Gödel mektubu"/>
+    <category term="Kurt Gödel"/>
+    <category term="John von Neumann"/>
+    <category term="hesaplama karmaşıklığı"/>
+    <category term="NP-tam"/>
+    <category term="Cook–Levin teoremi"/>
+    <category term="milenyum problemleri"/>
+    <summary type="text">Kurt Gödel’in 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi: P vs NP (P ile NP) probleminin ilk izi, Cook–Levin teoremi ve milyon dolarlık soru.</summary>
+  </entry>
+</feed>

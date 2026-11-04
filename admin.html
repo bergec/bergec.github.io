@@ -958,7 +958,7 @@ function withHomeSeo(plain, data) {
   return plain;
 }
 
-/* ─────────────────── yazar sayfaları ve llms.txt ─────────────────── */
+/* ─────────────────── yazar sayfaları, llms.txt ve Atom akışı ─────────────────── */
 
 /** Yazının yazar adları ("A ve B", "A, B" biçimleri de). */
 function authorNamesOf(p) {
@@ -1009,7 +1009,7 @@ function authorPageHtml(ap) {
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
     '<title>' + esc(title) + '</title>\n' +
     '<meta name="description" content="' + esc(desc) + '">\n' +
-    '<link rel="canonical" href="' + url + '">\n' +
+    '<link rel="canonical" href="' + url + '">\n' + FEED_LINK + '\n' +
     '<meta property="og:type" content="profile">\n<meta property="og:site_name" content="Bergeç">\n<meta property="og:locale" content="tr_TR">\n' +
     '<meta property="og:title" content="' + esc(title) + '">\n<meta property="og:description" content="' + esc(desc) + '">\n' +
     '<meta property="og:url" content="' + url + '">\n<meta property="og:image" content="' + SITE_URL + 'og-image.png">\n' +
@@ -1053,6 +1053,50 @@ function buildLlmsTxt(data) {
   return L.join('\n') + '\n';
 }
 
+/** Akışın (feed.xml) adresi: sayfaların <head>'ine "alternate" bağlantısı olarak da yazılır. */
+const FEED_URL = SITE_URL + 'feed.xml';
+const FEED_LINK = '<link rel="alternate" type="application/atom+xml" title="Bergeç" href="' + FEED_URL + '">';
+
+/**
+ * feed.xml (Atom 1.0): taslak olmayan yazılar, yeniden eskiye. Okuyucular (Feedly, NetNewsWire…) siteyi buradan izler.
+ * Tarihler yazının gününden (Türkiye saatiyle gece yarısı); akışın "updated"ı en yeni yazınınki — yayımlarken
+ * yazı eklenmediyse dosya değişmez.
+ */
+function buildFeed(data) {
+  const time = d => d + 'T00:00:00+03:00';
+  const seen = new Set();
+  const posts = flattenOf(data).filter(p => p && !p.taslak && p.href && !/^[a-z]+:/i.test(p.href) && !seen.has(p.href) && seen.add(p.href))
+    .map((p, i) => ({ p, i, d: isoOfTrDate(p.date) }))
+    .sort((a, b) => (b.d || '').localeCompare(a.d || '') || a.i - b.i)
+    .map(x => x.p);
+  const dates = posts.map(p => isoOfTrDate(p.date)).filter(Boolean).sort();
+  const updated = time(dates[dates.length - 1] || new Date().toISOString().slice(0, 10));
+  const entries = posts.map(p => {
+    const url = SITE_URL + encodeURI(p.href);
+    const d = isoOfTrDate(p.date);
+    const L = ['  <entry>', '    <title>' + esc(plainOfTex(p.title)) + '</title>',
+      '    <link rel="alternate" type="text/html" href="' + esc(url) + '"/>', '    <id>' + esc(url) + '</id>'];
+    if (d) L.push('    <published>' + time(d) + '</published>');
+    L.push('    <updated>' + (d ? time(d) : updated) + '</updated>');
+    authorNamesOf(p).forEach(n => L.push('    <author><name>' + esc(n) + '</name><uri>' + esc(SITE_URL + authorHrefOf(n)) + '</uri></author>'));
+    keywordsOf(p).forEach(k => L.push('    <category term="' + esc(k) + '"/>'));
+    if (p.excerpt) L.push('    <summary type="text">' + esc(plainOfTex(p.excerpt)) + '</summary>');
+    L.push('  </entry>');
+    return L.join('\n');
+  });
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="tr">\n' +
+    '  <title>Bergeç</title>\n' +
+    '  <subtitle>Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar.</subtitle>\n' +
+    '  <link rel="self" type="application/atom+xml" href="' + FEED_URL + '"/>\n' +
+    '  <link rel="alternate" type="text/html" href="' + SITE_URL + '"/>\n' +
+    '  <id>' + SITE_URL + '</id>\n' +
+    '  <updated>' + updated + '</updated>\n' +
+    '  <author><name>Bergeç</name><uri>' + SITE_URL + '</uri><email>bergecblog@gmail.com</email></author>\n' +
+    '  <icon>' + SITE_URL + 'favicon-96x96.png</icon>\n' +
+    '  <logo>' + SITE_URL + 'og-image.png</logo>\n' +
+    (entries.length ? entries.join('\n') + '\n' : '') + '</feed>\n';
+}
+
 /** Kaydın, yazı sayfasının <title>'ına ve seo bloğuna giden alanları: değişti mi diye karşılaştırmak için. */
 function seoKeyOf(p) {
   return JSON.stringify([p.title, p.excerpt, p.seoTitle || '', keywordsOf(p), p.about || null, p.author, p.date]);
@@ -1065,7 +1109,7 @@ function withSeoHead(html, entry) {
   const date = isoOfTrDate(entry.date);
   const L = ['<!-- seo -->'];
   if (desc) L.push('<meta name="description" content="' + a(desc) + '">');
-  L.push('<link rel="canonical" href="' + url + '">',
+  L.push('<link rel="canonical" href="' + url + '">', FEED_LINK,
     '<meta property="og:type" content="article">', '<meta property="og:site_name" content="Bergeç">', '<meta property="og:locale" content="tr_TR">',
     '<meta property="og:title" content="' + a(entry.title || '') + '">');
   if (desc) L.push('<meta property="og:description" content="' + a(desc) + '">');
@@ -1111,8 +1155,8 @@ function withComments(html) {
 
 /**
  * Ana sayfa listesini değiştirip (istenirse yanında başka dosyalarla) tek commit'te kaydeder.
- * Site haritası (sitemap.xml) da aynı commit'te güncellenir; kaydedilen yazıların seo bloğu arşiv kaydından yazılır,
- * altlarına yorum bölümü eklenir.
+ * Site haritası (sitemap.xml), yazar sayfaları, llms.txt ve Atom akışı (feed.xml) da aynı commit'te güncellenir;
+ * kaydedilen yazıların seo bloğu arşiv kaydından yazılır, altlarına yorum bölümü eklenir.
  * mutate(liste) değişikliği yazıları adresleriyle (href) bulup uygular. Liste siz açtıktan
  * sonra başkası tarafından değiştirildiyse güncel hâli indirilir ve aynı işlem onun üzerine
  * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
@@ -1155,7 +1199,7 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       }
       files.push(...Object.values(imgFiles));
       const generated = authorPagesOf(data).map(ap => ({ path: ap.href, text: authorPageHtml(ap) }))
-        .concat([{ path: 'llms.txt', text: buildLlmsTxt(data) }]);
+        .concat([{ path: 'llms.txt', text: buildLlmsTxt(data) }, { path: 'feed.xml', text: buildFeed(data) }]);
       const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap], generated), message, expect);
       state.repoIndex = data;
       state.indexPlain = plain;
