@@ -1,0 +1,23 @@
+# Bergeç
+
+> Bergeç (bergec.github.io), bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar yayımlayan bir blog. Konular arasında hesaplama kuramı ve P vs NP problemi, kriptografi ve Enigma, Knuth’un algoritma ve kombinatorik soruları, lambda hesabı ve programlama dilleri var. Yazılar Türkçe, formüller LaTeX/KaTeX ile yazılı.
+
+Site: https://bergec.github.io/ · Dil: Türkçe · İletişim: bergecblog@gmail.com
+
+## Yazılar
+
+- [Knuth’un Kitabından Bir Soru (III)](https://bergec.github.io/knuth-3.html): Bir vagon sıralaması yığın (stack) ile ne zaman elde edilebilir? Yığınla elde edilebilen permütasyonlar için gerek ve yeter koşul: 312 örüntüsü ve kanıtı. (Yasin Aydın, 05.10.2026) Konular: yığınla sıralanabilir permütasyon, permütasyon örüntüsü, yığın (stack), Donald Knuth, The Art of Computer Programming, kombinatorik, algoritmalar.
+- [Enigma Bölüm 3: Enigmanın Çözülmesi](https://bergec.github.io/enigma-3.html): Enigma şifresinin kırılışı: Marian Rejewski ve Polonyalı matematikçilerin permütasyon döngülerine dayanan çözümü ve Alan Turing’in Bombe makinesi. (Yasin Aydın, 07.02.2026) Konular: Enigma şifresi nasıl kırıldı, Enigma, Alan Turing, Bombe, Marian Rejewski, kriptanaliz, kriptografi, İkinci Dünya Savaşı.
+- [Enigma Bölüm 2: Enigmanın Çalışma Prensibi](https://bergec.github.io/enigma-2.html): Enigma M3’ün rotorları, halka ayarı, yansıtıcısı ve fiş panosu; şifreleme ile deşifrelemenin matematiği ve Enigma’nın kaç farklı ayarı olduğu. (Yasin Aydın, 07.02.2026) Konular: Enigma makinesi, Enigma nasıl çalışır, Enigma M3, rotor, fiş panosu, yansıtıcı, kriptografi, İkinci Dünya Savaşı, şifreleme.
+- [Enigma Bölüm 1: Matematiksel Ön Hazırlık](https://bergec.github.io/enigma-1.html): Enigma makinesini anlamak için gereken matematik: permütasyonlar, döngü gösterimi, eşlenik permütasyonlar, transpozisyonlar ve involüsyonlar. (Yasin Aydın, 05.02.2026) Konular: Enigma, Enigma makinesi, Enigma şifresi, permütasyon, döngü gösterimi, eşlenik permütasyon, involüsyon, kriptografi, şifreleme.
+- [Berelim Y ile](https://bergec.github.io/berelim-y-ile.html): Özyinelemenin özü: lambda hesabında Y birleştiricisi (Y combinator) ve bir fonksiyonun kendi adını kullanmadan kendini nasıl çağırabildiği. (Cem Bozşahin, 11.12.2025) Konular: Y birleştiricisi, Y combinator, özyineleme, lambda hesabı, fonksiyonel programlama, sabit nokta birleştiricisi.
+- [Kodların Serüveni](https://bergec.github.io/kodlarin-seruveni.html): Yazdığımız kod nasıl çalışır? Lexer ve parser’dan tree-walk yorumlayıcıya, bytecode yorumlayıcıdan AOT derlemeye programlama dillerinin iç yapısı. (Kaan Emir Eröz, 05.12.2025) Konular: programlama dilleri, derleyici, yorumlayıcı, compiler, interpreter, lexer, parser, bytecode, AOT derleme.
+- [Knuth’un Kitabından Bir Soru (II)](https://bergec.github.io/knuth-2.html): Knuth’un yığın (stack) sorusunun gelişmiş hâli: yığında m vagon kalırsa kaç farklı sıralama olur? Yineleme bağıntısı ve çifte üreteç fonksiyonuyla çözüm. (Yasin Aydın, 02.12.2025) Konular: üreteç fonksiyonlar, yineleme bağıntısı, yığın (stack), Catalan sayıları, Donald Knuth, The Art of Computer Programming, kombinatorik, algoritmalar.
+- [Knuth’un Kitabından Bir Soru (I)](https://bergec.github.io/knuth-1.html): Knuth’un The Art of Computer Programming kitabından bir soru: n vagon bir yığın (stack) ile kaç farklı sırada çıkarılabilir? Cevap: Catalan sayıları. (Yasin Aydın, 09.11.2025) Konular: Catalan sayıları, yığın (stack), vagon sıralama, Donald Knuth, The Art of Computer Programming, kombinatorik, algoritmalar, veri yapıları.
+- [Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü](https://bergec.github.io/godel-mektubu.html): Kurt Gödel’in 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi: P vs NP (P ile NP) probleminin ilk izi, Cook–Levin teoremi ve milyon dolarlık soru. (Yasin Aydın, 06.11.2025) Konular: P vs NP, P ile NP problemi, P NP, Gödel mektubu, Kurt Gödel, John von Neumann, hesaplama karmaşıklığı, NP-tam, Cook–Levin teoremi, milenyum problemleri.
+
+## Yazarlar
+
+- [Cem Bozşahin](https://bergec.github.io/yazar-cem-bozsahin.html): 1 yazı
+- [Yasin Aydın](https://bergec.github.io/yazar-yasin-aydin.html): 7 yazı
+- [Kaan Emir Eröz](https://bergec.github.io/yazar-kaan-emir-eroz.html): 1 yazı

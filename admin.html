@@ -797,7 +797,7 @@ function jsonForScript(value, indent) {
 /** Ana sayfanın veri bloğu (ve ondan üretilen bloklar) çıkarılmış hâli: sabit kısımları (metinler, düzen) karşılaştırmak için. */
 function staticOf(plain) {
   return String(plain || '').replace(INDEX_RE, (all, a, body, c) => a + c)
-    .replace(/(<!-- (liste|liste-ld) -->)[\s\S]*?(<!-- \/\2 -->)/g, (all, a, name, c) => a + c);
+    .replace(/(<!-- (liste|liste-ld|yazarlar) -->)[\s\S]*?(<!-- \/\2 -->)/g, (all, a, name, c) => a + c);
 }
 
 function readIndexData(plain) {
@@ -806,6 +806,9 @@ function readIndexData(plain) {
   return JSON.parse(m[2]);
 }
 function writeIndexData(plain, data) {
+  const pages = {};
+  authorPagesOf(data).forEach(ap => { pages[ap.author.ad] = ap.href; });
+  (data.authors || []).forEach(a => { if (a && typeof a === 'object') { if (pages[a.ad]) a.sayfa = pages[a.ad]; else delete a.sayfa; } });
   plain = plain.replace(INDEX_RE, (all, a, body, c) => a + '\n' + jsonForScript(data, 2) + '\n' + c);
   return withHomeSeo(plain, data);
 }
@@ -835,6 +838,10 @@ function buildSitemap(data, writtenPaths, oldXml) {
     seen.add(p.href);
     const loc = SITE_URL + encodeURI(p.href);
     urls.push({ loc, lastmod: writtenPaths.includes(p.href) ? today : (old[loc] || isoOfTrDate(p.date) || today) });
+  });
+  authorPagesOf(data).forEach(ap => {
+    const dates = ap.posts.map(p => isoOfTrDate(p.date)).filter(Boolean).sort();
+    urls.push({ loc: SITE_URL + ap.href, lastmod: dates[dates.length - 1] || today });
   });
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     urls.map(u => '  <url>\n    <loc>' + esc(u.loc) + '</loc>\n    <lastmod>' + u.lastmod + '</lastmod>\n  </url>\n').join('') +
@@ -885,8 +892,12 @@ function articleLd(entry, desc) {
     url, mainEntityOfPage: url, inLanguage: 'tr', image: SITE_URL + 'og-image.png' };
   if (desc) ld.description = desc;
   if (date) ld.datePublished = date;
-  if (entry.author) ld.author = { '@type': 'Person', name: entry.author };
-  const kw = keywordsOf(entry);
+  const names = authorNamesOf(entry);
+  if (names.length) {
+    const people = names.map(n => ({ '@type': 'Person', name: n, url: SITE_URL + authorHrefOf(n) }));
+    ld.author = people.length === 1 ? people[0] : people;
+  }
+  const kw = keywordsOf(entry).concat(names.filter(n => !keywordsOf(entry).includes(n)));
   if (kw.length) ld.keywords = kw.join(', ');
   // konular: Google yazının neyle ilgili olduğunu Wikipedia sayfası üzerinden tanısın ({ name, sameAs })
   if (Array.isArray(entry.about) && entry.about.length) {
@@ -898,8 +909,9 @@ function articleLd(entry, desc) {
 }
 
 /**
- * Ana sayfadaki üretilen iki blok (yazı listesi verisinden):
+ * Ana sayfadaki üretilen bloklar (yazı listesi verisinden):
  *  - <!-- liste-ld -->: schema.org Blog yapısal verisi (bütün yazılar);
+ *  - <!-- yazarlar -->: #authors içine yazar sayfalarına bağlanan düz HTML liste;
  *  - <!-- liste -->: #archive içine yazıların düz HTML listesi. Sayfa açılınca betik bunu kendi listesiyle
  *    değiştirir; JavaScript çalıştırmayan arama motorları da yazı bağlantılarını görsün diye.
  * Bloklar yoksa: ilki WebSite verisinin ya da </head>'in önüne, ikincisi <div id="archive"> içine eklenir.
@@ -922,6 +934,9 @@ function withHomeSeo(plain, data) {
     '<h4><a href="' + esc(p.href) + '">' + esc(p.title) + '</a></h4><div class="author">' + esc(p.author) + '</div>' +
     '<p>' + esc(plainOfTex(p.excerpt)) + '</p></div></article>').join('\n');
   const listBlock = '<!-- liste -->\n' + rows + '\n<!-- /liste -->';
+  const authorsBlock = '<!-- yazarlar -->\n' + authorPagesOf(data).map(ap =>
+    '<li><span class="a-text"><span class="a-name"><a href="' + esc(ap.href) + '">' + esc(ap.author.ad) + '</a></span>' +
+    (ap.author.bio ? '<span class="a-bio">' + esc(ap.author.bio) + '</span>' : '') + '</span></li>').join('\n') + '\n<!-- /yazarlar -->';
 
   if (/<!-- liste-ld -->[\s\S]*?<!-- \/liste-ld -->/.test(plain)) {
     plain = plain.replace(/<!-- liste-ld -->[\s\S]*?<!-- \/liste-ld -->/, () => ldBlock);
@@ -935,7 +950,107 @@ function withHomeSeo(plain, data) {
   } else {
     plain = plain.replace(/<div id="archive"><\/div>/, () => '<div id="archive">\n' + listBlock + '\n</div>');
   }
+  if (/<!-- yazarlar -->[\s\S]*?<!-- \/yazarlar -->/.test(plain)) {
+    plain = plain.replace(/<!-- yazarlar -->[\s\S]*?<!-- \/yazarlar -->/, () => authorsBlock);
+  } else {
+    plain = plain.replace(/<ul class="authors" id="authors"><\/ul>/, () => '<ul class="authors" id="authors">\n' + authorsBlock + '\n</ul>');
+  }
   return plain;
+}
+
+/* ─────────────────── yazar sayfaları ve llms.txt ─────────────────── */
+
+/** Yazının yazar adları ("A ve B", "A, B" biçimleri de). */
+function authorNamesOf(p) {
+  return String((p && p.author) || '').split(/\s*(?:,|&| ve )\s*/).map(s => s.trim()).filter(Boolean);
+}
+/** Yazar sayfasının adresi: yazar-<ad>.html (Yazarlar panelindeki id ile aynı biçim). */
+function authorHrefOf(name) { return 'yazar-' + slugify(name) + '.html'; }
+
+/**
+ * Yayında en az bir yazısı olan her yazar için { author, href, posts }: önce Yazarlar listesindeki sırayla,
+ * sonra yazılarda adı geçip listede olmayanlar.
+ */
+function authorPagesOf(data) {
+  const posts = flattenOf(data).filter(p => p && !p.taslak && p.href && !/^[a-z]+:/i.test(p.href));
+  const key = s => String(s).toLocaleLowerCase('tr');
+  const listed = (data.authors || []).map(a => typeof a === 'string' ? { ad: a } : a).filter(a => a && a.ad);
+  const out = [], seen = new Set();
+  listed.concat(...posts.map(p => authorNamesOf(p).map(ad => ({ ad })))).forEach(a => {
+    const k = key(a.ad);
+    if (seen.has(k)) return;
+    seen.add(k);
+    const mine = posts.filter(p => authorNamesOf(p).some(n => key(n) === k));
+    if (mine.length) out.push({ author: a, href: authorHrefOf(a.ad), posts: mine });
+  });
+  return out;
+}
+
+/** Yazar sayfası: adı, tanıtımı ve Bergeç'teki yazılarının listesi (ad aranınca yazılar bulunsun diye). */
+function authorPageHtml(ap) {
+  const a = ap.author, url = SITE_URL + ap.href;
+  const title = a.ad + ' — Yazıları · Bergeç';
+  const desc = clipDesc(a.ad + ', Bergeç’teki yazıları: ' + ap.posts.map(p => plainOfTex(p.title)).join('; ') + '.');
+  const person = { '@type': 'Person', name: a.ad, url };
+  if (a.bio) person.description = a.bio;
+  const ld = { '@context': 'https://schema.org', '@type': 'ProfilePage', url, inLanguage: 'tr', name: title, mainEntity: person,
+    hasPart: ap.posts.map(p => {
+      const o = { '@type': 'BlogPosting', headline: plainOfTex(p.title || '').slice(0, 110), url: SITE_URL + encodeURI(p.href), author: person };
+      const d = isoOfTrDate(p.date);
+      if (d) o.datePublished = d;
+      return o;
+    }),
+    isPartOf: { '@type': 'Blog', name: 'Bergeç', url: SITE_URL } };
+  const rows = ap.posts.map(p =>
+    '    <h3><a href="' + esc(p.href) + '">' + esc(plainOfTex(p.title)) + '</a></h3>\n' +
+    '    <p><span style="color: var(--color-neutral-600);">' + esc(p.date || '') + '</span>' +
+    (p.excerpt ? ' — ' + esc(plainOfTex(p.excerpt)) : '') + '</p>\n').join('\n');
+  return '<!DOCTYPE html>\n<html lang="tr">\n<head>\n<meta charset="utf-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    '<title>' + esc(title) + '</title>\n' +
+    '<meta name="description" content="' + esc(desc) + '">\n' +
+    '<link rel="canonical" href="' + url + '">\n' +
+    '<meta property="og:type" content="profile">\n<meta property="og:site_name" content="Bergeç">\n<meta property="og:locale" content="tr_TR">\n' +
+    '<meta property="og:title" content="' + esc(title) + '">\n<meta property="og:description" content="' + esc(desc) + '">\n' +
+    '<meta property="og:url" content="' + url + '">\n<meta property="og:image" content="' + SITE_URL + 'og-image.png">\n' +
+    '<meta name="twitter:card" content="summary_large_image">\n' +
+    '<script type="application/ld+json">' + jsonForScript(ld) + '<\/script>\n' +
+    '<link rel="icon" href="favicon.svg" type="image/svg+xml">\n<link rel="icon" href="favicon-96x96.png" type="image/png" sizes="96x96">\n' +
+    '<link rel="icon" href="favicon.ico" sizes="48x48">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n' +
+    '<!-- Cloudflare Web Analytics --><script type=\'module\' src=\'https://static.cloudflareinsights.com/beacon.min.js\' data-cf-beacon=\'{"token": "acab01d6baa64c2a827dc674fcab7c85"}\'><\/script><!-- End Cloudflare Web Analytics -->\n' +
+    '<link rel="stylesheet" href="assets/bergec.css">\n</head>\n<body>\n<div class="wrap">\n\n' +
+    '  <header class="top">\n    <a class="home" href="index.html">← Bergeç</a>\n    <span>Yazarlar</span>\n  </header>\n\n' +
+    '  <div class="kicker">Yazar</div>\n\n' +
+    '  <h1 class="title">' + esc(a.ad) + '</h1>\n' +
+    (a.bio ? '  <p class="lede">' + esc(a.bio) + '</p>\n' : '') + '\n' +
+    '  <article class="body">\n    <h2>Bergeç’teki yazıları</h2>\n\n' + rows + '\n  </article>\n\n' +
+    '  <footer class="bottom">\n    <span>Bergeç · ' + new Date().getFullYear() + '</span>\n' +
+    '    <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>\n' +
+    '    <span><a href="index.html">Anasayfaya dön</a></span>\n  </footer>\n\n</div>\n</body>\n</html>\n';
+}
+
+/**
+ * llms.txt (llmstxt.org): yapay zekâ asistanlarına sitenin ne olduğunu ve yazılarını düz metinle anlatır;
+ * ChatGPT, Claude, Perplexity gibi araçlar siteyi okurken buradan özetler.
+ */
+function buildLlmsTxt(data) {
+  const posts = flattenOf(data).filter(p => p && !p.taslak && p.href && !/^[a-z]+:/i.test(p.href));
+  const line = s => plainOfTex(s).replace(/\s+/g, ' ').trim();
+  const L = ['# Bergeç', '',
+    '> Bergeç (bergec.github.io), bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar yayımlayan bir blog. ' +
+    'Konular arasında hesaplama kuramı ve P vs NP problemi, kriptografi ve Enigma, Knuth’un algoritma ve kombinatorik soruları, ' +
+    'lambda hesabı ve programlama dilleri var. Yazılar Türkçe, formüller LaTeX/KaTeX ile yazılı.', '',
+    'Site: ' + SITE_URL + ' · Dil: Türkçe · İletişim: bergecblog@gmail.com', '', '## Yazılar', ''];
+  posts.forEach(p => {
+    const extra = [p.author, p.date].filter(Boolean).join(', ');
+    const kw = keywordsOf(p);
+    L.push('- [' + line(p.title) + '](' + SITE_URL + encodeURI(p.href) + '): ' + line(p.excerpt || '') +
+      (extra ? ' (' + extra + ')' : '') + (kw.length ? ' Konular: ' + kw.join(', ') + '.' : ''));
+  });
+  L.push('', '## Yazarlar', '');
+  authorPagesOf(data).forEach(ap => L.push('- [' + ap.author.ad + '](' + SITE_URL + ap.href + '): ' +
+    ap.posts.length + ' yazı' + (ap.author.bio ? '. ' + line(ap.author.bio) : '')));
+  return L.join('\n') + '\n';
 }
 
 /** Kaydın, yazı sayfasının <title>'ına ve seo bloğuna giden alanları: değişti mi diye karşılaştırmak için. */
@@ -1029,7 +1144,9 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       flattenOf(data).forEach(p => { if (p && p.href) entries[p.href] = p; });
       const files = extra.map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
         ? { path: f.path, text: withComments(withSeoHead(f.text, entries[f.path])) } : f);
-      const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap]), message, expect);
+      const generated = authorPagesOf(data).map(ap => ({ path: ap.href, text: authorPageHtml(ap) }))
+        .concat([{ path: 'llms.txt', text: buildLlmsTxt(data) }]);
+      const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap], generated), message, expect);
       state.repoIndex = data;
       state.indexPlain = plain;
       state.indexSha = shas['index.html'];
