@@ -22,6 +22,18 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'></script><!-- End Cloudflare Web Analytics -->
 <link rel="stylesheet" href="assets/bergec.css">
+<style>
+  h3.section { font-family: var(--font-body); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--color-neutral-600); margin: 48px 0 0; font-weight: 400; }
+  .arch-row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 0 20px; padding: 24px 0; border-top: 1px solid var(--color-divider); align-items: start; }
+  .arch-row:first-child { margin-top: 14px; }
+  .arch-row .date { font-size: 12px; line-height: 1.5; color: var(--color-neutral-600); font-feature-settings: 'tnum'; padding-top: 6px; letter-spacing: 0.04em; }
+  .arch-row h4 { font-family: var(--font-heading); font-weight: 400; font-size: 27px; line-height: 1.18; margin: 0; }
+  .arch-row h4 a { color: var(--color-text); text-decoration: none; }
+  .arch-row h4 a:hover { color: var(--color-accent-700); }
+  .arch-row .author { font-size: 12px; font-style: italic; color: var(--color-neutral-600); margin-top: 7px; }
+  .arch-row p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.7; text-align: justify; hyphens: auto; color: var(--color-neutral-800); text-wrap: pretty; }
+  @media (max-width: 620px) { .arch-row { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -36,16 +48,11 @@
   <h1 class="title">Bilim Tarihi</h1>
   <p class="lede">Bilgisayar biliminin arkasındaki insanlar ve hikâyeler: Gödel, von Neumann, Turing ve Enigma’yı çözen matematikçiler.</p>
 
-  <article class="body">
-    <h2>Bu konudaki yazılar</h2>
-
-    <h3><a href="enigma-3.html">Enigma Bölüm 3: Enigmanın Çözülmesi</a></h3>
-    <p><span style="color: var(--color-neutral-600);">07.02.2026</span> — Bu yazıda enigmanın şifresini kıran çözümleri inceleyeceğiz.</p>
-
-    <h3><a href="godel-mektubu.html">Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü</a></h3>
-    <p><span style="color: var(--color-neutral-600);">06.11.2025</span> — Kurt Gödel’in 20 Mart 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi ve bu mektuptan P ile NP problemine uzanan öykü.</p>
-
-  </article>
+  <h3 class="section">Bu konudaki yazılar</h3>
+  <div class="archive">
+<article class="arch-row"><div class="date">07.02.2026</div><div style="min-width: 0;"><h4><a href="enigma-3.html">Enigma Bölüm 3: Enigmanın Çözülmesi</a></h4><div class="author">Yasin Aydın</div><p>Bu yazıda enigmanın şifresini kıran çözümleri inceleyeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">06.11.2025</div><div style="min-width: 0;"><h4><a href="godel-mektubu.html">Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü</a></h4><div class="author">Yasin Aydın</div><p>Kurt Gödel’in 20 Mart 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi ve bu mektuptan P ile NP problemine uzanan öykü.</p></div></article>
+  </div>
 
   <footer class="bottom">
     <span>Bergeç · 2026</span>

@@ -949,10 +949,7 @@ function withHomeSeo(plain, data) {
       return o;
     }) };
   const ldBlock = '<!-- liste-ld -->\n<script type="application/ld+json">' + jsonForScript(ld) + '<\/script>\n<!-- /liste-ld -->';
-  const rows = posts.map(p =>
-    '<article class="arch-row"><div class="date">' + esc(p.date) + '</div><div style="min-width: 0;">' +
-    '<h4><a href="' + esc(p.href) + '">' + esc(p.title) + '</a></h4><div class="author">' + esc(p.author) + '</div>' +
-    '<p>' + esc(plainOfTex(p.excerpt)) + '</p></div></article>').join('\n');
+  const rows = posts.map(archRowHtml).join('\n');
   const listBlock = '<!-- liste -->\n' + rows + '\n<!-- /liste -->';
   const authorsBlock = '<!-- yazarlar -->\n' + authorPagesOf(data).map(ap =>
     '<li><span class="a-text"><span class="a-name"><a href="' + esc(ap.href) + '">' + esc(ap.author.ad) + '</a></span>' +
@@ -1026,16 +1023,31 @@ function authorPageHtml(ap) {
     }),
     isPartOf: { '@type': 'Blog', name: 'Bergeç', url: SITE_URL } };
   return listPageHtml({ url, title, desc, ogType: 'profile', ld, section: 'Yazarlar', kicker: 'Yazar', h1: a.ad, lede: a.bio,
-    h2: 'Bergeç’teki yazıları', rows: postRowsHtml(ap.posts) });
+    h2: 'Yazıları', rows: postRowsHtml(ap.posts) });
 }
 
-/** Yazar ve konu sayfalarındaki yazı listesi: başlık, tarih ve özet. */
-function postRowsHtml(posts) {
-  return posts.map(p =>
-    '    <h3><a href="' + esc(p.href) + '">' + esc(plainOfTex(p.title)) + '</a></h3>\n' +
-    '    <p><span style="color: var(--color-neutral-600);">' + esc(p.date || '') + '</span>' +
-    (p.excerpt ? ' — ' + esc(plainOfTex(p.excerpt)) : '') + '</p>\n').join('\n');
+/** Ana sayfanın arşivindeki yazı satırı (yazar, konu ve 404 sayfaları da aynısını kullanır). */
+function archRowHtml(p) {
+  return '<article class="arch-row"><div class="date">' + esc(p.date) + '</div><div style="min-width: 0;">' +
+    '<h4><a href="' + esc(p.href) + '">' + esc(p.title) + '</a></h4><div class="author">' + esc(p.author) + '</div>' +
+    '<p>' + esc(plainOfTex(p.excerpt)) + '</p></div></article>';
 }
+/** Yazar ve konu sayfalarındaki yazı listesi: ana sayfanın arşiviyle aynı satırlar. */
+function postRowsHtml(posts) { return posts.map(archRowHtml).join('\n') + '\n'; }
+
+/** Ana sayfadaki arşiv satırlarının biçimi (index.html'in kendi <style>'ından): liste sayfaları aynı görünsün. */
+const ARCH_ROW_CSS = '<style>\n' +
+  '  h3.section { font-family: var(--font-body); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--color-neutral-600); margin: 48px 0 0; font-weight: 400; }\n' +
+  '  .arch-row { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 0 20px; padding: 24px 0; border-top: 1px solid var(--color-divider); align-items: start; }\n' +
+  '  .arch-row:first-child { margin-top: 14px; }\n' +
+  '  .arch-row .date { font-size: 12px; line-height: 1.5; color: var(--color-neutral-600); font-feature-settings: \'tnum\'; padding-top: 6px; letter-spacing: 0.04em; }\n' +
+  '  .arch-row h4 { font-family: var(--font-heading); font-weight: 400; font-size: 27px; line-height: 1.18; margin: 0; }\n' +
+  '  .arch-row h4 a { color: var(--color-text); text-decoration: none; }\n' +
+  '  .arch-row h4 a:hover { color: var(--color-accent-700); }\n' +
+  '  .arch-row .author { font-size: 12px; font-style: italic; color: var(--color-neutral-600); margin-top: 7px; }\n' +
+  '  .arch-row p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.7; text-align: justify; hyphens: auto; color: var(--color-neutral-800); text-wrap: pretty; }\n' +
+  '  @media (max-width: 620px) { .arch-row { grid-template-columns: minmax(0, 1fr); gap: 6px; } }\n' +
+  '</style>\n';
 
 /**
  * Yazar, konu ve 404 sayfalarının ortak iskeleti (yazı sayfalarıyla aynı görünüm).
@@ -1058,12 +1070,12 @@ function listPageHtml(o) {
     '<link rel="icon" href="' + r + 'favicon.svg" type="image/svg+xml">\n<link rel="icon" href="' + r + 'favicon-96x96.png" type="image/png" sizes="96x96">\n' +
     '<link rel="icon" href="' + r + 'favicon.ico" sizes="48x48">\n<link rel="apple-touch-icon" href="' + r + 'apple-touch-icon.png">\n' +
     '<!-- Cloudflare Web Analytics --><script type=\'module\' src=\'https://static.cloudflareinsights.com/beacon.min.js\' data-cf-beacon=\'{"token": "acab01d6baa64c2a827dc674fcab7c85"}\'><\/script><!-- End Cloudflare Web Analytics -->\n' +
-    '<link rel="stylesheet" href="' + r + 'assets/bergec.css">\n</head>\n<body>\n<div class="wrap">\n\n' +
+    '<link rel="stylesheet" href="' + r + 'assets/bergec.css">\n' + ARCH_ROW_CSS + '</head>\n<body>\n<div class="wrap">\n\n' +
     '  <header class="top">\n    <a class="home" href="' + r + 'index.html">← Bergeç</a>\n    <span>' + esc(o.section) + '</span>\n  </header>\n\n' +
     '  <div class="kicker">' + esc(o.kicker) + '</div>\n\n' +
     '  <h1 class="title">' + esc(o.h1) + '</h1>\n' +
     (o.lede ? '  <p class="lede">' + esc(o.lede) + '</p>\n' : '') + '\n' +
-    '  <article class="body">\n    <h2>' + esc(o.h2) + '</h2>\n\n' + o.rows + '\n  </article>\n\n' +
+    '  <h3 class="section">' + esc(o.h2) + '</h3>\n  <div class="archive">\n' + o.rows + '  </div>\n\n' +
     '  <footer class="bottom">\n    <span>Bergeç · ' + new Date().getFullYear() + '</span>\n' +
     '    <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>\n' +
     '    <span><a href="' + r + 'index.html">Anasayfaya dön</a></span>\n  </footer>\n\n</div>\n</body>\n</html>\n';
