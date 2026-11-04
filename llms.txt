@@ -21,3 +21,11 @@ Site: https://bergec.github.io/ · Dil: Türkçe · İletişim: bergecblog@gmail
 - [Cem Bozşahin](https://bergec.github.io/yazar-cem-bozsahin.html): 1 yazı
 - [Yasin Aydın](https://bergec.github.io/yazar-yasin-aydin.html): 7 yazı
 - [Kaan Emir Eröz](https://bergec.github.io/yazar-kaan-emir-eroz.html): 1 yazı
+
+## Konular
+
+- [Kombinatorik](https://bergec.github.io/konu-kombinatorik.html): 4 yazı. Sayma ve dizme problemleri: Catalan sayıları, üreteç fonksiyonlar, permütasyonlar ve yığınla sıralama.
+- [Kriptografi](https://bergec.github.io/konu-kriptografi.html): 3 yazı. Şifrelerin matematiği ve tarihi: Enigma makinesinin nasıl çalıştığı, permütasyonlarla nasıl şifrelediği ve nasıl kırıldığı.
+- [Bilim Tarihi](https://bergec.github.io/konu-bilim-tarihi.html): 2 yazı. Bilgisayar biliminin arkasındaki insanlar ve hikâyeler: Gödel, von Neumann, Turing ve Enigma’yı çözen matematikçiler.
+- [Hesaplama Kuramı](https://bergec.github.io/konu-hesaplama-kurami.html): 2 yazı. Hesaplamanın sınırları ve temelleri: P ile NP problemi, Gödel’in mektubu, lambda hesabı ve özyineleme.
+- [Programlama Dilleri](https://bergec.github.io/konu-programlama-dilleri.html): 2 yazı. Yazdığımız kodun makineye ulaşana kadarki yolculuğu: derleyiciler, yorumlayıcılar, ayrıştırma ve fonksiyonel programlama.

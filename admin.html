@@ -556,6 +556,15 @@
       <div><label class="f" for="m-seotitle">Google başlığı <span style="text-transform: none; letter-spacing: 0;">(boşsa sayfanın başlığı; ~60 karakter, aranacak sözcükler başta)</span></label><input type="text" id="m-seotitle" placeholder="örn. Gödel’in Mektubu ve P vs NP Problemi"></div>
       <div><label class="f" for="m-keywords">Anahtar kelimeler <span style="text-transform: none; letter-spacing: 0;">(virgülle ayırın)</span></label><input type="text" id="m-keywords" placeholder="örn. P vs NP, Kurt Gödel, hesaplama karmaşıklığı"></div>
     </div>
+    <div style="margin-top: 14px;">
+      <label class="f" for="m-seodesc">Google açıklaması <span style="text-transform: none; letter-spacing: 0;">(arama sonucunda başlığın altında görünür; boşsa arşiv özeti. Sitede görünmez. ~150 karakter)</span></label>
+      <textarea id="m-seodesc" rows="2" style="font-family: var(--font-body); font-size: 14px;"></textarea>
+    </div>
+    <div class="grid g3" style="margin-top: 14px;">
+      <div><label class="f" for="m-seri">Seri <span style="text-transform: none; letter-spacing: 0;">(aynı serideki yazılar sırayla birbirine bağlanır)</span></label><input type="text" id="m-seri" placeholder="örn. Enigma"></div>
+      <div><label class="f" for="m-konular">Konular <span style="text-transform: none; letter-spacing: 0;">(virgülle; her konunun bir sayfası olur)</span></label><input type="text" id="m-konular" placeholder="örn. Kriptografi, Kombinatorik"></div>
+      <div><label class="f" for="m-gorsel">Paylaşım görseli <span style="text-transform: none; letter-spacing: 0;">(depodaki dosya, 1200×630)</span></label><input type="text" id="m-gorsel" placeholder="örn. assets/paylasim/enigma-2.png"></div>
+    </div>
     <div id="m-lede-wrap" style="margin-top: 14px;">
       <label class="f" for="m-lede">Manşet giriş paragrafları <span style="text-transform: none; letter-spacing: 0;">(boş satırla ayırın, ana sayfada iki sütunda görünür; formül: $...$ satır içi, $$...$$ ortalı)</span></label>
       <textarea id="m-lede" rows="5" style="font-family: var(--font-body); font-size: 14px;"></textarea>
@@ -797,7 +806,7 @@ function jsonForScript(value, indent) {
 /** Ana sayfanın veri bloğu (ve ondan üretilen bloklar) çıkarılmış hâli: sabit kısımları (metinler, düzen) karşılaştırmak için. */
 function staticOf(plain) {
   return String(plain || '').replace(INDEX_RE, (all, a, body, c) => a + c)
-    .replace(/(<!-- (liste|liste-ld|yazarlar) -->)[\s\S]*?(<!-- \/\2 -->)/g, (all, a, name, c) => a + c);
+    .replace(/(<!-- (liste|liste-ld|yazarlar|konular) -->)[\s\S]*?(<!-- \/\2 -->)/g, (all, a, name, c) => a + c);
 }
 
 function readIndexData(plain) {
@@ -843,6 +852,10 @@ function buildSitemap(data, writtenPaths, oldXml) {
     const dates = ap.posts.map(p => isoOfTrDate(p.date)).filter(Boolean).sort();
     urls.push({ loc: SITE_URL + ap.href, lastmod: dates[dates.length - 1] || today });
   });
+  topicPagesOf(data).forEach(tp => {
+    const dates = tp.posts.map(p => isoOfTrDate(p.date)).filter(Boolean).sort();
+    urls.push({ loc: SITE_URL + tp.href, lastmod: dates[dates.length - 1] || today });
+  });
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     urls.map(u => '  <url>\n    <loc>' + esc(u.loc) + '</loc>\n    <lastmod>' + u.lastmod + '</lastmod>\n  </url>\n').join('') +
     '</urlset>\n';
@@ -885,11 +898,17 @@ function keywordsOf(entry) {
 }
 
 /** Yazının yapısal verisi (schema.org BlogPosting): Google'da yazar, tarih ve başlık doğru görünsün diye. */
+/** Yazının paylaşım görseli (arşiv kaydındaki "gorsel"; yoksa sitenin genel görseli). */
+function ogImageOf(entry) {
+  const g = String((entry && entry.gorsel) || '').trim();
+  return g ? (/^https?:/i.test(g) ? g : SITE_URL + encodeURI(g.replace(/^\//, ''))) : SITE_URL + 'og-image.png';
+}
+
 function articleLd(entry, desc) {
   const url = SITE_URL + encodeURI(entry.href);
   const date = isoOfTrDate(entry.date);
   const ld = { '@context': 'https://schema.org', '@type': 'BlogPosting', headline: plainOfTex(entry.title || '').slice(0, 110),
-    url, mainEntityOfPage: url, inLanguage: 'tr', image: SITE_URL + 'og-image.png' };
+    url, mainEntityOfPage: url, inLanguage: 'tr', image: ogImageOf(entry) };
   if (desc) ld.description = desc;
   if (date) ld.datePublished = date;
   const names = authorNamesOf(entry);
@@ -912,6 +931,7 @@ function articleLd(entry, desc) {
  * Ana sayfadaki üretilen bloklar (yazı listesi verisinden):
  *  - <!-- liste-ld -->: schema.org Blog yapısal verisi (bütün yazılar);
  *  - <!-- yazarlar -->: #authors içine yazar sayfalarına bağlanan düz HTML liste;
+ *  - <!-- konular -->: #konular içine konu sayfalarına bağlanan liste (yalnızca blok sayfada varsa);
  *  - <!-- liste -->: #archive içine yazıların düz HTML listesi. Sayfa açılınca betik bunu kendi listesiyle
  *    değiştirir; JavaScript çalıştırmayan arama motorları da yazı bağlantılarını görsün diye.
  * Bloklar yoksa: ilki WebSite verisinin ya da </head>'in önüne, ikincisi <div id="archive"> içine eklenir.
@@ -937,6 +957,10 @@ function withHomeSeo(plain, data) {
   const authorsBlock = '<!-- yazarlar -->\n' + authorPagesOf(data).map(ap =>
     '<li><span class="a-text"><span class="a-name"><a href="' + esc(ap.href) + '">' + esc(ap.author.ad) + '</a></span>' +
     (ap.author.bio ? '<span class="a-bio">' + esc(ap.author.bio) + '</span>' : '') + '</span></li>').join('\n') + '\n<!-- /yazarlar -->';
+  const topicsBlock = '<!-- konular -->\n' + topicPagesOf(data).map(tp =>
+    '<li><a href="' + esc(tp.href) + '">' + esc(tp.ad) + '</a> <span style="font-style: normal; color: var(--color-neutral-600);">(' +
+    tp.posts.length + ')</span></li>').join('\n') + '\n<!-- /konular -->';
+  plain = plain.replace(/<!-- konular -->[\s\S]*?<!-- \/konular -->/, () => topicsBlock);
 
   if (/<!-- liste-ld -->[\s\S]*?<!-- \/liste-ld -->/.test(plain)) {
     plain = plain.replace(/<!-- liste-ld -->[\s\S]*?<!-- \/liste-ld -->/, () => ldBlock);
@@ -1001,32 +1025,205 @@ function authorPageHtml(ap) {
       return o;
     }),
     isPartOf: { '@type': 'Blog', name: 'Bergeç', url: SITE_URL } };
-  const rows = ap.posts.map(p =>
+  return listPageHtml({ url, title, desc, ogType: 'profile', ld, section: 'Yazarlar', kicker: 'Yazar', h1: a.ad, lede: a.bio,
+    h2: 'Bergeç’teki yazıları', rows: postRowsHtml(ap.posts) });
+}
+
+/** Yazar ve konu sayfalarındaki yazı listesi: başlık, tarih ve özet. */
+function postRowsHtml(posts) {
+  return posts.map(p =>
     '    <h3><a href="' + esc(p.href) + '">' + esc(plainOfTex(p.title)) + '</a></h3>\n' +
     '    <p><span style="color: var(--color-neutral-600);">' + esc(p.date || '') + '</span>' +
     (p.excerpt ? ' — ' + esc(plainOfTex(p.excerpt)) : '') + '</p>\n').join('\n');
+}
+
+/**
+ * Yazar, konu ve 404 sayfalarının ortak iskeleti (yazı sayfalarıyla aynı görünüm).
+ * o: { url, title, desc, ogType, ld, section, kicker, h1, lede, h2, rows, root, noindex }
+ * root: bağlantıların başına gelen ön ek ("/" → 404 sayfası her adreste çalışsın diye kökten bağlanır).
+ */
+function listPageHtml(o) {
+  const r = o.root || '';
   return '<!DOCTYPE html>\n<html lang="tr">\n<head>\n<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
-    '<title>' + esc(title) + '</title>\n' +
-    '<meta name="description" content="' + esc(desc) + '">\n' +
-    '<link rel="canonical" href="' + url + '">\n' + FEED_LINK + '\n' +
-    '<meta property="og:type" content="profile">\n<meta property="og:site_name" content="Bergeç">\n<meta property="og:locale" content="tr_TR">\n' +
-    '<meta property="og:title" content="' + esc(title) + '">\n<meta property="og:description" content="' + esc(desc) + '">\n' +
-    '<meta property="og:url" content="' + url + '">\n<meta property="og:image" content="' + SITE_URL + 'og-image.png">\n' +
-    '<meta name="twitter:card" content="summary_large_image">\n' +
-    '<script type="application/ld+json">' + jsonForScript(ld) + '<\/script>\n' +
-    '<link rel="icon" href="favicon.svg" type="image/svg+xml">\n<link rel="icon" href="favicon-96x96.png" type="image/png" sizes="96x96">\n' +
-    '<link rel="icon" href="favicon.ico" sizes="48x48">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n' +
+    '<title>' + esc(o.title) + '</title>\n' +
+    (o.noindex ? '<meta name="robots" content="noindex">\n' : '') +
+    (o.desc ? '<meta name="description" content="' + esc(o.desc) + '">\n' : '') +
+    (o.url ? '<link rel="canonical" href="' + o.url + '">\n' : '') + FEED_LINK + '\n' +
+    (o.url ? '<meta property="og:type" content="' + (o.ogType || 'website') + '">\n<meta property="og:site_name" content="Bergeç">\n<meta property="og:locale" content="tr_TR">\n' +
+      '<meta property="og:title" content="' + esc(o.title) + '">\n<meta property="og:description" content="' + esc(o.desc) + '">\n' +
+      '<meta property="og:url" content="' + o.url + '">\n<meta property="og:image" content="' + SITE_URL + 'og-image.png">\n' +
+      '<meta name="twitter:card" content="summary_large_image">\n' : '') +
+    (o.ld ? '<script type="application/ld+json">' + jsonForScript(o.ld) + '<\/script>\n' : '') +
+    '<link rel="icon" href="' + r + 'favicon.svg" type="image/svg+xml">\n<link rel="icon" href="' + r + 'favicon-96x96.png" type="image/png" sizes="96x96">\n' +
+    '<link rel="icon" href="' + r + 'favicon.ico" sizes="48x48">\n<link rel="apple-touch-icon" href="' + r + 'apple-touch-icon.png">\n' +
     '<!-- Cloudflare Web Analytics --><script type=\'module\' src=\'https://static.cloudflareinsights.com/beacon.min.js\' data-cf-beacon=\'{"token": "acab01d6baa64c2a827dc674fcab7c85"}\'><\/script><!-- End Cloudflare Web Analytics -->\n' +
-    '<link rel="stylesheet" href="assets/bergec.css">\n</head>\n<body>\n<div class="wrap">\n\n' +
-    '  <header class="top">\n    <a class="home" href="index.html">← Bergeç</a>\n    <span>Yazarlar</span>\n  </header>\n\n' +
-    '  <div class="kicker">Yazar</div>\n\n' +
-    '  <h1 class="title">' + esc(a.ad) + '</h1>\n' +
-    (a.bio ? '  <p class="lede">' + esc(a.bio) + '</p>\n' : '') + '\n' +
-    '  <article class="body">\n    <h2>Bergeç’teki yazıları</h2>\n\n' + rows + '\n  </article>\n\n' +
+    '<link rel="stylesheet" href="' + r + 'assets/bergec.css">\n</head>\n<body>\n<div class="wrap">\n\n' +
+    '  <header class="top">\n    <a class="home" href="' + r + 'index.html">← Bergeç</a>\n    <span>' + esc(o.section) + '</span>\n  </header>\n\n' +
+    '  <div class="kicker">' + esc(o.kicker) + '</div>\n\n' +
+    '  <h1 class="title">' + esc(o.h1) + '</h1>\n' +
+    (o.lede ? '  <p class="lede">' + esc(o.lede) + '</p>\n' : '') + '\n' +
+    '  <article class="body">\n    <h2>' + esc(o.h2) + '</h2>\n\n' + o.rows + '\n  </article>\n\n' +
     '  <footer class="bottom">\n    <span>Bergeç · ' + new Date().getFullYear() + '</span>\n' +
     '    <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>\n' +
-    '    <span><a href="index.html">Anasayfaya dön</a></span>\n  </footer>\n\n</div>\n</body>\n</html>\n';
+    '    <span><a href="' + r + 'index.html">Anasayfaya dön</a></span>\n  </footer>\n\n</div>\n</body>\n</html>\n';
+}
+
+/* ───────────── konular, seriler ve "okumaya devam" bölümü ───────────── */
+
+/** Kayıttaki konular: dizi ya da virgülle ayrılmış metin → temiz dizi. */
+function konularOf(entry) {
+  const k = entry && entry.konular;
+  return (Array.isArray(k) ? k : String(k || '').split(',')).map(s => String(s).trim()).filter(Boolean);
+}
+/** Konu sayfasının adresi: konu-<ad>.html */
+function topicHrefOf(name) { return 'konu-' + slugify(name) + '.html'; }
+
+/** Yayındaki (taslak olmayan, sitedeki) yazılar. */
+function livePostsOf(data) {
+  return flattenOf(data).filter(p => p && !p.taslak && p.href && !/^[a-z]+:/i.test(p.href));
+}
+
+/** En az bir yazısı olan her konu için { ad, aciklama, href, posts }; ilk geçtiği sırayla (yazılar yeniden eskiye). */
+function topicPagesOf(data) {
+  const key = s => String(s).toLocaleLowerCase('tr');
+  const notes = data.konuAciklamalari || {};
+  const out = [], byKey = {};
+  livePostsOf(data).forEach(p => konularOf(p).forEach(ad => {
+    const k = key(ad);
+    if (!byKey[k]) { byKey[k] = { ad, aciklama: notes[ad] || '', href: topicHrefOf(ad), posts: [] }; out.push(byKey[k]); }
+    if (!byKey[k].posts.includes(p)) byKey[k].posts.push(p);
+  }));
+  return out;
+}
+
+/** Konu sayfası: konunun kısa tanıtımı ve o konudaki yazılar. */
+function topicPageHtml(tp) {
+  const url = SITE_URL + tp.href;
+  const title = tp.ad + ' Yazıları · Bergeç';
+  const desc = clipDesc(tp.aciklama || (tp.ad + ' üzerine Bergeç’teki Türkçe yazılar: ' + tp.posts.map(p => plainOfTex(p.title)).join('; ') + '.'));
+  const ld = { '@context': 'https://schema.org', '@type': 'CollectionPage', url, inLanguage: 'tr', name: title, description: desc,
+    about: { '@type': 'Thing', name: tp.ad },
+    hasPart: tp.posts.map(p => {
+      const o = { '@type': 'BlogPosting', headline: plainOfTex(p.title || '').slice(0, 110), url: SITE_URL + encodeURI(p.href) };
+      const d = isoOfTrDate(p.date);
+      if (d) o.datePublished = d;
+      if (p.author) o.author = { '@type': 'Person', name: p.author };
+      return o;
+    }),
+    isPartOf: { '@type': 'Blog', name: 'Bergeç', url: SITE_URL } };
+  return listPageHtml({ url, title, desc, ld, section: 'Konular', kicker: 'Konu', h1: tp.ad, lede: tp.aciklama,
+    h2: 'Bu konudaki yazılar', rows: postRowsHtml(tp.posts) });
+}
+
+/** 404.html: GitHub Pages bulunamayan her adreste bunu gösterir; son yazılara yönlendirir. */
+function notFoundHtml(data) {
+  const posts = livePostsOf(data).slice(0, 6).map(p => Object.assign({}, p, { href: '/' + p.href }));
+  return listPageHtml({ title: 'Sayfa bulunamadı · Bergeç', noindex: true, root: '/', section: 'Bergeç', kicker: '404',
+    h1: 'Aradığınız sayfa burada değil', lede: 'Adres değişmiş ya da yanlış yazılmış olabilir. Ana sayfadaki arşive ya da aşağıdaki son yazılara bakabilirsiniz.',
+    h2: 'Son yazılar', rows: postRowsHtml(posts) });
+}
+
+/** Yazının serisindeki yazılar, eskiden yeniye (aynı gün: listede alttaki önce). */
+function seriesOf(data, entry) {
+  const name = String((entry && entry.seri) || '').trim();
+  if (!name) return [];
+  const key = s => String(s || '').trim().toLocaleLowerCase('tr');
+  const posts = livePostsOf(data);
+  return posts.map((p, i) => ({ p, i, d: isoOfTrDate(p.date) || '' })).filter(x => key(x.p.seri) === key(name))
+    .sort((a, b) => a.d.localeCompare(b.d) || b.i - a.i).map(x => x.p);
+}
+
+/** "Bunları da okuyun": ortak konu, anahtar kelime ve yazara göre en yakın üç yazı (serideki komşular hariç). */
+function relatedOf(data, entry, skip) {
+  const key = s => String(s).toLocaleLowerCase('tr');
+  const set = a => new Set(a.map(key));
+  const topics = set(konularOf(entry)), kws = set(keywordsOf(entry)), authors = set(authorNamesOf(entry));
+  const scored = livePostsOf(data).filter(p => p.href !== entry.href && !skip.includes(p.href)).map((p, i) => {
+    let s = 0;
+    konularOf(p).forEach(t => { if (topics.has(key(t))) s += 3; });
+    keywordsOf(p).forEach(k => { if (kws.has(key(k))) s += 1; });
+    authorNamesOf(p).forEach(a => { if (authors.has(key(a))) s += 0.5; });
+    return { p, i, s };
+  });
+  const best = scored.filter(x => x.s >= 1).sort((a, b) => b.s - a.s || a.i - b.i);
+  const rest = scored.filter(x => x.s < 1); // yeterince yakın yazı yoksa en yenilerle tamamla
+  return best.concat(rest).slice(0, 3).map(x => x.p);
+}
+
+/**
+ * Yazının altındaki <!-- devam --> bölümü: serideki önceki/sonraki yazı, yazının konuları ve benzer yazılar.
+ * Arşiv verisinden üretilir; bir yazı eklenince ya da değişince komşu yazıların bölümü de yeniden yazılır.
+ */
+function devamBlockOf(data, entry) {
+  const series = seriesOf(data, entry);
+  const at = series.findIndex(p => p.href === entry.href);
+  const prev = at > 0 ? series[at - 1] : null, next = at >= 0 && at < series.length - 1 ? series[at + 1] : null;
+  const link = p => '<a href="' + esc(p.href) + '">' + esc(plainOfTex(p.title)) + '</a>';
+  const L = ['  <!-- devam -->', '  <section class="refs devam" id="devam">', '    <h2>Okumaya devam</h2>'];
+  if (at >= 0 && series.length > 1) {
+    L.push('    <p style="font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-neutral-600); margin: 0 0 10px;">' +
+      esc(String(entry.seri).trim()) + ' dizisi · ' + (at + 1) + ' / ' + series.length + '</p>');
+    if (prev) L.push('    <p style="margin: 0 0 6px;">← Önceki: ' + link(prev) + '</p>');
+    if (next) L.push('    <p style="margin: 0 0 6px;">Sonraki: ' + link(next) + ' →</p>');
+  }
+  const topics = konularOf(entry);
+  if (topics.length) L.push('    <p style="margin: 14px 0 0; font-size: 14px;">Konular: ' +
+    topics.map(t => '<a href="' + esc(topicHrefOf(t)) + '">' + esc(t) + '</a>').join(' · ') + '</p>');
+  const rel = relatedOf(data, entry, [prev, next].filter(Boolean).map(p => p.href));
+  if (rel.length) {
+    L.push('    <h3 style="font-family: var(--font-heading); font-weight: 400; font-style: italic; font-size: 19px; color: var(--color-accent-700); margin: 22px 0 10px;">Bunları da okuyun</h3>',
+      '    <ol>');
+    rel.forEach(p => L.push('      <li>' + link(p) + (p.date ? ' <span style="color: var(--color-neutral-600);">· ' + esc(p.date) + '</span>' : '') + '</li>'));
+    L.push('    </ol>');
+  }
+  L.push('  </section>', '  <!-- /devam -->');
+  return L.join('\n') + '\n\n';
+}
+
+/** <!-- devam --> bölümünü yeniden yazar; yoksa yorumların (yoksa alt bilginin) üstüne ekler. Taslağa eklenmez. */
+function withDevam(html, entry, data) {
+  html = html.replace(/  <!-- devam -->[\s\S]*?<!-- \/devam -->\n\n/, '');
+  if (!entry || entry.taslak) return html;
+  let i = html.indexOf('  <!-- yorumlar -->');
+  if (i < 0) i = html.indexOf('  <footer class="bottom">');
+  return i < 0 ? html : html.slice(0, i) + devamBlockOf(data, entry) + html.slice(i);
+}
+
+/** Okuma süresi: yazı gövdesindeki sözcük sayısından (dakikada ~200 sözcük; formüller yavaş okunur diye cömert). */
+function readingMinutesOf(html) {
+  const m = /<article class="body">([\s\S]*?)<\/article>/.exec(html);
+  if (!m) return 0;
+  const text = m[1].replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z#0-9]+;/gi, ' ');
+  const words = text.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+  return Math.max(1, Math.round(words / 200));
+}
+/** Üst satırdaki (kicker) "N dk okuma" yazısını yazar ya da günceller. */
+function withReadingTime(html) {
+  html = html.replace(/\n?\s*<span class="okuma"[^>]*>[^<]*<\/span>/, '');
+  const n = readingMinutesOf(html);
+  const m = /(<div class="kicker">[\s\S]*?)(\n?\s*<\/div>)/.exec(html);
+  if (!n || !m) return html;
+  const span = '\n    <span class="okuma" style="color: var(--color-neutral-600);">· ' + n + ' dk okuma</span>';
+  return html.slice(0, m.index) + m[1] + span + m[2] + html.slice(m.index + m[0].length);
+}
+
+/* ─────────────────────────── IndexNow ─────────────────────────── */
+
+// Anahtar sitenin kökündeki <anahtar>.txt dosyasında durur; arama motorları oradan doğrular.
+const INDEXNOW_KEY = '595703f912d3518b3683d694c9c51557';
+
+/**
+ * Bing, Yandex ve IndexNow'a katılan öteki arama motorlarına "bu adresler değişti" der; yeni yazı aramalarda
+ * günler yerine saatler içinde görünür. Tarayıcıdan yanıt okunamaz (no-cors): istek gider, sonucu beklenmez.
+ */
+function pingIndexNow(urls) {
+  [...new Set(urls)].slice(0, 20).forEach(u => {
+    try {
+      fetch('https://api.indexnow.org/indexnow?url=' + encodeURIComponent(u) + '&key=' + INDEXNOW_KEY, { mode: 'no-cors' }).catch(() => {});
+    } catch (e) {}
+  });
 }
 
 /**
@@ -1044,12 +1241,18 @@ function buildLlmsTxt(data) {
   posts.forEach(p => {
     const extra = [p.author, p.date].filter(Boolean).join(', ');
     const kw = keywordsOf(p);
-    L.push('- [' + line(p.title) + '](' + SITE_URL + encodeURI(p.href) + '): ' + line(p.excerpt || '') +
+    L.push('- [' + line(p.title) + '](' + SITE_URL + encodeURI(p.href) + '): ' + line(p.seoDesc || p.excerpt || '') +
       (extra ? ' (' + extra + ')' : '') + (kw.length ? ' Konular: ' + kw.join(', ') + '.' : ''));
   });
   L.push('', '## Yazarlar', '');
   authorPagesOf(data).forEach(ap => L.push('- [' + ap.author.ad + '](' + SITE_URL + ap.href + '): ' +
     ap.posts.length + ' yazı' + (ap.author.bio ? '. ' + line(ap.author.bio) : '')));
+  const topics = topicPagesOf(data);
+  if (topics.length) {
+    L.push('', '## Konular', '');
+    topics.forEach(tp => L.push('- [' + tp.ad + '](' + SITE_URL + tp.href + '): ' + tp.posts.length + ' yazı' +
+      (tp.aciklama ? '. ' + line(tp.aciklama) : '')));
+  }
   return L.join('\n') + '\n';
 }
 
@@ -1099,13 +1302,13 @@ function buildFeed(data) {
 
 /** Kaydın, yazı sayfasının <title>'ına ve seo bloğuna giden alanları: değişti mi diye karşılaştırmak için. */
 function seoKeyOf(p) {
-  return JSON.stringify([p.title, p.excerpt, p.seoTitle || '', keywordsOf(p), p.about || null, p.author, p.date]);
+  return JSON.stringify([p.title, p.excerpt, p.seoTitle || '', p.seoDesc || '', keywordsOf(p), p.about || null, p.author, p.date, p.gorsel || '']);
 }
 
 function withSeoHead(html, entry) {
   const a = (s) => esc(s);
   const url = SITE_URL + encodeURI(entry.href);
-  const desc = clipDesc(plainOfTex(entry.excerpt));
+  const desc = clipDesc(plainOfTex(entry.seoDesc || entry.excerpt)); // Google açıklaması; yoksa arşiv özeti
   const date = isoOfTrDate(entry.date);
   const L = ['<!-- seo -->'];
   if (desc) L.push('<meta name="description" content="' + a(desc) + '">');
@@ -1113,7 +1316,7 @@ function withSeoHead(html, entry) {
     '<meta property="og:type" content="article">', '<meta property="og:site_name" content="Bergeç">', '<meta property="og:locale" content="tr_TR">',
     '<meta property="og:title" content="' + a(entry.title || '') + '">');
   if (desc) L.push('<meta property="og:description" content="' + a(desc) + '">');
-  L.push('<meta property="og:url" content="' + url + '">', '<meta property="og:image" content="' + SITE_URL + 'og-image.png">',
+  L.push('<meta property="og:url" content="' + url + '">', '<meta property="og:image" content="' + a(ogImageOf(entry)) + '">',
     '<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',
     '<meta name="twitter:card" content="summary_large_image">');
   if (entry.author) L.push('<meta name="author" content="' + a(entry.author) + '">');
@@ -1155,8 +1358,9 @@ function withComments(html) {
 
 /**
  * Ana sayfa listesini değiştirip (istenirse yanında başka dosyalarla) tek commit'te kaydeder.
- * Site haritası (sitemap.xml), yazar sayfaları, llms.txt ve Atom akışı (feed.xml) da aynı commit'te güncellenir;
- * kaydedilen yazıların seo bloğu arşiv kaydından yazılır, altlarına yorum bölümü eklenir.
+ * Site haritası (sitemap.xml), yazar ve konu sayfaları, llms.txt, Atom akışı (feed.xml) ve 404.html da aynı commit'te
+ * güncellenir; kaydedilen yazıların seo bloğu arşiv kaydından yazılır, altlarına "okumaya devam" ve yorum bölümleri,
+ * üst satırlarına okuma süresi eklenir. Kayıttan sonra yazılar IndexNow ile arama motorlarına bildirilir.
  * mutate(liste) değişikliği yazıları adresleriyle (href) bulup uygular. Liste siz açtıktan
  * sonra başkası tarafından değiştirildiyse güncel hâli indirilir ve aynı işlem onun üzerine
  * yeniden uygulanır; böylece iki kişinin liste değişiklikleri birbirini silmez.
@@ -1174,9 +1378,11 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       // yalnızca arşiv kaydı değişen yazıların sayfaları da yeniden yazılır: <title> ve seo bloğu kayıtla aynı kalsın
       const extraPaths = new Set(extra.map(f => f.path));
       const before = {};
-      flattenOf(state.repoIndex).forEach(p => { if (p && p.href) before[p.href] = seoKeyOf(p); });
+      // (ya da altındaki "okumaya devam" bölümü değişen: seri komşusu, konu, benzer yazılar)
+      const pageKey = (d, p) => seoKeyOf(p) + (p.taslak ? '' : devamBlockOf(d, p));
+      flattenOf(state.repoIndex).forEach(p => { if (p && p.href) before[p.href] = pageKey(state.repoIndex, p); });
       for (const p of flattenOf(data)) {
-        if (!p || !p.href || !/\.html$/i.test(p.href) || extraPaths.has(p.href) || before[p.href] === undefined || before[p.href] === seoKeyOf(p)) continue;
+        if (!p || !p.href || !/\.html$/i.test(p.href) || extraPaths.has(p.href) || before[p.href] === undefined || before[p.href] === pageKey(data, p)) continue;
         try {
           const f = await ghGetFile(p.href);
           if (f) { extra.push({ path: p.href, text: readPage(f.text) }); expect[p.href] = f.sha; extraPaths.add(p.href); }
@@ -1187,7 +1393,7 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       const entries = {};
       flattenOf(data).forEach(p => { if (p && p.href) entries[p.href] = p; });
       const files = extra.map(f => (f.text !== null && /\.html$/i.test(f.path) && entries[f.path])
-        ? { path: f.path, text: withComments(withSeoHead(f.text, entries[f.path])) } : f);
+        ? { path: f.path, text: withReadingTime(withDevam(withComments(withSeoHead(f.text, entries[f.path])), entries[f.path], data)) } : f);
       // yazılara gömülü görseller assets/img/<yazı>/ dosyalarına çıkar; aynı commit'te gönderilir
       const imgFiles = {};
       for (let i = 0; i < files.length; i++) {
@@ -1199,8 +1405,13 @@ async function saveIndex(message, extraFiles, mutate, extraExpect, basePlain) {
       }
       files.push(...Object.values(imgFiles));
       const generated = authorPagesOf(data).map(ap => ({ path: ap.href, text: authorPageHtml(ap) }))
-        .concat([{ path: 'llms.txt', text: buildLlmsTxt(data) }, { path: 'feed.xml', text: buildFeed(data) }]);
+        .concat(topicPagesOf(data).map(tp => ({ path: tp.href, text: topicPageHtml(tp) })))
+        .concat([{ path: 'llms.txt', text: buildLlmsTxt(data) }, { path: 'feed.xml', text: buildFeed(data) },
+          { path: '404.html', text: notFoundHtml(data) }]);
       const { shas } = await ghCommit(files.concat([{ path: 'index.html', text: plain }, sitemap], generated), message, expect);
+      // arama motorlarına haber: ana sayfa ve bu commit'te yazılan/silinen yayındaki yazılar
+      const live = new Set(livePostsOf(data).map(p => p.href)), was = new Set(livePostsOf(state.repoIndex).map(p => p.href));
+      pingIndexNow([SITE_URL].concat(extra.map(f => f.path).filter(h => live.has(h) || was.has(h)).map(h => SITE_URL + encodeURI(h))));
       state.repoIndex = data;
       state.indexPlain = plain;
       state.indexSha = shas['index.html'];
@@ -1764,6 +1975,10 @@ function applyOp(data, op) {
       // eski (bu alanlar eklenmeden kaydedilmiş) bekleyen işlemler mevcut değerleri silmesin
       if ('seoTitle' in f) { if (f.seoTitle) q.seoTitle = f.seoTitle; else delete q.seoTitle; }
       if ('keywords' in f) { if (f.keywords.length) q.keywords = f.keywords; else delete q.keywords; }
+      if ('seoDesc' in f) { if (f.seoDesc) q.seoDesc = f.seoDesc; else delete q.seoDesc; }
+      if ('seri' in f) { if (f.seri) q.seri = f.seri; else delete q.seri; }
+      if ('konular' in f) { if (f.konular.length) q.konular = f.konular; else delete q.konular; }
+      if ('gorsel' in f) { if (f.gorsel) q.gorsel = f.gorsel; else delete q.gorsel; }
       if (f.featured) {
         const i = arr.indexOf(q);
         if (i > 0) { arr.splice(i, 1); arr.unshift(q); }
@@ -4010,6 +4225,10 @@ function openMeta(p, featured) {
   $('m-excerpt').value = p.excerpt || '';
   $('m-seotitle').value = p.seoTitle || '';
   $('m-keywords').value = keywordsOf(p).join(', ');
+  $('m-seodesc').value = p.seoDesc || '';
+  $('m-seri').value = p.seri || '';
+  $('m-konular').value = konularOf(p).join(', ');
+  $('m-gorsel').value = p.gorsel || '';
   $('m-lede').value = (p.lede || []).join('\n\n');
   $('m-featured').checked = !!featured;
   msg('meta-msg', '');
@@ -4030,12 +4249,17 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
     excerpt: $('m-excerpt').value.trim(),
     seoTitle: $('m-seotitle').value.trim(),
     keywords: keywordsOf({ keywords: $('m-keywords').value }),
+    seoDesc: $('m-seodesc').value.replace(/\s+/g, ' ').trim(),
+    seri: $('m-seri').value.trim(),
+    konular: konularOf({ konular: $('m-konular').value }),
+    gorsel: $('m-gorsel').value.trim().replace(/^\//, ''),
     kicker: $('m-kicker').value.trim(),
     lede: $('m-lede').value.split(/\n{2,}/).map(s => s.trim()).filter(Boolean),
     featured: $('m-featured').checked
   };
   const same = f.title === (p.title || '') && f.author === (p.author || '') && f.date === (p.date || '') && f.href === (p.href || '') &&
     f.excerpt === (p.excerpt || '') && f.seoTitle === (p.seoTitle || '') && f.keywords.join(',') === keywordsOf(p).join(',') &&
+    f.seoDesc === (p.seoDesc || '') && f.seri === (p.seri || '') && f.konular.join(',') === konularOf(p).join(',') && f.gorsel === (p.gorsel || '') &&
     f.kicker === (p.kicker || '') && f.lede.join('\n\n') === (p.lede || []).join('\n\n') && f.featured === state.metaFeatured;
   if (same) { ev.target.disabled = false; noChange(); return; }
   try {
