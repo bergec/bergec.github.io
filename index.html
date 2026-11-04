@@ -5,20 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bergeç — Bilgisayar Bilimi, Matematik ve Mantık</title>
 <!-- seo -->
-<meta name="description" content="Bergeç, bilgisayar bilimi, matematik ve mantık üzerine yazılar toplayan bir blog.">
+<meta name="description" content="Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar: Enigma’nın matematiği, Knuth’un soruları, P ile NP problemi, Y birleştiricisi ve daha fazlası.">
 <link rel="canonical" href="https://bergec.github.io/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Bergeç">
 <meta property="og:locale" content="tr_TR">
 <meta property="og:title" content="Bergeç — Bilgisayar Bilimi, Matematik ve Mantık">
-<meta property="og:description" content="Bergeç, bilgisayar bilimi, matematik ve mantık üzerine yazılar toplayan bir blog.">
+<meta property="og:description" content="Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar: Enigma’nın matematiği, Knuth’un soruları, P ile NP problemi, Y birleştiricisi ve daha fazlası.">
 <meta property="og:url" content="https://bergec.github.io/">
 <meta property="og:image" content="https://bergec.github.io/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <!-- /seo -->
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "Bergeç", "alternateName": ["bergec", "Bergec"], "url": "https://bergec.github.io/"}</script>
+<!-- liste-ld -->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Blog","name":"Bergeç","url":"https://bergec.github.io/","inLanguage":"tr","publisher":{"@type":"Organization","name":"Bergeç","url":"https://bergec.github.io/","logo":{"@type":"ImageObject","url":"https://bergec.github.io/apple-touch-icon.png"}},"blogPost":[{"@type":"BlogPosting","headline":"Knuth’un Kitabından Bir Soru (III)","url":"https://bergec.github.io/knuth-3.html","datePublished":"2026-10-05","author":{"@type":"Person","name":"Yasin Aydın"}},{"@type":"BlogPosting","headline":"Enigma Bölüm 3: Enigmanın Çözülmesi","url":"https://bergec.github.io/enigma-3.html","datePublished":"2026-02-07","author":{"@type":"Person","name":"Yasin Aydın"}},{"@type":"BlogPosting","headline":"Enigma Bölüm 2: Enigmanın Çalışma Prensibi","url":"https://bergec.github.io/enigma-2.html","datePublished":"2026-02-07","author":{"@type":"Person","name":"Yasin Aydın"}},{"@type":"BlogPosting","headline":"Enigma Bölüm 1: Matematiksel Ön Hazırlık","url":"https://bergec.github.io/enigma-1.html","datePublished":"2026-02-05","author":{"@type":"Person","name":"Yasin Aydın"}},{"@type":"BlogPosting","headline":"Berelim Y ile","url":"https://bergec.github.io/berelim-y-ile.html","datePublished":"2025-12-11","author":{"@type":"Person","name":"Cem Bozşahin"}},{"@type":"BlogPosting","headline":"Kodların Serüveni","url":"https://bergec.github.io/kodlarin-seruveni.html","datePublished":"2025-12-05","author":{"@type":"Person","name":"Kaan Emir Eröz"}},{"@type":"BlogPosting","headline":"Knuth’un Kitabından Bir Soru (II)","url":"https://bergec.github.io/knuth-2.html","datePublished":"2025-12-02","author":{"@type":"Person","name":"Yasin Aydın"}},{"@type":"BlogPosting","headline":"Knuth’un Kitabından Bir Soru (I)","url":"https://bergec.github.io/knuth-1.html","datePublished":"2025-11-09","author":{"@type":"Person","name":"Yasin Aydın"}},{"@type":"BlogPosting","headline":"Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü","url":"https://bergec.github.io/godel-mektubu.html","datePublished":"2025-11-06","author":{"@type":"Person","name":"Yasin Aydın"}}]}</script>
+<!-- /liste-ld -->
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "Bergeç", "alternateName": ["bergec", "Bergec"], "url": "https://bergec.github.io/", "inLanguage": "tr", "description": "Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar."}</script>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-96x96.png" type="image/png" sizes="96x96">
 <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -152,7 +155,7 @@
   .mark .neck span { flex: 0 0 2.4em; height: 0.18em; border: 0.05em solid var(--color-neutral-500); }
   .mark .keyboard { width: 8.2em; margin-top: 0.42em; border: 0.085em solid currentColor; border-radius: 0.18em; padding: 0.3em 0.34em; display: grid; grid-template-columns: repeat(12, 1fr); gap: 0.1em; }
   .mark .keyboard span { height: 0.22em; background: var(--color-neutral-400); }
-  .mark .wordmark { border: 0.085em solid currentColor; border-radius: 0.28em; padding: 0.22em 0.6em 0.3em; margin-top: 0.2em; }
+  .mark .wordmark { border: 0.085em solid currentColor; border-radius: 0.28em; padding: 0.22em 0.6em 0.3em; margin: 0.2em 0 0; font-size: inherit; font-weight: inherit; line-height: inherit; }
   .mark .wordmark span { font-family: var(--font-heading); font-size: 1.9em; line-height: 1.15; letter-spacing: 0.02em; }
 
   @media (max-width: 860px) {
@@ -192,7 +195,7 @@
               <span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
           </div>
-          <div class="wordmark"><span>bergeç</span></div>
+          <h1 class="wordmark"><span>bergeç</span></h1>
         </div>
       </div>
 
@@ -221,7 +224,19 @@
 
         <h3 class="section" id="arsiv">Arşiv</h3>
 
-        <div id="archive"></div>
+        <div id="archive">
+<!-- liste -->
+<article class="arch-row"><div class="date">05.10.2026</div><div style="min-width: 0;"><h4><a href="knuth-3.html">Knuth’un Kitabından Bir Soru (III)</a></h4><div class="author">Yasin Aydın</div><p>Bu yazıda bir sıralamanın yığın kullanılarak elde edilebilmesi için gerek ve yeter koşulu vereceğiz.</p></div></article>
+<article class="arch-row"><div class="date">07.02.2026</div><div style="min-width: 0;"><h4><a href="enigma-3.html">Enigma Bölüm 3: Enigmanın Çözülmesi</a></h4><div class="author">Yasin Aydın</div><p>Bu yazıda enigmanın şifresini kıran çözümleri inceleyeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">07.02.2026</div><div style="min-width: 0;"><h4><a href="enigma-2.html">Enigma Bölüm 2: Enigmanın Çalışma Prensibi</a></h4><div class="author">Yasin Aydın</div><p>Yazının bu kısmında Enigma’nın bileşenlerini ve bu bileşenlerin çalışma prensiplerini inceleyeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">05.02.2026</div><div style="min-width: 0;"><h4><a href="enigma-1.html">Enigma Bölüm 1: Matematiksel Ön Hazırlık</a></h4><div class="author">Yasin Aydın</div><p>Bu yazıda Enigma'nın nasıl çalıştığını anlamak için gereken matematiği inceleyeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">11.12.2025</div><div style="min-width: 0;"><h4><a href="berelim-y-ile.html">Berelim Y ile</a></h4><div class="author">Cem Bozşahin</div><p>Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir.</p></div></article>
+<article class="arch-row"><div class="date">05.12.2025</div><div style="min-width: 0;"><h4><a href="kodlarin-seruveni.html">Kodların Serüveni</a></h4><div class="author">Kaan Emir Eröz</div><p>Bir dosyaya yazdığımız kodları çıktıya dönüştüren programlar var; onlara programlama dili diyoruz. Bu yazıda programlama dillerinin nasıl çalıştığını inceleyeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">02.12.2025</div><div style="min-width: 0;"><h4><a href="knuth-2.html">Knuth’un Kitabından Bir Soru (II)</a></h4><div class="author">Yasin Aydın</div><p>Bu yazıda Knuth'un Kitabından Bir Soru (I) yazısında tanıttığımız sorunun gelişmiş bir versiyonunu çözeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">09.11.2025</div><div style="min-width: 0;"><h4><a href="knuth-1.html">Knuth’un Kitabından Bir Soru (I)</a></h4><div class="author">Yasin Aydın</div><p>Bu yazıda bilgisayar bilimi ile matematiğin buluştuğu ilginç bir soruyu inceleyeceğiz.</p></div></article>
+<article class="arch-row"><div class="date">06.11.2025</div><div style="min-width: 0;"><h4><a href="godel-mektubu.html">Kurt Amca’dan Mektup Var: Milyon Dolarlık Problemin Öyküsü</a></h4><div class="author">Yasin Aydın</div><p>Kurt Gödel’in 20 Mart 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi ve bu mektuptan P ile NP problemine uzanan öykü.</p></div></article>
+<!-- /liste -->
+</div>
 
         <div class="home-extra home-bottom" data-edit></div>
       </main>
@@ -316,21 +331,21 @@
       "date": "05.02.2026",
       "author": "Yasin Aydın",
       "href": "enigma-1.html",
-      "excerpt": "Bu yazıda Enigma'nın nasıl çalıştığını anlamak için gereken matematiği inceleyecğiz."
+      "excerpt": "Bu yazıda Enigma'nın nasıl çalıştığını anlamak için gereken matematiği inceleyeceğiz."
     },
     {
       "title": "Berelim Y ile",
       "date": "11.12.2025",
       "author": "Cem Bozşahin",
       "href": "berelim-y-ile.html",
-      "excerpt": "Programlamaya yeni başlayanlar özyinelemeyi öğrendiklerinde düzey atladıklarını hissederler. Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir."
+      "excerpt": "Programlamaya yeni başlayanlar, çok özel ve güzel bir programlama kavramını öğrenip kullanmaya başladıklarında düzey atladıklarını hissederler. Bu kavram özyinelemedir."
     },
     {
       "title": "Kodların Serüveni",
       "date": "05.12.2025",
       "author": "Kaan Emir Eröz",
       "href": "kodlarin-seruveni.html",
-      "excerpt": "Bir dosyaya yazdığımız kodları çıktıya dönüştüren programlar var; onlara programlama dili diyoruz. Bu yazıda programlama dillerinin nasıl çalıştığını inceleyeceiz."
+      "excerpt": "Bir dosyaya yazdığımız kodları çıktıya dönüştüren programlar var; onlara programlama dili diyoruz. Bu yazıda programlama dillerinin nasıl çalıştığını inceleyeceğiz."
     },
     {
       "title": "Knuth’un Kitabından Bir Soru (II)",
@@ -351,7 +366,7 @@
       "date": "06.11.2025",
       "author": "Yasin Aydın",
       "href": "godel-mektubu.html",
-      "excerpt": "Bu yazıda 20 Mart 1956'da Gödel’in von Neumann’a yazdığı mektuptan P ile NP sorusunun öyküsüne giden yolu inceleyeceğiz."
+      "excerpt": "Kurt Gödel’in 20 Mart 1956’da John von Neumann’a yazdığı mektubun Türkçe çevirisi ve bu mektuptan P ile NP problemine uzanan öykü."
     }
   ]
 }
