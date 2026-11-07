@@ -1350,8 +1350,8 @@ function withSeoHead(html, entry) {
   L.push('<!-- /seo -->');
   const block = L.join('\n') + '\n';
   html = html.replace(/<!-- seo -->[\s\S]*?<!-- \/seo -->\n?/, '');
-  // arama başlığı: Google'da görünen başlık (sayfadaki büyük başlık değişmez)
-  const seoTitle = String(entry.seoTitle || '').trim();
+  // arama başlığı: Google'da görünen başlık (sayfadaki büyük başlık değişmez); boşsa yazının arşivdeki başlığı
+  const seoTitle = String(entry.seoTitle || '').trim() || plainOfTex(entry.title || '');
   if (seoTitle) html = html.replace(/<title>[\s\S]*?<\/title>/, () => '<title>' + a(seoTitle) + ' · Bergeç</title>');
   const m = /<title>[\s\S]*?<\/title>\n?/.exec(html);
   if (!m) return html;
