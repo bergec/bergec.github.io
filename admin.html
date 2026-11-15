@@ -900,9 +900,13 @@ function clipDesc(s, n) {
 const SITE_PUBLISHER = { '@type': 'Organization', name: 'Bergeç', url: SITE_URL,
   logo: { '@type': 'ImageObject', url: SITE_URL + 'apple-touch-icon.png' } };
 
-/** Sitenin genel anahtar kelimeleri (ana sayfanın Blog yapısal verisine yazılır). */
-const SITE_KEYWORDS = ['bilgisayar bilimi blogu', 'Türkçe bilgisayar blogu', 'bilgisayar bilimi', 'matematik blogu', 'mantık',
-  'algoritmalar', 'hesaplama kuramı', 'kriptografi', 'programlama dilleri', 'kombinatorik'];
+/** Ana sayfadaki slogan (Blog verisinin ve beslemenin açıklaması). */
+const SITE_SLOGAN = 'Bilgisayar bilimi, matematik ve mantık üzerine yazılar toplayan bir blog.';
+/** Ana sayfadaki "Hakkında" yazısı (llms.txt'nin girişi). */
+const SITE_ABOUT = 'Bergeç, bilgisayar bilimi, matematik, mantık gibi alanlarda paylaşım yapan bir blog platformudur.';
+
+/** Sitenin genel anahtar kelimeleri: ana sayfa sloganı ve yazılarda geçen ifadeler. */
+const SITE_KEYWORDS = ['bilgisayar bilimi', 'matematik', 'mantık', 'P vs NP', 'Kurt Gödel', 'Enigma', 'Alan Turing', 'Donald Knuth', 'The Art of Computer Programming', 'Catalan sayıları', 'lambda', 'özyineleme', 'programlama dilleri'];
 
 /** Kayıttaki anahtar kelimeler: dizi ya da virgülle ayrılmış metin → temiz dizi. */
 function keywordsOf(entry) {
@@ -952,7 +956,7 @@ function articleLd(entry, desc) {
 function withHomeSeo(plain, data) {
   const posts = flattenOf(data).filter(p => p && !p.taslak && p.href);
   const ld = { '@context': 'https://schema.org', '@type': 'Blog', name: 'Bergeç', url: SITE_URL, inLanguage: 'tr',
-    description: 'Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar.', keywords: SITE_KEYWORDS.join(', '),
+    description: SITE_SLOGAN, keywords: SITE_KEYWORDS.join(', '),
     publisher: SITE_PUBLISHER,
     blogPost: posts.map(p => {
       const o = { '@type': 'BlogPosting', headline: plainOfTex(p.title || '').slice(0, 110), url: pageUrlOf(p.href) };
@@ -1126,7 +1130,7 @@ function topicPagesOf(data) {
 function topicPageHtml(tp) {
   const url = pageUrlOf(tp.href);
   const title = tp.ad + ' Yazıları · Bergeç';
-  const desc = clipDesc(tp.aciklama || (tp.ad + ' üzerine Bergeç’teki Türkçe yazılar: ' + tp.posts.map(p => plainOfTex(p.title)).join('; ') + '.'));
+  const desc = clipDesc(tp.aciklama || (tp.ad + ' üzerine Bergeç’teki yazılar: ' + tp.posts.map(p => plainOfTex(p.title)).join('; ') + '.'));
   const ld = { '@context': 'https://schema.org', '@type': 'CollectionPage', url, inLanguage: 'tr', name: title, description: desc,
     about: { '@type': 'Thing', name: tp.ad },
     hasPart: tp.posts.map(p => {
@@ -1259,9 +1263,8 @@ function buildLlmsTxt(data) {
   const posts = flattenOf(data).filter(p => p && !p.taslak && p.href && !/^[a-z]+:/i.test(p.href));
   const line = s => plainOfTex(s).replace(/\s+/g, ' ').trim();
   const L = ['# Bergeç', '',
-    '> Bergeç (bergec.github.io), bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar yayımlayan bir blog. ' +
-    'Konular arasında hesaplama kuramı ve P vs NP problemi, kriptografi ve Enigma, Knuth’un algoritma ve kombinatorik soruları, ' +
-    'lambda hesabı ve programlama dilleri var. Yazılar Türkçe, formüller LaTeX/KaTeX ile yazılı.', '',
+    // yalnızca sitenin kendi metinleri: ana sayfadaki "Hakkında" yazısı ve yazılarda geçen ifadeler
+    '> ' + SITE_ABOUT, '', 'Yazılarda geçenler: ' + SITE_KEYWORDS.slice(3).join(', ') + '.', '',
     'Site: ' + SITE_URL + ' · Dil: Türkçe · İletişim: bergecblog@gmail.com', '', '## Yazılar', ''];
   posts.forEach(p => {
     const extra = [p.author, p.date].filter(Boolean).join(', ');
@@ -1314,7 +1317,7 @@ function buildFeed(data) {
   });
   return '<?xml version="1.0" encoding="UTF-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="tr">\n' +
     '  <title>Bergeç</title>\n' +
-    '  <subtitle>Bilgisayar bilimi, matematik ve mantık üzerine Türkçe yazılar.</subtitle>\n' +
+    '  <subtitle>' + esc(SITE_SLOGAN) + '</subtitle>\n' +
     '  <link rel="self" type="application/atom+xml" href="' + FEED_URL + '"/>\n' +
     '  <link rel="alternate" type="text/html" href="' + SITE_URL + '"/>\n' +
     '  <id>' + SITE_URL + '</id>\n' +
