@@ -824,7 +824,7 @@ function writeIndexData(plain, data) {
 
 /* ─────────────────────────── site haritası ─────────────────────────── */
 
-const SITE_URL = 'https://bergec.github.io/';
+const SITE_URL = 'https://bergecblog.com/';
 
 /**
  * Adreslerde .html görünmez: GitHub Pages "enigma-1" isteğine enigma-1.html'i verir.
@@ -1367,7 +1367,7 @@ function withSeoHead(html, entry) {
 // Yorumlar ve beğeniler GitHub Discussions'ta ("Yorumlar" kategorisi) tutulur; her yazı adresiyle eşleşir.
 const GISCUS_ATTRS = 'data-repo="bergec/bergec.github.io" data-repo-id="R_kgDOUY9z9w" data-category="Yorumlar" ' +
   'data-category-id="DIC_kwDOUY9z984DHHR5" data-mapping="pathname" data-strict="1" data-reactions-enabled="1" ' +
-  'data-emit-metadata="0" data-input-position="top" data-theme="https://bergec.github.io/assets/giscus.css" ' +
+  'data-emit-metadata="0" data-input-position="top" data-theme="https://bergecblog.com/assets/giscus.css" ' +
   'data-lang="tr" data-loading="lazy"';
 
 /** Yazının altındaki <!-- yorumlar --> bloğunu yeniden yazar; yoksa alt bilginin (footer.bottom) üstüne ekler. */
@@ -3565,7 +3565,7 @@ async function drawShare() {
     ctx.font = L.url + 'px Lora, serif';
     ctx.textAlign = 'right';
     let x = W - L.padX;
-    [...'bergec.github.io'].reverse().forEach(ch => { ctx.fillText(ch, x, cy + L.url * 0.35); x -= ctx.measureText(ch).width + L.url * 0.12; });
+    [...'bergecblog.com'].reverse().forEach(ch => { ctx.fillText(ch, x, cy + L.url * 0.35); x -= ctx.measureText(ch).width + L.url * 0.12; });
     ctx.textAlign = 'left';
   }
 }

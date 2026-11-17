@@ -397,7 +397,7 @@ function pageHtml(slug) {
 </svg>
 <div class="brand">BERGEÇ</div>
 <div class="col"><div class="ust">${esc(m.ust)}</div><h1>${m.baslikHtml || esc(m.baslik)}</h1><div class="alt">${esc(m.alt)}</div><div class="rule"></div></div>
-<div class="foot">${esc(m.yazar)} · bergec.github.io</div>
+<div class="foot">${esc(m.yazar)} · bergecblog.com</div>
 <svg width="${W}" height="${H}" style="left:0;top:0;pointer-events:none">
   <rect x="20" y="20" width="${W - 40}" height="${H - 40}" fill="none" stroke="${C.ink}" stroke-width="1.2"/>
   <rect x="27" y="27" width="${W - 54}" height="${H - 54}" fill="none" stroke="${C.gold}" stroke-width="0.8"/>
