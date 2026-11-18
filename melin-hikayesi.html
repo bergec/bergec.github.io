@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mel’in Hikayesi · Bergeç</title>
+<!-- seo -->
+<meta name="description" content="Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için…">
+<link rel="canonical" href="https://bergecblog.com/melin-hikayesi">
+<link rel="alternate" type="application/atom+xml" title="Bergeç" href="https://bergecblog.com/feed.xml">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Bergeç">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:title" content="Mel’in Hikayesi">
+<meta property="og:description" content="Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için…">
+<meta property="og:url" content="https://bergecblog.com/melin-hikayesi">
+<meta property="og:image" content="https://bergecblog.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="author" content="Tolga Can">
+<meta property="article:published_time" content="2026-11-18">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Mel’in Hikayesi","url":"https://bergecblog.com/melin-hikayesi","mainEntityOfPage":"https://bergecblog.com/melin-hikayesi","inLanguage":"tr","image":"https://bergecblog.com/og-image.png","description":"Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için…","datePublished":"2026-11-18","author":{"@type":"Person","name":"Tolga Can","url":"https://bergecblog.com/yazar-tolga-can"},"keywords":"Mel, The Story of Mel, Ed Nather, Ed Post, Real Programmers Don't Use Pascal, makine kodu, kendini değiştiren kod, drum hafıza, FORTRAN, Assembly, Tolga Can","publisher":{"@type":"Organization","name":"Bergeç","url":"https://bergecblog.com/","logo":{"@type":"ImageObject","url":"https://bergecblog.com/apple-touch-icon.png"}},"isPartOf":{"@type":"Blog","name":"Bergeç","url":"https://bergecblog.com/"}}</script>
+<!-- /seo -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-96x96.png" type="image/png" sizes="96x96">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="assets/bergec.css">
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'></script><!-- End Cloudflare Web Analytics -->
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="home" href="./">← Bergeç</a>
+    <span>Arşiv</span>
+  </header>
+
+  <div class="kicker">
+    <span style="color: var(--color-neutral-600); text-transform: none; letter-spacing: 0;">18.11.2026</span>
+    <span class="okuma" style="color: var(--color-neutral-600);">· 3 dk okuma</span>
+  </div>
+
+  <h1 class="title">Mel’in Hikayesi</h1>
+  <div class="byline">Tolga Can</div>
+
+  <article class="body">
+
+    <p class="lede">Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için ortaya çıktığı zamanlara götürmek istiyorum.</p>
+    <p>Yapısal programlama dillerinin yeni trend olduğu zamanlarda DATAMATION adlı aylık bir dergide 1983 yılının Temmuz sayısında “Gerçek Programcılar Pascal ile Yazmaz” adlı bir yazısında[1] Ed Post, Pascal’ı hicivli bir şekilde eleştirerek FORTRAN ve Assembly dillerinin hala bu işi bilenlerin kullandığı diller olduğunu söyler. Dergide yayınlanmadan önce aynı yazıyı 1982 yılında bir USENET forumunda yayınlayan Ed Post’a, Mayıs 1983’te aynı adı taşıyan Ed Nather adlı bir kullanıcı güzel bir cevap yazarak bu işin asıl erbabının FORTRAN’la bile değil onaltılık düzende makine kodu ile yazdığını söyleyerek bilgisayar dünyasını Mel ile tanıştırır[2] . Yazıda ilk adı ve çalıştığı yerler dışında başka bilgi verilmeyen gizemli Mel, ilerleyen yıllarda epey ilgi odağı olur (en azından işin erbabı programcılar arasında) ve hem kimliği hem de yazıya konu olan programlama hünerleri hakkında birçok yazı yazılır (Örn. [3]).</p>
+    <p>Mel’i bizle tanıştıran Ed Nather’ın yazısının içeriğine gelmek gerekirse -- Mel şirketten ayrıldıktan sonra, onun yazdığı bir Black Jack programını inceleyip değiştirmekle görevlendirilen Ed, Mel’in programlama dehası karşısında hissettiklerini ve Mel’in farklı optimizasyon yöntemlerini şiirsel bir şekilde düz yazı ile anlatır. O kadar şiirsel bir yazıdır ki başka bir kullanıcı tarafından serbest şiir formatında tekrar yayınlanır[4] . Peki nedir Mel’i bu kadar özel yapan?</p>
+    <p>Günümüzde, C ya da C++ gibi çalıştırılabilir bir çıktı üreten dillerde yazılan programlar derlendikten sonra sınırları belirli parçalar halinde hafızaya yüklenip çalıştırılırlar. Mesela, Unix türevi olan sistemlerde kullanılan ELF formatında komutları içeren bir <em>.text</em> bölümü ve ilk değeri olan global değişkenleri içeren bir <em>.data</em> bölümü vardır. Donanım seviyesinde hafıza koruması ve güvenlik açığı oluşturmamak için <em>.text</em> bölümü program çalışma esnasında değiştirilemez. Yani programda bir değişiklik yapmak isterseniz kaynak kodunuzu değiştirip, tekrar derleyip bunu yapabilirsiniz. Diğer bir deyişle çalışma esnasında kendini değiştiren bir kod yazmak genel olarak mümkün değildir. Fakat yıllar önce, programcıların işlemci komutlarının sayısal kodlarını ezbere bildikleri zamanlarda, program komutları ile işlenilen verilen arasındaki ayrım günümüzdeki kadar net değildi ve Mel gibi usta programcılar bu durumu avantaja çevirerek kendi kendini değiştirebilen, daha hızlı çalışan, daha az kaynak kullanan programlar yazmada kullanıyordu. Ed’in yazdığına göre Mel bir komutun sayısal değerini gerektiğinde programındaki bir sabit sayı olarak kullanmaktan hiç çekinmezmiş. Yani toplama yapmak için kullanılan komut 0x0005 ise ve bizim de bir yerde 0x0005 sayısına ihtiyacımız varsa niye bunun için ek bir hafıza kullanalım</p>
+    <p>Mel, programındaki komutları ve verileri hafızada öyle güzel optimize bir sıraya sokarmış ki o zamanlarda yaygın olan <em>drum</em> hafızanın bir sonraki komutu okumak için dönme zamanı dikkate alındığında bir sonra çalıştırılan komut hiç beklemeden çalıştırılabilirmiş. Bu optimizasyonu otomatik yapmak için tasarlanan programlar hiçbir zaman Mel’in yazdığı kodlardaki performansı yakalayamamış.</p>
+    <p>Ed’i en çok şaşkına çeviren, Mel’in Black Jack programındaki bir döngünün hiçbir döngü testi veya döngüden dışarıya çıkaran bir komut içermemesine rağmen, yani bir sonsuz döngü olması gerekirken, gayet güzel bir şekilde çalışıp sona ermesiydi. Peki Mel bunu nasıl başarmıştı? Mel kullandığı verileri hafızanın üst bölümünde büyük adres değerlerine sahip olan yerlere koyup, döngüdeki komutun atıfta bulunduğu adresi 1 arttırarak tüm verileri işlemesini sağlıyordu. Bütün veriler işlenip bittiğinde yani en tepedeki adres değerine 1 eklenip adres değeri taştığında, taşan <em>bit</em> bir önceki komutun JUMP komutuna dönüşmesine neden oluyor ve programın 0x0000 adresine zıplamasını sağlıyordu. Mel, döngüden çıkınca çalıştırmak istediği komutu da 0x0000 adresine koyduğu için hiçbir sorun olmadan program güzelce çalışmaya devam ediyordu. Yani Mel için program yazmak sadece ardı ardına çalışacak komutları tasarlamak değil, hafıza uzayında her birinin yerinin son derece önemli olduğu komutları bir tabloya yerleştirmek gibiydi. Programlama sanatının usta ressamıydı Mel.</p>
+    <h2>Kaynakça</h2>
+    <ol><li>Ed Post, &quot;Real Programmers Don't Use Pascal&quot;, DATAMATION, Temmuz 1983, pp. 263-265 (Readers' Forum).</li><li>The Story of Mel, a Real Programmer. USENET. Ed Nather (utastro!nather), 21 Mayıs, 1983. <a href="https://web.archive.org/web/20180212083430/https://cboh.org/mel.txt">https://web.archive.org/web/20180212083430/https://cboh.org/mel.txt</a></li><li>Dissecting the Story of Mel. <a href="https://www.e-basteln.de/computing/rpc4000/storyofmel/">https://www.e-basteln.de/computing/rpc4000/storyofmel/</a></li><li><a href="https://users.cs.utah.edu/~elb/folklore/mel.html">https://users.cs.utah.edu/~elb/folklore/mel.html</a></li></ol>
+
+  </article>
+
+  <!-- devam -->
+  <section class="refs devam" id="devam">
+    <h2>Okumaya devam</h2>
+    <p style="margin: 14px 0 0; font-size: 14px;">Konular: <a href="konu-programlama-dilleri">Programlama Dilleri</a> · <a href="konu-bilim-tarihi">Bilim Tarihi</a></p>
+    <h3 style="font-family: var(--font-heading); font-weight: 400; font-style: italic; font-size: 19px; color: var(--color-accent-700); margin: 22px 0 10px;">Bunları da okuyun</h3>
+    <ol>
+      <li><a href="kodlarin-seruveni">Kodların Serüveni</a> <span style="color: var(--color-neutral-600);">· 05.12.2025</span></li>
+      <li><a href="enigma-3">Enigma Bölüm 3: Enigmanın Çözülmesi</a> <span style="color: var(--color-neutral-600);">· 07.02.2026</span></li>
+      <li><a href="berelim-y-ile">Berelim Y ile</a> <span style="color: var(--color-neutral-600);">· 11.12.2025</span></li>
+    </ol>
+  </section>
+  <!-- /devam -->
+
+  <!-- yorumlar -->
+  <section class="comments" id="yorumlar">
+    <h2>Yorumlar</h2>
+    <p class="hint">Beğenmek ya da yorum yazmak için GitHub hesabıyla giriş yapmanız gerekir.</p>
+    <script src="https://giscus.app/client.js" data-repo="bergec/bergec.github.io" data-repo-id="R_kgDOUY9z9w" data-category="Yorumlar" data-category-id="DIC_kwDOUY9z984DHHR5" data-mapping="pathname" data-strict="1" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="https://bergecblog.com/assets/giscus.css" data-lang="tr" data-loading="lazy" crossorigin="anonymous" async></script>
+  </section>
+  <!-- /yorumlar -->
+
+  <footer class="bottom">
+    <span>Bergeç · 2026</span>
+    <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>
+    <span><a href="./">Anasayfaya dön</a></span>
+  </footer>
+
+</div>
+
+<script type="application/json" id="bergec-images">{}</script>
+<script type="application/json" id="bergec-source">{"v":1,"meta":{"title":"Mel’in Hikayesi","subtitle":"","author":"Tolga Can","date":"18.11.2026","excerpt":"Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için ortaya çıktığı zamanlara götürmek istiyorum.","slug":"melin-hikayesi.html","lede":true,"katex":false},"body":"Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için ortaya çıktığı zamanlara götürmek istiyorum.\n\nYapısal programlama dillerinin yeni trend olduğu zamanlarda DATAMATION adlı aylık bir dergide 1983 yılının Temmuz sayısında “Gerçek Programcılar Pascal ile Yazmaz” adlı bir yazısında[1] Ed Post, Pascal’ı hicivli bir şekilde eleştirerek FORTRAN ve Assembly dillerinin hala bu işi bilenlerin kullandığı diller olduğunu söyler. Dergide yayınlanmadan önce aynı yazıyı 1982 yılında bir USENET forumunda yayınlayan Ed Post’a, Mayıs 1983’te aynı adı taşıyan Ed Nather adlı bir kullanıcı güzel bir cevap yazarak bu işin asıl erbabının FORTRAN’la bile değil onaltılık düzende makine kodu ile yazdığını söyleyerek bilgisayar dünyasını Mel ile tanıştırır[2] . Yazıda ilk adı ve çalıştığı yerler dışında başka bilgi verilmeyen gizemli Mel, ilerleyen yıllarda epey ilgi odağı olur (en azından işin erbabı programcılar arasında) ve hem kimliği hem de yazıya konu olan programlama hünerleri hakkında birçok yazı yazılır (Örn. [3]).\n\nMel’i bizle tanıştıran Ed Nather’ın yazısının içeriğine gelmek gerekirse -- Mel şirketten ayrıldıktan sonra, onun yazdığı bir Black Jack programını inceleyip değiştirmekle görevlendirilen Ed, Mel’in programlama dehası karşısında hissettiklerini ve Mel’in farklı optimizasyon yöntemlerini şiirsel bir şekilde düz yazı ile anlatır. O kadar şiirsel bir yazıdır ki başka bir kullanıcı tarafından serbest şiir formatında tekrar yayınlanır[4] . Peki nedir Mel’i bu kadar özel yapan?\n\nGünümüzde, C ya da C++ gibi çalıştırılabilir bir çıktı üreten dillerde yazılan programlar derlendikten sonra sınırları belirli parçalar halinde hafızaya yüklenip çalıştırılırlar. Mesela, Unix türevi olan sistemlerde kullanılan ELF formatında komutları içeren bir *.text* bölümü ve ilk değeri olan global değişkenleri içeren bir *.data* bölümü vardır. Donanım seviyesinde hafıza koruması ve güvenlik açığı oluşturmamak için *.text* bölümü program çalışma esnasında değiştirilemez. Yani programda bir değişiklik yapmak isterseniz kaynak kodunuzu değiştirip, tekrar derleyip bunu yapabilirsiniz. Diğer bir deyişle çalışma esnasında kendini değiştiren bir kod yazmak genel olarak mümkün değildir. Fakat yıllar önce, programcıların işlemci komutlarının sayısal kodlarını ezbere bildikleri zamanlarda, program komutları ile işlenilen verilen arasındaki ayrım günümüzdeki kadar net değildi ve Mel gibi usta programcılar bu durumu avantaja çevirerek kendi kendini değiştirebilen, daha hızlı çalışan, daha az kaynak kullanan programlar yazmada kullanıyordu. Ed’in yazdığına göre Mel bir komutun sayısal değerini gerektiğinde programındaki bir sabit sayı olarak kullanmaktan hiç çekinmezmiş. Yani toplama yapmak için kullanılan komut 0x0005 ise ve bizim de bir yerde 0x0005 sayısına ihtiyacımız varsa niye bunun için ek bir hafıza kullanalım\n\nMel, programındaki komutları ve verileri hafızada öyle güzel optimize bir sıraya sokarmış ki o zamanlarda yaygın olan *drum* hafızanın bir sonraki komutu okumak için dönme zamanı dikkate alındığında bir sonra çalıştırılan komut hiç beklemeden çalıştırılabilirmiş. Bu optimizasyonu otomatik yapmak için tasarlanan programlar hiçbir zaman Mel’in yazdığı kodlardaki performansı yakalayamamış.\n\nEd’i en çok şaşkına çeviren, Mel’in Black Jack programındaki bir döngünün hiçbir döngü testi veya döngüden dışarıya çıkaran bir komut içermemesine rağmen, yani bir sonsuz döngü olması gerekirken, gayet güzel bir şekilde çalışıp sona ermesiydi. Peki Mel bunu nasıl başarmıştı? Mel kullandığı verileri hafızanın üst bölümünde büyük adres değerlerine sahip olan yerlere koyup, döngüdeki komutun atıfta bulunduğu adresi 1 arttırarak tüm verileri işlemesini sağlıyordu. Bütün veriler işlenip bittiğinde yani en tepedeki adres değerine 1 eklenip adres değeri taştığında, taşan *bit* bir önceki komutun JUMP komutuna dönüşmesine neden oluyor ve programın 0x0000 adresine zıplamasını sağlıyordu. Mel, döngüden çıkınca çalıştırmak istediği komutu da 0x0000 adresine koyduğu için hiçbir sorun olmadan program güzelce çalışmaya devam ediyordu. Yani Mel için program yazmak sadece ardı ardına çalışacak komutları tasarlamak değil, hafıza uzayında her birinin yerinin son derece önemli olduğu komutları bir tabloya yerleştirmek gibiydi. Programlama sanatının usta ressamıydı Mel.\n\n## Kaynakça\n\n1. Ed Post, \"Real Programmers Don't Use Pascal\", DATAMATION, Temmuz 1983, pp. 263-265 (Readers' Forum).\n2. The Story of Mel, a Real Programmer. USENET. Ed Nather (utastro!nather), 21 Mayıs, 1983. [https://web.archive.org/web/20180212083430/https://cboh.org/mel.txt](https://web.archive.org/web/20180212083430/https://cboh.org/mel.txt)\n3. Dissecting the Story of Mel. [https://www.e-basteln.de/computing/rpc4000/storyofmel/](https://www.e-basteln.de/computing/rpc4000/storyofmel/)\n4. [https://users.cs.utah.edu/~elb/folklore/mel.html](https://users.cs.utah.edu/~elb/folklore/mel.html)","images":[]}</script>
+
+<script>
+  (function () {
+    function boot() {
+      try {
+        var imgs = JSON.parse(document.getElementById('bergec-images').textContent);
+        document.querySelectorAll('img[data-bergec-img]').forEach(function (el) {
+          var src = imgs[el.getAttribute('data-bergec-img')];
+          if (src) el.src = src;
+        });
+      } catch (e) {}
+      if (window.renderMathInElement) {
+        renderMathInElement(document.body, {
+          delimiters: [{ left: '$$', right: '$$', display: true }],
+          throwOnError: false
+        });
+      }
+      document.querySelectorAll('.im').forEach(function (el) {
+        if (window.katex) {
+          try { katex.render(el.textContent, el, { throwOnError: false, displayMode: false }); } catch (e) {}
+        }
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+    else boot();
+  })();
+</script>
+
+</body>
+</html>

@@ -9,6 +9,7 @@ Site: https://bergecblog.com/ · Dil: Türkçe · İletişim: bergecblog@gmail.c
 ## Yazılar
 
 - [Knuth’un Kitabından Bir Soru (III)](https://bergecblog.com/knuth-3): Bu yazıda bir sıralamanın yığın kullanılarak elde edilebilmesi için gerek ve yeter koşulu vereceğiz. (Yasin Aydın, 05.10.2026) Konular: Knuth, The Art of Computer Programming, vagon, yığın, stack, permütasyon, gerek ve yeter koşul, algoritma, kanıt.
+- [Mel’in Hikayesi](https://bergecblog.com/melin-hikayesi): Bu yazı ile sizi çok eskilere, bilgisayarların yaygınlaşmaya ve üst seviye programlama dillerinin farklı donanımlar için program yazmayı kolaylaştırmak için ortaya çıktığı zamanlara götürmek istiyorum. (Tolga Can, 18.11.2026) Konular: Mel, The Story of Mel, Ed Nather, Ed Post, Real Programmers Don't Use Pascal, makine kodu, kendini değiştiren kod, drum hafıza, FORTRAN, Assembly.
 - [Enigma Bölüm 3: Enigmanın Çözülmesi](https://bergecblog.com/enigma-3): Bu yazıda enigmanın şifresini kıran çözümleri inceleyeceğiz. (Yasin Aydın, 07.02.2026) Konular: Enigma, Marian Rejewski, Henryk Zygalski, Jerzy Rozycki, Polonyalıların Çözümü, Alan Turing, Turing Bombe Çözümü, Bletchley Park, günlük anahtar, permütasyon, döngü.
 - [Enigma Bölüm 2: Enigmanın Çalışma Prensibi](https://bergecblog.com/enigma-2): Yazının bu kısmında Enigma’nın bileşenlerini ve bu bileşenlerin çalışma prensiplerini inceleyeceğiz. (Yasin Aydın, 07.02.2026) Konular: Enigma, Enigma M3, rotor, halka ayarı, Ringstellung, başlangıç ayarı, Grundstellung, yansıtıcı, Umkehrwalze, fiş panosu, Steckerverbindungen, şifreleme, deşifreleme, permütasyon.
 - [Enigma Bölüm 1: Matematiksel Ön Hazırlık](https://bergecblog.com/enigma-1): Bu yazıda Enigma'nın nasıl çalıştığını anlamak için gereken matematiği inceleyecğiz. (Yasin Aydın, 05.02.2026) Konular: Enigma, Enigma makinesi, permütasyon, döngü, eşlenik permütasyon, transpozisyon, involüsyon, şifreleme, 2. Dünya Savaşı.
@@ -23,11 +24,12 @@ Site: https://bergecblog.com/ · Dil: Türkçe · İletişim: bergecblog@gmail.c
 - [Cem Bozşahin](https://bergecblog.com/yazar-cem-bozsahin): 1 yazı
 - [Yasin Aydın](https://bergecblog.com/yazar-yasin-aydin): 7 yazı
 - [Kaan Emir Eröz](https://bergecblog.com/yazar-kaan-emir-eroz): 1 yazı
+- [Tolga Can](https://bergecblog.com/yazar-tolga-can): 1 yazı
 
 ## Konular
 
 - [Kombinatorik](https://bergecblog.com/konu-kombinatorik): 4 yazı. Vagon sıralama, yığın (stack), Catalan sayıları, yineleme bağıntısı, üreteç fonksiyon ve gerek ve yeter koşul; Enigma’da permütasyon ve döngüler.
+- [Programlama Dilleri](https://bergecblog.com/konu-programlama-dilleri): 3 yazı. Lexer, Parser, token, Tree-walk Interpreter, Bytecode Interpreter ve Ahead of Time Compilation; lambda, sabit nokta ve özyineleme.
+- [Bilim Tarihi](https://bergecblog.com/konu-bilim-tarihi): 3 yazı. Kurt Gödel, John von Neumann, Hilbert, Alan Turing, Marian Rejewski, Henryk Zygalski, Jerzy Rozycki ve Bletchley Park.
 - [Kriptografi](https://bergecblog.com/konu-kriptografi): 3 yazı. Enigma makinesi, permütasyon ve döngüler, rotorlar, fiş panosu ve günlük anahtar; Polonyalıların Çözümü ve Turing Bombe Çözümü.
-- [Bilim Tarihi](https://bergecblog.com/konu-bilim-tarihi): 2 yazı. Kurt Gödel, John von Neumann, Hilbert, Alan Turing, Marian Rejewski, Henryk Zygalski, Jerzy Rozycki ve Bletchley Park.
 - [Hesaplama Kuramı](https://bergecblog.com/konu-hesaplama-kurami): 2 yazı. P vs NP, Turing makinesi, Entscheidungsproblem, NP-tam ve Cook–Levin Teoremi; lambda, sabit nokta ve özyineleme.
-- [Programlama Dilleri](https://bergecblog.com/konu-programlama-dilleri): 2 yazı. Lexer, Parser, token, Tree-walk Interpreter, Bytecode Interpreter ve Ahead of Time Compilation; lambda, sabit nokta ve özyineleme.

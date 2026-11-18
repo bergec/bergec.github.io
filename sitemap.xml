@@ -2,19 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://bergecblog.com/</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/knuth-3</loc>
     <lastmod>2026-11-15</lastmod>
   </url>
   <url>
+    <loc>https://bergecblog.com/melin-hikayesi</loc>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <url>
     <loc>https://bergecblog.com/enigma-3</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/enigma-2</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/enigma-1</loc>
@@ -22,23 +26,23 @@
   </url>
   <url>
     <loc>https://bergecblog.com/berelim-y-ile</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/kodlarin-seruveni</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/knuth-2</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/knuth-1</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/godel-mektubu</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/yazar-cem-bozsahin</loc>
@@ -53,23 +57,27 @@
     <lastmod>2025-12-05</lastmod>
   </url>
   <url>
+    <loc>https://bergecblog.com/yazar-tolga-can</loc>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <url>
     <loc>https://bergecblog.com/konu-kombinatorik</loc>
     <lastmod>2026-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-programlama-dilleri</loc>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-bilim-tarihi</loc>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/konu-kriptografi</loc>
     <lastmod>2026-02-07</lastmod>
   </url>
   <url>
-    <loc>https://bergecblog.com/konu-bilim-tarihi</loc>
-    <lastmod>2026-02-07</lastmod>
-  </url>
-  <url>
     <loc>https://bergecblog.com/konu-hesaplama-kurami</loc>
-    <lastmod>2025-12-11</lastmod>
-  </url>
-  <url>
-    <loc>https://bergecblog.com/konu-programlama-dilleri</loc>
     <lastmod>2025-12-11</lastmod>
   </url>
 </urlset>
