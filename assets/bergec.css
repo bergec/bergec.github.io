@@ -305,6 +305,8 @@ article.body p {
 }
 article.body ul, article.body ol { margin: 0 0 18px; padding-left: 24px; }
 article.body li { font-size: 16px; line-height: 1.78; margin: 0 0 8px; }
+/* Uzun adresler (kaynakçadaki linkler gibi) dar ekranda sayfayı yana taşırmasın */
+article.body a, .refs a { overflow-wrap: anywhere; }
 article.body blockquote {
   margin: 0 0 22px; padding: 6px 0 6px 18px;
   border-left: 2px solid var(--color-accent); font-style: italic;
