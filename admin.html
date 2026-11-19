@@ -269,6 +269,7 @@
       <label style="font-size: 13px;"><input type="checkbox" id="f-featured" style="width: auto;"> Ana sayfada manşet yap</label>
       <label style="font-size: 13px;"><input type="checkbox" id="f-lede" checked style="width: auto;"> İlk paragrafa büyük harf (drop cap)</label>
       <label style="font-size: 13px;"><input type="checkbox" id="f-katex" checked style="width: auto;"> Matematik (KaTeX) yükle</label>
+      <label style="font-size: 13px;"><input type="checkbox" id="f-en" style="width: auto;"> İngilizce sürümü de var <span style="color: var(--color-neutral-600);">(okur “Türkçe / English” düğmesiyle geçer)</span></label>
     </div>
 
     <!-- görseller -->
@@ -331,6 +332,24 @@
           <strong>&lt;</strong> ve <strong>&gt;</strong> işaretlerini gönül rahatlığıyla kullanabilirsiniz; metin otomatik olarak güvenli hâle getirilir.
         </p>
       </details>
+    </div>
+
+    <!-- İngilizce sürüm (isteğe bağlı) -->
+    <div id="en-box" class="hidden" style="margin-top: 22px; border-top: 1px solid var(--color-divider); padding-top: 18px;">
+      <h2 style="font-size: 18px;">İngilizce sürüm</h2>
+      <p class="hint">
+        Yazının İngilizcesi. Okur, yazının başındaki <strong>Türkçe / English</strong> düğmesiyle iki sürüm arasında geçer; seçimi tarayıcısında hatırlanır.
+        Yazım kuralları aynıdır; görseller için aynı <code>[[gorsel:1]]</code> işaretlerini kullanın. Yazar ve tarih iki dilde ortaktır.
+        Yukarıdaki araç çubuğu en son tıkladığınız metin kutusuna yazar.
+      </p>
+      <div class="grid g2">
+        <div><label class="f" for="f-title-en">Title (English)</label><input type="text" id="f-title-en" lang="en" placeholder="Boş kalırsa Türkçe başlık kullanılır"></div>
+        <div><label class="f" for="f-subtitle-en">Subtitle <span style="text-transform: none; letter-spacing: 0;">(isteğe bağlı)</span></label><input type="text" id="f-subtitle-en" lang="en"></div>
+      </div>
+      <div class="editor" style="margin-top: 14px;">
+        <textarea id="f-body-en" lang="en" placeholder="Write the English version here…"></textarea>
+        <div class="preview"><iframe id="preview-en" title="İngilizce önizleme"></iframe></div>
+      </div>
     </div>
 
     <div class="bar">
@@ -1562,8 +1581,43 @@ function bodyToHtml(src, images, opts) {
 
 /* ─────────────────────────── yazı sayfası ─────────────────────────── */
 
-function buildArticle(meta, bodyHtml, usedImages) {
+/** İki dilli yazıda okurun "Türkçe / English" seçimi. Seçim tarayıcıda hatırlanır; ?lang=en adresi de İngilizce açar. */
+const DIL_CSS = `<style>
+  html:not([data-dil="en"]) [data-dil="en"], html[data-dil="en"] [data-dil="tr"], html[data-dil="en"] article.body:not([data-dil="en"]), html[data-dil="en"] .okuma { display: none !important; }
+  .dil-sec { display: inline-flex; gap: 2px; margin-top: 18px; padding: 3px; border: 1px solid var(--color-divider); border-radius: 999px; }
+  .dil-sec button { font: inherit; font-size: 12.5px; letter-spacing: 0.06em; min-height: 34px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--color-neutral-600); cursor: pointer; }
+  .dil-sec button:hover { color: var(--color-accent-700); }
+  .dil-sec button[aria-pressed="true"] { background: var(--color-accent-700); color: var(--color-bg); cursor: default; }
+  .dil-sec button:focus-visible { outline: 2px solid var(--color-accent-500); outline-offset: 2px; }
+</style>
+<script>try{var r=document.documentElement,q=/[?&]lang=(en|tr)\\b/.exec(location.search),d=q?q[1]:localStorage.getItem('bergec-dil');if(d==='en'&&!r.hasAttribute('data-dil')){r.setAttribute('data-dil','en');r.lang='en';}}catch(e){}<\/script>`;
+
+function dilScript(titleEn) {
+  return `<script>
+  (function () {
+    var root = document.documentElement, trTitle = document.title, enTitle = ${JSON.stringify(titleEn).replace(/</g, '\\u003c')};
+    var btns = document.querySelectorAll('[data-set-dil]');
+    function apply(d) {
+      root.setAttribute('data-dil', d); root.lang = d;
+      document.title = d === 'en' ? enTitle : trTitle;
+      for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', String(btns[i].getAttribute('data-set-dil') === d));
+    }
+    apply(root.getAttribute('data-dil') === 'en' ? 'en' : 'tr');
+    for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', function () {
+      var d = this.getAttribute('data-set-dil');
+      apply(d);
+      try { localStorage.setItem('bergec-dil', d); } catch (e) {}
+      try { var u = new URL(location.href); if (d === 'en') u.searchParams.set('lang', 'en'); else u.searchParams.delete('lang'); history.replaceState(null, '', u); } catch (e) {}
+    });
+  })();
+<\/script>`;
+}
+
+function buildArticle(meta, bodyHtml, usedImages, bodyEnHtml) {
   const katex = meta.katex !== false;
+  // İngilizce sürüm: kutu işaretli ve metni boş değilse sayfaya girer
+  const bi = !!(meta.en && String(meta.bodyEn || '').trim() && bodyEnHtml);
+  const titleEn = String(meta.titleEn || '').trim() || meta.title;
   const imgMap = {};
   usedImages.forEach(im => { imgMap[im.id] = im.dataUrl; });
 
@@ -1576,6 +1630,10 @@ function buildArticle(meta, bodyHtml, usedImages) {
     body: meta.body,
     images: usedImages.map(im => ({ id: im.id, name: im.name, caption: im.caption, width: im.width, align: im.align }))
   };
+  if (meta.en || String(meta.bodyEn || '').trim() || meta.titleEn || meta.subtitleEn) {
+    Object.assign(source.meta, { en: !!meta.en, titleEn: meta.titleEn || '', subtitleEn: meta.subtitleEn || '' });
+    source.bodyEn = meta.bodyEn || '';
+  }
 
   return `<!DOCTYPE html>
 <html lang="tr">
@@ -1591,7 +1649,7 @@ function buildArticle(meta, bodyHtml, usedImages) {
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "acab01d6baa64c2a827dc674fcab7c85"}'><\/script><!-- End Cloudflare Web Analytics -->${katex ? `
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"><\/script>` : ''}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"><\/script>` : ''}${bi ? '\n' + DIL_CSS : ''}
 </head>
 <body>
 <div class="wrap">
@@ -1605,16 +1663,28 @@ function buildArticle(meta, bodyHtml, usedImages) {
     <span style="color: var(--color-neutral-600); text-transform: none; letter-spacing: 0;">${esc(meta.date)}</span>
   </div>
 
-  <h1 class="title">${esc(meta.title)}</h1>${meta.subtitle ? `
-  <div class="subtitle">${esc(meta.subtitle)}</div>` : ''}
-  <div class="byline">${esc(meta.author)}</div>
+${bi ? `  <h1 class="title"><span data-dil="tr">${esc(meta.title)}</span><span data-dil="en" lang="en">${esc(titleEn)}</span></h1>${meta.subtitle ? `
+  <div class="subtitle" data-dil="tr">${esc(meta.subtitle)}</div>` : ''}${meta.subtitleEn ? `
+  <div class="subtitle" data-dil="en" lang="en">${esc(meta.subtitleEn)}</div>` : ''}` : `  <h1 class="title">${esc(meta.title)}</h1>${meta.subtitle ? `
+  <div class="subtitle">${esc(meta.subtitle)}</div>` : ''}`}
+  <div class="byline">${esc(meta.author)}</div>${bi ? `
+  <div class="dil-sec" role="group" aria-label="Yazının dili / Language">
+    <button type="button" data-set-dil="tr" lang="tr" aria-pressed="true">Türkçe</button>
+    <button type="button" data-set-dil="en" lang="en" aria-pressed="false">English</button>
+  </div>` : ''}
 
   <article class="body">
 
     ${bodyHtml}
 
   </article>
+${bi ? `
+  <article class="body" lang="en" data-dil="en">
 
+    ${bodyEnHtml}
+
+  </article>
+` : ''}
   <footer class="bottom">
     <span>Bergeç · 2026</span>
     <span><a href="mailto:bergecblog@gmail.com">bergecblog@gmail.com</a></span>
@@ -1651,7 +1721,7 @@ function buildArticle(meta, bodyHtml, usedImages) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();
   })();
-<\/script>
+<\/script>${bi ? '\n' + dilScript(titleEn + ' · Bergeç') : ''}
 
 </body>
 </html>
@@ -1843,8 +1913,12 @@ function renderImageList() {
 
 /* ─────────────────────────── düzenleyici ─────────────────────────── */
 
+// Araç çubuğu en son tıklanan metin kutusuna yazar (Türkçe ya da İngilizce metin)
+let activeTa = 'f-body';
+['f-body', 'f-body-en'].forEach(id => $(id).addEventListener('focus', () => { activeTa = id; }));
+
 function insertAtCursor(text) {
-  const ta = $('f-body');
+  const ta = $(activeTa);
   const s = ta.selectionStart, e = ta.selectionEnd;
   const before = ta.value.slice(0, s), after = ta.value.slice(e);
   const pad = (before && !before.endsWith('\n\n')) ? (before.endsWith('\n') ? '\n' : '\n\n') : '';
@@ -1857,7 +1931,7 @@ function insertAtCursor(text) {
 document.querySelectorAll('button.mini[data-ins], button.mini[data-wrap]').forEach(btn => {
   btn.addEventListener('click', (ev) => {
     ev.preventDefault();
-    const ta = $('f-body');
+    const ta = $(activeTa);
     const s = ta.selectionStart, e = ta.selectionEnd;
     const sel = ta.value.slice(s, e);
     if (btn.dataset.wrap) {
@@ -1892,19 +1966,24 @@ function currentMeta() {
     slug: $('f-slug').value.trim(),
     body: $('f-body').value,
     lede: $('f-lede').checked,
-    katex: $('f-katex').checked
+    katex: $('f-katex').checked,
+    en: $('f-en').checked,
+    titleEn: $('f-title-en').value.trim(),
+    subtitleEn: $('f-subtitle-en').value.trim(),
+    bodyEn: $('f-body-en').value
   };
 }
 
 function usedImages() {
-  const body = $('f-body').value;
+  const body = $('f-body').value + ($('f-en').checked ? '\n' + $('f-body-en').value : '');
   return state.images.filter(im => body.includes('[[gorsel:' + im.id + ']]'));
 }
 
 function buildCurrentArticle() {
   const meta = currentMeta();
   const html = bodyToHtml(meta.body, state.images, { lede: meta.lede });
-  return buildArticle(meta, html, usedImages());
+  const htmlEn = meta.en ? bodyToHtml(meta.bodyEn, state.images, { lede: meta.lede }) : '';
+  return buildArticle(meta, html, usedImages(), htmlEn);
 }
 
 function renderPreview() {
@@ -1913,14 +1992,18 @@ function renderPreview() {
       '<link rel="stylesheet" href="assets/bergec.css">',
       '<base href="' + location.href.replace(/[^/]*$/, '') + '"><link rel="stylesheet" href="assets/bergec.css">'
     );
-    $('preview').srcdoc = html;
+    // her önizleme kendi dilinde açılır (okurun kayıtlı seçimine bakmadan)
+    const inLang = (l) => html.replace('<html lang="tr">', '<html lang="' + l + '" data-dil="' + l + '">');
+    $('preview').srcdoc = inLang('tr');
+    if ($('f-en').checked) $('preview-en').srcdoc = inLang('en');
   } catch (e) {
     msg('edit-msg', 'Önizleme hatası: ' + e.message, 'err');
   }
 }
 
 $('f-body').addEventListener('input', schedulePreview);
-['f-title', 'f-subtitle', 'f-author', 'f-date'].forEach(id => $(id).addEventListener('input', schedulePreview));
+['f-title', 'f-subtitle', 'f-author', 'f-date', 'f-body-en', 'f-title-en', 'f-subtitle-en'].forEach(id => $(id).addEventListener('input', schedulePreview));
+$('f-en').addEventListener('change', () => { show('en-box', $('f-en').checked); schedulePreview(); });
 $('f-lede').addEventListener('change', schedulePreview);
 $('f-katex').addEventListener('change', schedulePreview);
 $('btn-preview-full').addEventListener('click', (e) => { e.preventDefault(); renderPreview(); });
@@ -2399,7 +2482,10 @@ function resetEditor() {
   state.editing = null;
   state.images = [];
   state.nextImgId = 1;
-  ['f-title', 'f-subtitle', 'f-author', 'f-date', 'f-excerpt', 'f-slug', 'f-body'].forEach(id => $(id).value = '');
+  ['f-title', 'f-subtitle', 'f-author', 'f-date', 'f-excerpt', 'f-slug', 'f-body', 'f-title-en', 'f-subtitle-en', 'f-body-en'].forEach(id => $(id).value = '');
+  $('f-en').checked = false;
+  show('en-box', false);
+  activeTa = 'f-body';
   $('f-featured').checked = false;
   $('f-lede').checked = true;
   $('f-katex').checked = true;
@@ -2468,6 +2554,11 @@ async function openArticle(p) {
     $('f-body').value = src.body || '';
     $('f-lede').checked = src.meta.lede !== false;
     $('f-katex').checked = src.meta.katex !== false;
+    $('f-en').checked = !!src.meta.en;
+    $('f-title-en').value = src.meta.titleEn || '';
+    $('f-subtitle-en').value = src.meta.subtitleEn || '';
+    $('f-body-en').value = src.bodyEn || '';
+    show('en-box', !!src.meta.en);
     $('f-featured').checked = (state.index.featured === p);
     state.images = (src.images || []).map(im => Object.assign({}, im, { dataUrl: imgs[im.id] || '' })).filter(im => im.dataUrl);
     state.nextImgId = state.images.reduce((a, im) => Math.max(a, (+im.id || 0) + 1), 1);
