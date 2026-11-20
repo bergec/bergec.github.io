@@ -760,7 +760,9 @@ async function ghCommit(files, message, expect, where) {
 }
 
 async function ghCommitOnce(files, message, expect, where) {
-  const ref = await gh(repoPath(`/git/ref/heads/${encodeURIComponent(branchOf(where))}`, where));
+  let ref;
+  try { ref = await gh(repoPath(`/git/ref/heads/${encodeURIComponent(branchOf(where))}`, where)); }
+  catch (e) { if (!/repository is empty/i.test(e.message)) throw e; ref = null; } // GitHub boş depoda 409 verir
   if (!ref) {
     // hiç commit'i olmayan (boş) taslak deposu: Git Data API boş depoda çalışmaz; önce bir README koy
     if (where && where.init) {
@@ -2475,7 +2477,9 @@ async function unpublishToDraft(p) {
  * Bu tarayıcıda "yayınlanmamış değişiklik" olarak bekleyen yeni taslakları (taslaklar eskiden böyle saklanıyordu)
  * gizli taslak deposuna taşır. Dönüş: taşınan taslak sayısı.
  */
+let migrateErrors = [];
 async function migrateLocalDrafts() {
+  migrateErrors = [];
   if (!state.drafts || !state.repoIndex) return 0;
   const hrefOf = o => o.kind === 'upsert' ? o.slug : o.kind === 'add' ? o.entry && o.entry.href : null;
   const hrefs = new Set();
@@ -2491,7 +2495,8 @@ async function migrateLocalDrafts() {
     const rec = draftRecord(e);
     delete rec.lede;
     if (last && last.featured) rec.manset = true;
-    try { await saveDraft(rec, pending.files[h].plain, null, null); } catch (err) { continue; }
+    try { await saveDraft(rec, pending.files[h].plain, null, null); }
+    catch (err) { migrateErrors.push('“' + (rec.title || h) + '”: ' + err.message); continue; } // tarayıcıda bekler, kaybolmaz
     pending.ops = pending.ops.filter(o => !related.includes(o));
     delete pending.files[h];
     n++;
@@ -4772,8 +4777,9 @@ $('btn-connect').addEventListener('click', async (ev) => {
     const left = pendingDescs().length;
     msg('conn-msg', 'Bağlandı. ' + (flatten().length) + ' yazı' + (state.drafts ? ', ' + state.drafts.length + ' taslak' : '') + ' bulundu.' +
       (moved ? ' Bu tarayıcıda bekleyen ' + moved + ' taslak gizli taslak deposuna taşındı; artık öteki adminler de görüyor.' : '') +
+      (migrateErrors.length ? ' ⚠ Bu tarayıcıdaki şu taslaklar gizli depoya taşınamadı (burada duruyorlar, kaybolmadı): ' + migrateErrors.join('; ') + '.' : '') +
       (left ? ' Bu tarayıcıda yayınlanmamış ' + left + ' değişiklik bulundu; alttaki çubuktan yayınlayabilir ya da geri alabilirsiniz.' : '') +
-      (state.draftErr ? ' ⚠ ' + state.draftErr : ''), state.draftErr ? 'info' : 'ok');
+      (state.draftErr ? ' ⚠ ' + state.draftErr : ''), state.draftErr || migrateErrors.length ? 'info' : 'ok');
   } catch (e) {
     let m = e.message;
     if (/Bad credentials/i.test(m)) {
