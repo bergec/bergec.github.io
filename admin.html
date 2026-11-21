@@ -2385,12 +2385,13 @@ async function commitDrafts(message, mutate, files, expect) {
 }
 
 /** Taslağı kaydeder. entry: liste kaydı (href = dosya adı); old: düzenlenen taslağın adı (yeni taslakta null); sha: açıldığındaki sürüm. Dönüş: sayfanın yeni sha'sı. */
-async function saveDraft(entry, html, old, sha) {
+async function saveDraft(entry, html, old, sha, message) {
   needDrafts();
   const href = entry.href;
   const files = [{ path: href, text: html }], expect = { [href]: old === href ? sha : null };
   if (old && old !== href) { files.push({ path: old, text: null }); expect[old] = sha; }
-  const run = (exp) => commitDrafts((old ? 'Taslak: ' : 'Yeni taslak: ') + entry.title, list => {
+  // commit mesajının başı taslak deposundaki e-posta bildirimini belirler ("Yeni taslak:", "Taslağa al:"; "Taslak:" bildirilmez)
+  const run = (exp) => commitDrafts(message || (old ? 'Taslak: ' : 'Yeni taslak: ') + entry.title, list => {
     if (list.some(x => x.href === href && x.href !== old)) throw new Error('“' + href + '” adında bir taslak zaten var; dosya adını değiştirin.');
     const i = list.findIndex(x => x.href === (old || href));
     const rec = Object.assign({}, i >= 0 ? list[i] : {}, draftRecord(entry), { guncelleme: new Date().toISOString() });
@@ -2463,7 +2464,7 @@ async function unpublishToDraft(p) {
   const rec = draftRecord(flattenOf(state.repoIndex).find(x => x.href === p.href) || p);
   delete rec.lede;
   if (state.repoIndex.featured && state.repoIndex.featured.href === p.href) rec.manset = true;
-  await saveDraft(rec, readPage(f.text), null, null);
+  await saveDraft(rec, readPage(f.text), null, null, 'Taslağa al: ' + p.title);
   try {
     await saveIndex('Taslağa al: ' + p.title, [{ path: p.href, text: null }], data => applyOp(data, { kind: 'remove', href: p.href }), { [p.href]: f.sha });
   } catch (e) {

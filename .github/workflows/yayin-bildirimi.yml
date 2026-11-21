@@ -1,0 +1,74 @@
+# Sitede yazı yayınlanınca ya da yayından kaldırılınca bergec hesabına (onun e-postasına) GitHub bildirimi gönderir.
+# "Yayın bildirimleri" adlı tek bir issue'ya yorum yazar; yorumdaki @bergec bahsi e-postayı tetikler.
+# Taslağa alma bildirimini gizli taslak deposu gönderir (orada da aynı düzen).
+name: Yayın bildirimi
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html']
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  bildir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Yayınlanan / kaldırılan yazıları bul ve bildir
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ONCEKI: ${{ github.event.before }}
+          MESAJ: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          git show "$ONCEKI:index.html" > /tmp/onceki.html 2>/dev/null || : > /tmp/onceki.html
+          python3 - > /tmp/govde.md <<'PY'
+          import json, os, re
+
+          def yazilar(yol):
+              """Ana sayfadaki yayında olan yazılar (taslaklar ve dış bağlantılar hariç): {href: kayıt}"""
+              try:
+                  s = open(yol, encoding='utf-8').read()
+                  m = re.search(r'<script type="application/json" id="bergec-index">([\s\S]*?)</script>', s)
+                  d = json.loads(m.group(1))
+              except (OSError, AttributeError, ValueError):
+                  return None
+              arr = ([d['featured']] if d.get('featured') else []) + (d.get('posts') or [])
+              return {p['href']: p for p in arr
+                      if p and p.get('href') and not p.get('taslak') and not re.match(r'^[a-z]+:', p['href'], re.I)}
+
+          once, simdi = yazilar('/tmp/onceki.html'), yazilar('index.html')
+          if once is None or simdi is None:
+              raise SystemExit(0)
+          mesaj = os.environ.get('MESAJ', '').strip()
+          if mesaj.startswith('Arşiv kaydı:'):  # dosya adı değişikliği yeni yayın sayılmasın
+              raise SystemExit(0)
+
+          def adres(h):
+              h = re.sub(r'(^|/)index\.html$', r'\1', h)
+              return 'https://bergecblog.com/' + (h[:-5] if h.endswith('.html') else h)
+
+          def satir(p):
+              return f"**{p.get('title') or p['href']}** — {p.get('author') or 'yazar belirtilmemiş'}"
+
+          olaylar = [f"Yayınlandı: {satir(p)} · {adres(h)}" for h, p in simdi.items() if h not in once]
+          if not mesaj.startswith('Taslağa al:'):
+              olaylar += [f"Yayından kaldırıldı: {satir(p)}" for h, p in once.items() if h not in simdi]
+          if olaylar:
+              print('@bergec\n')
+              for o in olaylar:
+                  print('- ' + o)
+          PY
+          if [ ! -s /tmp/govde.md ]; then echo "Bildirilecek değişiklik yok."; exit 0; fi
+          no=$(gh issue list --state open --search 'in:title "Yayın bildirimleri"' --json number --jq '.[0].number // empty')
+          if [ -z "$no" ]; then
+            gh issue create --title "Yayın bildirimleri" --body-file /tmp/govde.md
+          else
+            gh issue comment "$no" --body-file /tmp/govde.md
+          fi
