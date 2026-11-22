@@ -583,7 +583,13 @@
     <div class="grid g3" style="margin-top: 14px;">
       <div><label class="f" for="m-seri">Seri <span style="text-transform: none; letter-spacing: 0;">(aynı serideki yazılar sırayla birbirine bağlanır)</span></label><input type="text" id="m-seri" placeholder="örn. Enigma"></div>
       <div><label class="f" for="m-konular">Konular <span style="text-transform: none; letter-spacing: 0;">(virgülle; her konunun bir sayfası olur)</span></label><input type="text" id="m-konular" placeholder="örn. Kriptografi, Kombinatorik"></div>
-      <div><label class="f" for="m-gorsel">Paylaşım görseli <span style="text-transform: none; letter-spacing: 0;">(depodaki dosya, 1200×630)</span></label><input type="text" id="m-gorsel" placeholder="örn. assets/paylasim/enigma-2.png"></div>
+      <div><label class="f" for="m-gorsel">Paylaşım görseli <span style="text-transform: none; letter-spacing: 0;">(depodaki dosya, 1200×630)</span></label><input type="text" id="m-gorsel" placeholder="örn. assets/paylasim/enigma-2.png">
+        <div class="row" style="margin-top: 6px; gap: 8px; align-items: center;">
+          <button class="b ghost" id="btn-gorsel-upload" type="button" title="Bilgisayarınızdan bir resim seçin; 1200×630'a kırpılıp depoya yüklenir">Resim yükle</button>
+          <input type="file" id="m-gorsel-file" accept="image/*" class="hidden">
+          <img id="m-gorsel-preview" alt="" class="hidden" style="width: 120px; height: 63px; object-fit: cover; border: 1px solid rgba(0,0,0,.15);">
+        </div>
+      </div>
     </div>
     <div id="m-lede-wrap" style="margin-top: 14px;">
       <label class="f" for="m-lede">Manşet giriş paragrafları <span style="text-transform: none; letter-spacing: 0;">(boş satırla ayırın, ana sayfada iki sütunda görünür; formül: $...$ satır içi, $$...$$ ortalı)</span></label>
@@ -4673,6 +4679,7 @@ function openMeta(p, featured) {
   $('m-seri').value = p.seri || '';
   $('m-konular').value = konularOf(p).join(', ');
   $('m-gorsel').value = p.gorsel || '';
+  showGorselPreview(p.gorsel ? ogImageOf(p) : '');
   $('m-lede').value = (p.lede || []).join('\n\n');
   $('m-featured').checked = !!featured;
   msg('meta-msg', '');
@@ -4718,6 +4725,61 @@ $('btn-meta-save').addEventListener('click', async (ev) => {
     backToList('“' + f.title + '” arşiv kaydı kaydedildi');
   } catch (e) { msg('meta-msg', e.message, 'err'); }
   finally { ev.target.disabled = false; }
+});
+
+/* Paylaşım görseli yükleme: seçilen resim 1200×630'a ortadan kırpılır (bağlantı önizlemelerinin boyutu),
+   hemen depoya assets/paylasim/<yazı>-<özet>.jpg olarak gönderilir ve yolu "Paylaşım görseli" kutusuna yazılır.
+   Yazıya bağlanması için arşiv kaydında "Kaydet"e basmak gerekir. Dosya adındaki özet, içerik değişince adresi
+   değiştirir: sosyal ağların önbelleğindeki eski resim yeni paylaşımlarda görünmez. */
+function showGorselPreview(src) {
+  const im = $('m-gorsel-preview');
+  if (!src) { im.removeAttribute('src'); show('m-gorsel-preview', false); return; }
+  im.onerror = () => show('m-gorsel-preview', false);
+  im.src = src;
+  show('m-gorsel-preview', true);
+}
+async function coverImageB64(file, W, H) {
+  const dataUrl = await readFileAsDataURL(file);
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = () => rej(new Error('Görsel açılamadı: ' + file.name));
+    i.src = dataUrl;
+  });
+  const s = Math.max(W / img.width, H / img.height);
+  const w = img.width * s, h = img.height * s;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  return { dataUrl: c.toDataURL('image/jpeg', 0.88), small: img.width < W || img.height < H };
+}
+$('btn-gorsel-upload').addEventListener('click', (e) => { e.preventDefault(); $('m-gorsel-file').click(); });
+$('m-gorsel-file').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  const p = state.metaTarget;
+  if (!file || !p) return;
+  const btn = $('btn-gorsel-upload');
+  btn.disabled = true;
+  try {
+    msg('meta-msg', 'Resim hazırlanıyor…', 'info');
+    const { dataUrl, small } = await coverImageB64(file, 1200, 630);
+    const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+    const hash = (await sha256Hex(b64ToBytes(b64))).slice(0, 8);
+    const base = slugify(String($('m-href').value.trim() || p.href || 'yazi').replace(/\.html$/, '')).slice(0, 60) || 'yazi';
+    const path = 'assets/paylasim/' + base + '-' + hash + '.jpg';
+    msg('meta-msg', 'Resim GitHub’a gönderiliyor…', 'info');
+    if (!(await fileExists(path))) await ghCommit([{ path, b64 }], 'Paylaşım görseli: ' + ($('m-title').value.trim() || p.title || base), { [path]: null });
+    $('m-gorsel').value = path;
+    showGorselPreview(dataUrl);
+    msg('meta-msg', 'Resim yüklendi (' + path + '). Yazıya bağlanması için “Kaydet”e basın.' +
+      (small ? ' Not: resim 1200×630’dan küçük olduğu için büyütüldü; bulanık görünebilir.' : ''), 'ok');
+  } catch (err) { msg('meta-msg', 'Resim yüklenemedi: ' + err.message, 'err'); }
+  finally { btn.disabled = false; }
 });
 
 /* ─────────────────────────── bağlantı ─────────────────────────── */
