@@ -2,7 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://bergecblog.com/</loc>
-    <lastmod>2026-11-18</lastmod>
+    <lastmod>2026-11-22</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/yale-patt</loc>
+    <lastmod>2026-11-22</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/melin-hikayesi</loc>
@@ -18,7 +22,7 @@
   </url>
   <url>
     <loc>https://bergecblog.com/enigma-2</loc>
-    <lastmod>2026-11-18</lastmod>
+    <lastmod>2026-11-22</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/enigma-1</loc>
@@ -30,15 +34,15 @@
   </url>
   <url>
     <loc>https://bergecblog.com/kodlarin-seruveni</loc>
-    <lastmod>2026-11-18</lastmod>
+    <lastmod>2026-11-22</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/knuth-2</loc>
-    <lastmod>2026-11-18</lastmod>
+    <lastmod>2026-11-22</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/knuth-1</loc>
-    <lastmod>2026-11-18</lastmod>
+    <lastmod>2026-11-22</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/godel-mektubu</loc>
@@ -59,6 +63,30 @@
   <url>
     <loc>https://bergecblog.com/yazar-tolga-can</loc>
     <lastmod>2026-11-18</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/yazar-taylan-yilmaz</loc>
+    <lastmod>2026-11-19</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-bilgisayar-mimarisi</loc>
+    <lastmod>2026-11-19</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-bilgisayar-bilimleri</loc>
+    <lastmod>2026-11-19</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-egitim</loc>
+    <lastmod>2026-11-19</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-yapay-zeka</loc>
+    <lastmod>2026-11-19</lastmod>
+  </url>
+  <url>
+    <loc>https://bergecblog.com/konu-soylesi</loc>
+    <lastmod>2026-11-19</lastmod>
   </url>
   <url>
     <loc>https://bergecblog.com/konu-programlama-dilleri</loc>
