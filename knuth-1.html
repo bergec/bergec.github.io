@@ -59,7 +59,7 @@
     <p>Bir demiryolu hattının giriş tarafında, soldan sağa doğru sıralanmış ve <span class="im">1, 2, 3, 4, \dots, n</span> olarak numaralandırılmış <span class="im">n</span> vagon bulunduğunu düşünelim. Vagonlar yalnızca belirtilen yönlerde hareket edebilir ve birbirlerinin üzerinden atlayamaz. Vagonların çıkışa taşınması <em>stack</em> (yığın) işlemleri kullanılarak gerçekleştirilir:</p>
     <ul>
       <li><strong>Push:</strong> Giriş kısmının en önündeki vagonu yığın bölgesine hareket ettir.</li>
-      <li><strong>Pop:</strong> Yığının en önündeki vagonu çıkışa doğru hareket ettir.</li>
+      <li><strong>Pop:</strong> Yığının en üstündeki vagonu çıkışa doğru hareket ettir.</li>
     </ul>
     <p>Bu işlemler sonucunda, <span class="im">1, 2, \dots, n</span> sıralaması kaç farklı şekilde yeniden düzenlenebilir?<sup class="fn">1</sup></p>
 
@@ -75,7 +75,7 @@
     <div class="eq eq-block">$$\binom{2n}{n} = \frac{(2n)!}{n!\,n!}$$</div>
     <p>Ancak bazı diziler anlamsızdır. Anlamlı dizilerde, baştan itibaren alınan her alt dizide S harfi sayısı X harfi sayısından fazla ya da eşit olmalıdır (vagon yığına sokulmadan çıkarılamaz). Bu anlamlı dizilerin her biri çıkıştaki başka bir sıralamaya karşılık gelir.</p>
     <p>Şimdi ilk vagonu yığın bölgesine alalım. Bu durumda ya sıradaki vagon yığın bölgesine hareket eder ya da ilk vagon yığın bölgesinden çıkış bölgesine hareket eder. Yani diğer vagonların S-X karakterleri ilk vagona tekabül eden S-X karakterlerinin arasında bulunur ya da ilk vagonun S-X karakterlerinden sonra bulunur. <span class="im">A_n</span>, <span class="im">n</span> tane vagon için toplam olabilecek sıralama sayısı olsun.</p>
-    <p>Burada <span class="im">(n+1)</span> tane vagonun ilkini kullandık. Geriye <span class="im">n</span> tane vagon için S–X karakteri kaldı. Bu <span class="im">n</span> tane trenin S–X karakterlerinin hepsi, ilk vagonun S–X karakterinin içinde olabilir. Buradan <span class="im">A_n A_0</span> tane sıralama gelir. <span class="im">n-1</span> tanesi içeride, 1 tanesi dışarıda olduğu durumda <span class="im">A_{n-1} A_1</span> tane sıralama gelir. <span class="im">k</span> tane trenin içeride, <span class="im">(n-k)</span> tane trenin dışarıda olduğu durumdan <span class="im">A_k A_{n-k}</span> sıralama gelir. Böyle devam edersek, <span class="im">n &gt; 0</span> için <span class="im">A_0 = 1</span> olmak üzere:</p>
+    <p>Burada <span class="im">(n+1)</span> tane vagonun ilkini kullandık. Geriye <span class="im">n</span> tane vagon için S–X karakteri kaldı. Bu <span class="im">n</span> tane trenin S–X karakterlerinin hepsi, ilk vagonun S–X karakterinin içinde olabilir. Buradan <span class="im">A_n A_0</span> tane sıralama gelir. <span class="im">n-1</span> tanesi içeride, 1 tanesi dışarıda olduğu durumda <span class="im">A_{n-1} A_1</span> tane sıralama gelir. <span class="im">k</span> tane trenin içeride, <span class="im">(n-k)</span> tane trenin dışarıda olduğu durumdan <span class="im">A_k A_{n-k}</span> sıralama gelir. Böyle devam edersek, <span class="im">n \geq 0</span> için <span class="im">A_0 = 1</span> olmak üzere:</p>
     <div class="eq eq-block">$$A_{n+1} = \sum_{i=0}^{n} A_i A_{n-i} \quad \text{ve} \quad A_0 = 1 \tag{1}$$</div>
     <p>Bu, Catalan sayılarının özyinelemeli tanımıdır. Şimdi <span class="im">A_n</span> için üreteç fonksiyonu yazalım:</p>
     <div class="eq eq-block">$$F(x) = \sum_{n=0}^{\infty} A_n x^n = 1 + \sum_{n=1}^{\infty} A_n x^n = 1 + \sum_{n=0}^{\infty} A_{n+1} x^{n+1} \tag{2}$$</div>

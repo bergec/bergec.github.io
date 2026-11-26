@@ -62,7 +62,7 @@
     <p>Bir demiryolu hattının giriş tarafında, soldan sağa doğru sıralanmış ve <span class="im">1,2,3,4,\dots,n</span> olarak numaralandırılmış <span class="im">n</span> vagon bulunduğunu düşünelim. Vagonlar yalnızca belirtilen yönlerde hareket edebilir ve birbirlerinin üzerinden atlayamaz. Vagonların çıkışa taşınması <em>stack</em> (yığın) işlemleri kullanılarak gerçekleştirilir:</p>
     <ul>
       <li><strong>Push:</strong> Giriş kısmının en önündeki vagonu yığın bölgesine hareket ettir.</li>
-      <li><strong>Pop:</strong> Yığının en önündeki vagonu çıkışa doğru hareket ettir.</li>
+      <li><strong>Pop:</strong> Yığının en üstündeki vagonu çıkışa doğru hareket ettir.</li>
     </ul>
     <p>Bu işlemler sonucunda, <span class="im">1,2,\dots,n</span> sıralaması yığımda <span class="im">m \le n</span> tane tren kalacak ve giriş bölgesinde hiç tren kalmayacak şekilde kaç farklı şekilde yeniden düzenlenebilir?</p>
 
@@ -80,7 +80,7 @@
 
     <p>Şimdi <span class="im">g_{(n+1)m}</span>'e bakalım. <span class="im">g_{(n+1)m}</span>, <span class="im">n+1</span> uzunluğunda ve S harfinin sayısı ile X harfinin farkı <span class="im">m</span> olan karakter dizisi sayısını verir. Böyle karakter dizileri ya X ile biter ya da S ile biter. Buna uygun bir yineleme bağıntısı yazalım. Eğer son karakter X ise ilk <span class="im">n</span> karakterden oluşan karakter dizisinde toplam S sayısındaki fark <span class="im">m+1</span> olur ve bu başlangıç dizisi gereken koşulu sağlar. Buradan <span class="im">g_{n(m+1)}</span> durumu gelir. Eğer son karakter S ise ilk <span class="im">n</span> karakterden oluşan karakter dizisinde toplam S sayısı ile toplam X sayısı arasındaki fark <span class="im">m-1</span> olur. Benzer şekilde bu başlangıç dizisi de gereken koşulu sağlar. Buradan da toplam <span class="im">g_{n(m-1)}</span> durumu gelir. Yani,</p>
     <div class="eq eq-block">$$g_{(n+1)m} = g_{n(m+1)} + g_{n(m-1)}, \quad m \ge 0,\ n \ge 0,\ g_{0m} = \delta_{0m} \qquad (1)$$</div>
-    <p>olur. Burada <span class="im">\delta_{0m}</span> işareti <em>Kronocker deltası</em> olarak adlandırılır ve <span class="im">m=0</span> ise değeri 1, değilse değeri 0'dır. Dikkat ederseniz <span class="im">n-m</span> çift sayı olmalı. Eğer <span class="im">n-m</span> çift değilse <span class="im">g_{nm}=0</span> olur. Şimdi üreteç fonksiyonunu yazalım.</p>
+    <p>olur. Burada <span class="im">\delta_{0m}</span> işareti <em>Kronecker deltası</em> olarak adlandırılır ve <span class="im">m=0</span> ise değeri 1, değilse değeri 0'dır. Dikkat ederseniz <span class="im">n-m</span> çift sayı olmalı. Eğer <span class="im">n-m</span> çift değilse <span class="im">g_{nm}=0</span> olur. Şimdi üreteç fonksiyonunu yazalım.</p>
     <div class="eq eq-block">$$G(x,z) = \sum_{m=0}^{\infty}\sum_{n=0}^{\infty} g_{nm}z^n x^m \qquad (2)$$</div>
     <p>Ayrıca</p>
     <div class="eq eq-block">$$g(z) = G(0,z) \qquad (3)$$</div>
@@ -149,7 +149,7 @@
     <div class="def">
       <span class="label">Tanım.</span>
       <div class="eq eq-block">$$A_k(x,t) = \binom{x-kt}{k}\frac{x}{x-kt}, \quad x \neq kt \qquad (14)$$</div>
-      şartını sağlayan <span class="im">n</span>. dereceden bir polinom olarak tanımlansın. Gördüğünüz üzere
+      şartını sağlayan <span class="im">k</span>. dereceden bir polinom olarak tanımlansın. Gördüğünüz üzere
       <div class="eq eq-block">$$f(\omega) = \sum_{k=0}^{\infty} A_k(1,-2)\omega^k \qquad (15)$$</div>
       olur.
     </div>
@@ -195,12 +195,12 @@
     <p>kullanarak <span class="im">G(x,z)</span>'yi bulalım.</p>
     <div class="eq eq-block">$$(f(z^2))^{n+1} = \sum_{m=0}^{\infty} A_m(n+1,-2)z^{2m}$$</div>
     <p>eşitliğini yerine yazalım.</p>
-    <div class="eq eq-block">$$G(x,z) = \sum_{n=0}^{\infty}\sum_{m=0}^{\infty} A_m(n+1,-2)x^m z^{2m+n} = \sum_{n=0}^{\infty}\sum_{m=0}^{\infty} \binom{n+1+2m}{m}\frac{n+1}{n+1+2m}x^n z^{2m+n}$$</div>
+    <div class="eq eq-block">$$G(x,z) = \sum_{n=0}^{\infty}\sum_{m=0}^{\infty} A_m(n+1,-2)x^n z^{2m+n} = \sum_{n=0}^{\infty}\sum_{m=0}^{\infty} \binom{n+1+2m}{m}\frac{n+1}{n+1+2m}x^n z^{2m+n}$$</div>
     <p>olarak bulunur. Yani</p>
     <div class="eq eq-block">$$g_{(2m+n)n} = \binom{n+1+2m}{m}\frac{n+1}{n+1+2m} \qquad (19)$$</div>
     <p>olur. <span class="im">n</span>'i <span class="im">m</span> ile <span class="im">m</span>'i <span class="im">\frac{n-m}{2}</span> ile değiştirisek</p>
     <div class="eq eq-block">$$g_{nm} = \binom{n+1}{\frac{n-m}{2}}\frac{m+1}{n+1} \qquad (20)$$</div>
-    <p>olarak buluruz. Eğer <span class="im">n-m</span> pozitif çift bir tam sayı değilse <span class="im">g_{nm}=0</span>'dır. Şimdi aradığımız durum sayısı olan <span class="im">g_{(2n-m)m}</span>'i hesaplayalım.</p>
+    <p>olarak buluruz. Eğer <span class="im">n-m</span> negatif olmayan çift bir tam sayı değilse <span class="im">g_{nm}=0</span>'dır. Şimdi aradığımız durum sayısı olan <span class="im">g_{(2n-m)m}</span>'i hesaplayalım.</p>
     <div class="eq eq-block">$$g_{(2n-m)m} = \binom{2n-m+1}{n-m}\frac{m+1}{2n-m+1} \qquad (21)$$</div>
     <p>olarak buluruz. Yani <span class="im">n</span> tren <span class="im">m</span> tanesi yığında kalacak şekilde ve giriş boş kalacak biçimde</p>
     <div class="eq eq-block">$$g_{(2n-m)m} = \binom{2n-m+1}{n-m}\frac{m+1}{2n-m+1} \qquad (22)$$</div>
